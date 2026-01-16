@@ -113,4 +113,51 @@ export class ExtractService {
 
     return results;
   }
+
+  async retryFailedExtractions() {
+    // Buscar reuniones que tienen extracciones fallidas
+    const failedExtractions = await this.prisma.extraction.findMany({
+      where: {
+        status: ExtractionStatus.FAILED,
+      },
+      include: {
+        meeting: true,
+      },
+    });
+
+    const results = {
+      total: failedExtractions.length,
+      success: 0,
+      failed: 0,
+      skipped: 0,
+    };
+
+    for (const failedExtraction of failedExtractions) {
+      // Verificar si ya hay una extracción exitosa más reciente para esta reunión
+      const latestExtraction = await this.prisma.extraction.findFirst({
+        where: {
+          meetingId: failedExtraction.meetingId,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      // Si la última extracción es exitosa, saltar esta reunión
+      if (latestExtraction && latestExtraction.status === ExtractionStatus.SUCCESS) {
+        results.skipped++;
+        continue;
+      }
+
+      // Reintentar la extracción
+      const result = await this.extractFromMeeting(failedExtraction.meetingId);
+      if (result?.status === ExtractionStatus.SUCCESS) {
+        results.success++;
+      } else {
+        results.failed++;
+      }
+    }
+
+    return results;
+  }
 }

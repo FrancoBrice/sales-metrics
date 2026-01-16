@@ -12,6 +12,7 @@ export default function Dashboard() {
   const [sellers, setSellers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [extracting, setExtracting] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [filters, setFilters] = useState<CustomerFilters>({});
 
@@ -59,6 +60,21 @@ export default function Dashboard() {
     }
   }
 
+  async function handleRetryFailed() {
+    setRetrying(true);
+    try {
+      const result = await api.extract.retryFailed();
+      alert(`Reintento completado:\n• Total: ${result.total}\n• Exitosos: ${result.success}\n• Fallidos: ${result.failed}\n• Omitidos: ${result.skipped}`);
+      // Reload based on new data
+      await loadDashboardData();
+    } catch (error) {
+      console.error("Retry failed:", error);
+      alert("Error al reintentar análisis fallidos");
+    } finally {
+      setRetrying(false);
+    }
+  }
+
   return (
     <div className="container">
       <div className="header">
@@ -67,9 +83,17 @@ export default function Dashboard() {
           <button
             className="btn btn-secondary"
             onClick={handleExtractFromDashboard}
-            disabled={extracting}
+            disabled={extracting || retrying}
           >
             {extracting ? "Analizando..." : "🔍 Analizar Pendientes"}
+          </button>
+          <button
+            className="btn btn-outline"
+            onClick={handleRetryFailed}
+            disabled={extracting || retrying}
+            style={{ marginRight: "0.5rem" }}
+          >
+            {retrying ? "Reintentando..." : "🔄 Reintentar Fallidos"}
           </button>
           <button className="btn btn-primary" onClick={() => setShowUpload(true)}>
             📤 Importar CSV

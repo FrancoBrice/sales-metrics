@@ -154,5 +154,6 @@ export const api = {
   },
   extract: {
     extractAll: () => fetchApi<{ total: number; success: number; failed: number }>("/extract/bulk/all", { method: "POST" }),
+    retryFailed: () => fetchApi<{ total: number; success: number; failed: number; skipped: number }>("/extract/bulk/retry-failed", { method: "POST" }),
   },
 };
