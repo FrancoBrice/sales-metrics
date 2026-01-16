@@ -78,17 +78,12 @@ export class GeminiClient implements LlmClient {
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>("GEMINI_API_KEY");
     if (!apiKey || apiKey === "your-gemini-api-key-here") {
-      this.logger.warn("GEMINI_API_KEY not configured - will use fallback extraction");
+      throw new Error("GEMINI_API_KEY is required. Please configure your Gemini API key in the environment variables.");
     }
-    this.genAI = new GoogleGenerativeAI(apiKey || "");
+    this.genAI = new GoogleGenerativeAI(apiKey);
   }
 
   async extractFromTranscript(transcript: string): Promise<Extraction> {
-    const apiKey = this.configService.get<string>("GEMINI_API_KEY");
-
-    if (!apiKey || apiKey === "your-gemini-api-key-here") {
-      return this.fallbackExtraction(transcript);
-    }
 
     try {
       const model = this.genAI.getGenerativeModel({
@@ -108,20 +103,18 @@ export class GeminiClient implements LlmClient {
 
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        this.logger.warn("No JSON found in LLM response, using fallback");
-        return this.fallbackExtraction(transcript);
+        throw new Error("No valid JSON found in Gemini API response");
       }
 
       const parsed = tryParseJson<Partial<Extraction>>(jsonMatch[0]);
       if (!parsed) {
-        this.logger.warn("Failed to parse LLM JSON, using fallback");
-        return this.fallbackExtraction(transcript);
+        throw new Error("Failed to parse JSON from Gemini API response");
       }
 
       return this.validateAndMerge(parsed, transcript);
     } catch (error) {
       this.logger.error(`LLM extraction failed: ${error}`);
-      return this.fallbackExtraction(transcript);
+      throw new Error(`Gemini API extraction failed: ${error}`);
     }
   }
 
@@ -179,86 +172,6 @@ export class GeminiClient implements LlmClient {
     return valid.length > 0 ? valid : defaultValue;
   }
 
-  private fallbackExtraction(transcript: string): Extraction {
-    const leadSourceResult = detectLeadSource(transcript);
-    const volumeResult = detectVolume(transcript);
-    const integrationsResult = detectIntegrations(transcript);
 
-    return {
-      industry: this.detectIndustryHeuristic(transcript),
-      businessModel: BusinessModel.B2B,
-      jtbdPrimary: [JtbdPrimary.AUTOMATIZAR_ATENCION],
-      painPoints: this.detectPainPointsHeuristic(transcript),
-      leadSource: leadSourceResult.source,
-      processMaturity: ProcessMaturity.MANUAL,
-      toolingMaturity: ToolingMaturity.HERRAMIENTAS_BASICAS,
-      knowledgeComplexity: KnowledgeComplexity.MODERADA,
-      riskLevel: RiskLevel.MEDIO,
-      integrations: integrationsResult.integrations,
-      urgency: Urgency.MEDIA,
-      successMetrics: [SuccessMetric.TIEMPO_RESPUESTA],
-      objections: [],
-      sentiment: Sentiment.POSITIVO,
-      volume: volumeResult.volume,
-      confidence: 0.5,
-    };
-  }
 
-  private detectIndustryHeuristic(transcript: string): Industry {
-    const lower = transcript.toLowerCase();
-    const industryPatterns: [RegExp, Industry][] = [
-      [/servicios financieros|inversiones|fintech|banca/i, Industry.SERVICIOS_FINANCIEROS],
-      [/tienda online|ecommerce|e-commerce|articulos deportivos/i, Industry.ECOMMERCE],
-      [/clinica|salud|pacientes|odontolog|medic/i, Industry.SALUD],
-      [/educacion|cursos|estudiantes|admision|universidad/i, Industry.EDUCACION],
-      [/software|tecnologia|startup tecnolog|app|plataforma/i, Industry.TECNOLOGIA],
-      [/logistica|envios|transporte|flota/i, Industry.LOGISTICA],
-      [/turismo|viajes|tours|agencia de viajes/i, Industry.TURISMO],
-      [/restaurante|catering|alimentos|pasteleria|gourmet/i, Industry.ALIMENTOS],
-      [/moda|ropa|prendas|vestir/i, Industry.MODA],
-      [/eventos|conferencias|seminarios/i, Industry.EVENTOS],
-      [/consultoria|asesoria/i, Industry.CONSULTORIA],
-      [/legal|abogados|juridic/i, Industry.LEGAL],
-      [/inmobiliaria|propiedades|bienes raices/i, Industry.INMOBILIARIA],
-      [/marketing|publicidad|digital/i, Industry.MARKETING],
-      [/arquitectura|diseño de interiores/i, Industry.ARQUITECTURA],
-      [/construccion|obra/i, Industry.CONSTRUCCION],
-      [/energia|renovable|solar/i, Industry.ENERGIA],
-      [/agricola|cultivos|agro/i, Industry.AGRICULTURA],
-      [/ong|voluntario|fundacion/i, Industry.ONG],
-    ];
-
-    for (const [pattern, industry] of industryPatterns) {
-      if (pattern.test(lower)) {
-        return industry;
-      }
-    }
-    return Industry.OTRO;
-  }
-
-  private detectPainPointsHeuristic(transcript: string): PainPoints[] {
-    const lower = transcript.toLowerCase();
-    const painPoints: PainPoints[] = [];
-
-    if (/volumen|cantidad de consultas|muchas consultas|incremento.*consultas/i.test(lower)) {
-      painPoints.push(PainPoints.VOLUMEN_ALTO);
-    }
-    if (/demora|tiempo de respuesta|responder.*inmediato|no.*responder.*tiempo/i.test(lower)) {
-      painPoints.push(PainPoints.RESPUESTAS_LENTAS);
-    }
-    if (/sobrecarga|saturado|insuficiente|no da abasto|capacidad/i.test(lower)) {
-      painPoints.push(PainPoints.SOBRECARGA_EQUIPO);
-    }
-    if (/repetitivas|preguntas frecuentes|mismas preguntas/i.test(lower)) {
-      painPoints.push(PainPoints.CONSULTAS_REPETITIVAS);
-    }
-    if (/manual|gestion manual|manualmente/i.test(lower)) {
-      painPoints.push(PainPoints.GESTION_MANUAL);
-    }
-    if (/pico|temporada alta|promociones|epocas/i.test(lower)) {
-      painPoints.push(PainPoints.PICOS_DEMANDA);
-    }
-
-    return painPoints.length > 0 ? painPoints : [PainPoints.VOLUMEN_ALTO];
-  }
 }
