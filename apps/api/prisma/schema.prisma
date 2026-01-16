@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id          String    @id @default(cuid())
+  name        String
+  email       String
+  phone       String
+  seller      String
+  meetingDate DateTime
+  closed      Boolean
+  createdAt   DateTime  @default(now())
+  meetings    Meeting[]
+}
+
+model Meeting {
+  id          String       @id @default(cuid())
+  customerId  String
+  customer    Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  transcript  String
+  createdAt   DateTime     @default(now())
+  extractions Extraction[]
+}
+
+model Extraction {
+  id             String   @id @default(cuid())
+  meetingId      String
+  meeting        Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  resultJson     String
+  model          String
+  promptVersion  String
+  schemaVersion  String
+  status         String
+  rawModelOutput String?
+  createdAt      DateTime @default(now())
+}

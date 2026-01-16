@@ -1,0 +1,22 @@
+{
+  "name": "web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@vambe/shared": "workspace:*",
+    "next": "^14.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.4.0"
+  }
+}
