@@ -73,7 +73,7 @@ Responde SOLO con el JSON, sin explicaciones adicionales.`;
 export class GeminiClient implements LlmClient {
   private readonly logger = new Logger(GeminiClient.name);
   private readonly genAI: GoogleGenerativeAI;
-  private readonly modelName = "gemini-2.0-flash-exp";
+  private readonly modelName = "gemini-1.5-flash-latest";
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>("GEMINI_API_KEY");

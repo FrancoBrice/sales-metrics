@@ -5,7 +5,7 @@ import { ExtractionStatus } from "@vambe/shared";
 
 const SCHEMA_VERSION = "1.0.0";
 const PROMPT_VERSION = "1.0.0";
-const MODEL_NAME = "gemini-2.0-flash-exp";
+const MODEL_NAME = "gemini-1.5-flash-latest";
 
 @Injectable()
 export class ExtractService {
