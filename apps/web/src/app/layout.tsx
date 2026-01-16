@@ -1,3 +1,4 @@
+import { Navigation } from "@/components/Navigation";
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -13,7 +14,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body>
+        <div className="layout-wrapper">
+          <Navigation />
+          <main>{children}</main>
+        </div>
+      </body>
     </html>
   );
 }

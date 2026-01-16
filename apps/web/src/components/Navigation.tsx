@@ -1,0 +1,27 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+export function Navigation() {
+  const pathname = usePathname();
+
+  const links = [
+    { href: "/", label: "Dashboard" },
+    { href: "/customers", label: "Clientes" },
+  ];
+
+  return (
+    <nav className="nav-tabs">
+      <div className="container" style={{ paddingBottom: 0, borderBottom: "none" }}>
+        <div className="tabs-list">
+          {links.map((link) => (
+            <Link key={link.href} href={link.href} className={`tab-link ${pathname === link.href ? "active" : ""}`}>
+              {link.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </nav>
+  );
+}

@@ -1,15 +1,16 @@
 "use client";
 
 import { CustomerFilters } from "@/lib/api";
-import { LeadSource, Industry, LeadSourceLabels, IndustryLabels } from "@vambe/shared";
+import { LeadSourceLabels, IndustryLabels } from "@vambe/shared";
 
 interface FiltersProps {
   sellers: string[];
   filters: CustomerFilters;
   onChange: (filters: CustomerFilters) => void;
+  variant?: "dashboard" | "list";
 }
 
-export function Filters({ sellers, filters, onChange }: FiltersProps) {
+export function Filters({ sellers, filters, onChange, variant = "list" }: FiltersProps) {
   const handleChange = (key: keyof CustomerFilters, value: string | boolean | undefined) => {
     onChange({
       ...filters,
@@ -39,52 +40,56 @@ export function Filters({ sellers, filters, onChange }: FiltersProps) {
         </select>
       </div>
 
-      <div className="filter-group">
-        <label className="filter-label">Estado</label>
-        <select
-          className="filter-select"
-          value={filters.closed === undefined ? "" : filters.closed.toString()}
-          onChange={(e) =>
-            handleChange("closed", e.target.value === "" ? undefined : e.target.value === "true")
-          }
-        >
-          <option value="">Todos</option>
-          <option value="true">Cerrados</option>
-          <option value="false">No cerrados</option>
-        </select>
-      </div>
+      {variant === "list" && (
+        <>
+          <div className="filter-group">
+            <label className="filter-label">Estado</label>
+            <select
+              className="filter-select"
+              value={filters.closed === undefined ? "" : filters.closed.toString()}
+              onChange={(e) =>
+                handleChange("closed", e.target.value === "" ? undefined : e.target.value === "true")
+              }
+            >
+              <option value="">Todos</option>
+              <option value="true">Cerrados</option>
+              <option value="false">No cerrados</option>
+            </select>
+          </div>
 
-      <div className="filter-group">
-        <label className="filter-label">Fuente de Lead</label>
-        <select
-          className="filter-select"
-          value={filters.leadSource || ""}
-          onChange={(e) => handleChange("leadSource", e.target.value)}
-        >
-          <option value="">Todas</option>
-          {Object.entries(LeadSourceLabels).map(([key, label]) => (
-            <option key={key} value={key}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </div>
+          <div className="filter-group">
+            <label className="filter-label">Fuente de Lead</label>
+            <select
+              className="filter-select"
+              value={filters.leadSource || ""}
+              onChange={(e) => handleChange("leadSource", e.target.value)}
+            >
+              <option value="">Todas</option>
+              {Object.entries(LeadSourceLabels).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      <div className="filter-group">
-        <label className="filter-label">Industria</label>
-        <select
-          className="filter-select"
-          value={filters.industry || ""}
-          onChange={(e) => handleChange("industry", e.target.value)}
-        >
-          <option value="">Todas</option>
-          {Object.entries(IndustryLabels).map(([key, label]) => (
-            <option key={key} value={key}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </div>
+          <div className="filter-group">
+            <label className="filter-label">Industria</label>
+            <select
+              className="filter-select"
+              value={filters.industry || ""}
+              onChange={(e) => handleChange("industry", e.target.value)}
+            >
+              <option value="">Todas</option>
+              {Object.entries(IndustryLabels).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </>
+      )}
 
       <div className="filter-group">
         <label className="filter-label">Desde</label>

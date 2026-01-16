@@ -10,6 +10,8 @@ interface CustomerFilter {
   dateFrom?: string;
   dateTo?: string;
   industry?: string;
+  page?: number;
+  limit?: number;
 }
 
 @Injectable()
@@ -17,6 +19,10 @@ export class CustomersService {
   constructor(private readonly prisma: PrismaService) { }
 
   async findAll(filter: CustomerFilter) {
+    const page = filter.page || 1;
+    const limit = filter.limit || 30;
+    const skip = (page - 1) * limit;
+
     const where: Prisma.CustomerWhereInput = {};
 
     if (filter.seller) {
@@ -37,61 +43,84 @@ export class CustomersService {
       }
     }
 
-    const customers = await this.prisma.customer.findMany({
-      where,
-      include: {
-        meetings: {
-          include: {
-            extractions: {
-              orderBy: { createdAt: "desc" },
-              take: 1,
+    // Pre-filter by extraction fields if possible
+    // Note: This is an optimization. Since extraction is JSON, we fetch all for now if filtering by json fields
+    // Ideally we would move critical fields to columns, but for this scale in-memory filter is fine,
+    // EXCEPT pagination breaks.
+    // To support proper pagination with JSON filters, we'll fetch ALL IDs first that match SQL filters,
+    // then filter in memory, then paginate the result slice.
+
+    const requiresInMemoryFilter = !!filter.leadSource || !!filter.industry;
+
+    if (requiresInMemoryFilter) {
+      // Get all matching database filters first
+      const allCandidates = await this.prisma.customer.findMany({
+        where,
+        include: {
+          meetings: {
+            include: {
+              extractions: {
+                orderBy: { createdAt: "desc" },
+                take: 1,
+              },
             },
           },
         },
-      },
-      orderBy: { meetingDate: "desc" },
-    });
+        orderBy: { meetingDate: "desc" },
+      });
 
-    const result = customers.map((customer) => {
-      const meeting = customer.meetings[0];
-      const extractionRecord = meeting?.extractions[0];
+      // Filter in memory
+      const filtered = allCandidates.map(this.mapCustomer).filter((c) => {
+        if (filter.leadSource && c.extraction?.leadSource !== filter.leadSource) return false;
+        if (filter.industry && c.extraction?.industry !== filter.industry) return false;
+        return true;
+      });
 
-      let extraction: Extraction | null = null;
-      if (extractionRecord) {
-        try {
-          extraction = JSON.parse(extractionRecord.resultJson);
-        } catch {
-          extraction = null;
-        }
-      }
+      const total = filtered.length;
+      const paginatedData = filtered.slice(skip, skip + limit);
 
       return {
-        id: customer.id,
-        name: customer.name,
-        email: customer.email,
-        phone: customer.phone,
-        seller: customer.seller,
-        meetingDate: customer.meetingDate.toISOString().split("T")[0],
-        closed: customer.closed,
-        createdAt: customer.createdAt.toISOString(),
-        meetingId: meeting?.id ?? null,
-        extraction,
+        data: paginatedData,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
       };
-    });
 
-    if (filter.leadSource) {
-      return result.filter(
-        (c) => c.extraction?.leadSource === filter.leadSource
-      );
+    } else {
+      // Database level pagination
+      const [total, customers] = await Promise.all([
+        this.prisma.customer.count({ where }),
+        this.prisma.customer.findMany({
+          where,
+          include: {
+            meetings: {
+              include: {
+                extractions: {
+                  orderBy: { createdAt: "desc" },
+                  take: 1,
+                },
+              },
+            },
+          },
+          orderBy: { meetingDate: "desc" },
+          skip,
+          take: limit,
+        }),
+      ]);
+
+      return {
+        data: customers.map(this.mapCustomer),
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
     }
-
-    if (filter.industry) {
-      return result.filter(
-        (c) => c.extraction?.industry === filter.industry
-      );
-    }
-
-    return result;
   }
 
   async getUniqueSellers() {
@@ -102,5 +131,32 @@ export class CustomersService {
     });
 
     return customers.map((c) => c.seller);
+  }
+
+  private mapCustomer(customer: any) {
+    const meeting = customer.meetings[0];
+    const extractionRecord = meeting?.extractions[0];
+
+    let extraction: Extraction | null = null;
+    if (extractionRecord) {
+      try {
+        extraction = JSON.parse(extractionRecord.resultJson);
+      } catch {
+        extraction = null;
+      }
+    }
+
+    return {
+      id: customer.id,
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      seller: customer.seller,
+      meetingDate: customer.meetingDate.toISOString().split("T")[0],
+      closed: customer.closed,
+      createdAt: customer.createdAt.toISOString(),
+      meetingId: meeting?.id ?? null,
+      extraction,
+    };
   }
 }

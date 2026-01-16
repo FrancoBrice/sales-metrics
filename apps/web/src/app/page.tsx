@@ -1,121 +1,115 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { api, CustomerWithExtraction, MetricsOverview, CustomerFilters } from "@/lib/api";
+import { useEffect, useState } from "react";
+import { api, CustomerFilters, MetricsOverview } from "@/lib/api";
 import { Filters } from "@/components/Filters";
 import { MetricsCards } from "@/components/MetricsCards";
-import { CustomersTable } from "@/components/CustomersTable";
 import { ChartsSection } from "@/components/ChartsSection";
 import { UploadModal } from "@/components/UploadModal";
 
 export default function Dashboard() {
-  const [customers, setCustomers] = useState<CustomerWithExtraction[]>([]);
   const [metrics, setMetrics] = useState<MetricsOverview | null>(null);
   const [sellers, setSellers] = useState<string[]>([]);
-  const [filters, setFilters] = useState<CustomerFilters>({});
   const [loading, setLoading] = useState(true);
-  const [showUpload, setShowUpload] = useState(false);
   const [extracting, setExtracting] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [filters, setFilters] = useState<CustomerFilters>({});
 
-  const loadData = useCallback(async () => {
+  useEffect(() => {
+    loadSellers();
+    loadDashboardData();
+  }, [filters]);
+
+  async function loadSellers() {
+    try {
+      const data = await api.customers.getSellers();
+      setSellers(data);
+    } catch (error) {
+      console.error("Failed to load sellers:", error);
+    }
+  }
+
+  async function loadDashboardData() {
     setLoading(true);
     try {
-      const [customersData, metricsData, sellersData] = await Promise.all([
-        api.customers.list(filters),
-        api.metrics.overview({
-          seller: filters.seller,
-          dateFrom: filters.dateFrom,
-          dateTo: filters.dateTo,
-        }),
-        api.customers.getSellers(),
-      ]);
-      setCustomers(customersData);
+      const metricsData = await api.metrics.overview({
+        seller: filters.seller,
+        dateFrom: filters.dateFrom,
+        dateTo: filters.dateTo,
+      });
       setMetrics(metricsData);
-      setSellers(sellersData);
     } catch (error) {
-      console.error("Error loading data:", error);
+      console.error("Failed to load dashboard data:", error);
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const handleFilterChange = (newFilters: CustomerFilters) => {
-    setFilters(newFilters);
-  };
-
-  const handleUploadSuccess = () => {
-    setShowUpload(false);
-    loadData();
-  };
-
-  const handleExtractAll = async () => {
+  async function handleExtractFromDashboard() {
     setExtracting(true);
     try {
-      const result = await api.extract.extractAll();
-      alert(`Extracción completada: ${result.success} exitosas, ${result.failed} fallidas`);
-      loadData();
+      await api.extract.extractAll();
+      // Reload based on new data
+      await loadDashboardData();
     } catch (error) {
-      console.error("Error extracting:", error);
-      alert("Error al ejecutar extracciones");
+      console.error("Extraction failed:", error);
+      alert("Error al iniciar el análisis");
     } finally {
       setExtracting(false);
     }
-  };
+  }
 
   return (
     <div className="container">
-      <header className="header">
+      <div className="header">
         <h1>Vambe Sales Metrics</h1>
         <div className="header-actions">
           <button
             className="btn btn-secondary"
-            onClick={handleExtractAll}
+            onClick={handleExtractFromDashboard}
             disabled={extracting}
           >
-            {extracting ? "Procesando..." : "🔄 Analizar Pendientes"}
+            {extracting ? "Analizando..." : "🔍 Analizar Pendientes"}
           </button>
-          <button
-            className="btn btn-primary"
-            onClick={() => setShowUpload(true)}
-          >
+          <button className="btn btn-primary" onClick={() => setShowUpload(true)}>
             📤 Importar CSV
           </button>
         </div>
-      </header>
+      </div>
 
       <Filters
         sellers={sellers}
         filters={filters}
-        onChange={handleFilterChange}
+        onChange={setFilters}
+        variant="dashboard"
       />
 
-      {loading ? (
+      {loading && !metrics ? (
         <div className="loading">
           <div className="spinner"></div>
         </div>
-      ) : (
+      ) : metrics ? (
         <>
           <MetricsCards metrics={metrics} />
-
+          {/* Note: Charts currently represent global distribution or seller specific data from separate endpoints.
+              Ideally these would also re-fetch based on filters if the API supported it.
+              The MetricsCards reflect the filtered data. */}
           <ChartsSection metrics={metrics} />
-
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">Clientes ({customers.length})</h2>
-            </div>
-            <CustomersTable customers={customers} />
-          </div>
         </>
+      ) : (
+        <div className="empty-state">
+          <h3>No hay datos disponibles</h3>
+          <p>Importa un archivo CSV para comenzar</p>
+        </div>
       )}
 
       {showUpload && (
         <UploadModal
           onClose={() => setShowUpload(false)}
-          onSuccess={handleUploadSuccess}
+          onSuccess={() => {
+            loadDashboardData();
+            loadSellers();
+          }}
         />
       )}
     </div>

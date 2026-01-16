@@ -81,6 +81,18 @@ export interface CustomerFilters {
   dateFrom?: string;
   dateTo?: string;
   industry?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 export const api = {
@@ -93,9 +105,19 @@ export const api = {
       if (filters?.dateFrom) params.set("dateFrom", filters.dateFrom);
       if (filters?.dateTo) params.set("dateTo", filters.dateTo);
       if (filters?.industry) params.set("industry", filters.industry);
+      if (filters?.page) params.set("page", String(filters.page));
+      if (filters?.limit) params.set("limit", String(filters.limit));
 
       const query = params.toString();
-      return fetchApi<CustomerWithExtraction[]>(`/customers${query ? `?${query}` : ""}`);
+      return fetchApi<PaginatedResponse<CustomerWithExtraction> | CustomerWithExtraction[]>(
+        `/customers${query ? `?${query}` : ""}`
+      ).then((res) => {
+        // Handle migration period where api might return array or object
+        if (Array.isArray(res)) {
+          return { data: res, meta: { total: res.length, page: 1, limit: 1000, totalPages: 1 } };
+        }
+        return res;
+      });
     },
     getSellers: () => fetchApi<string[]>("/customers/sellers"),
   },

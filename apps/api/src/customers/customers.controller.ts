@@ -15,13 +15,17 @@ export class CustomersController {
   @ApiQuery({ name: "dateFrom", required: false })
   @ApiQuery({ name: "dateTo", required: false })
   @ApiQuery({ name: "industry", required: false })
+  @ApiQuery({ name: "page", required: false, type: Number })
+  @ApiQuery({ name: "limit", required: false, type: Number })
   async listCustomers(
     @Query("seller") seller?: string,
     @Query("closed") closed?: string,
     @Query("leadSource") leadSource?: string,
     @Query("dateFrom") dateFrom?: string,
     @Query("dateTo") dateTo?: string,
-    @Query("industry") industry?: string
+    @Query("industry") industry?: string,
+    @Query("page") page: number = 1,
+    @Query("limit") limit: number = 30
   ) {
     return this.customersService.findAll({
       seller,
@@ -30,6 +34,8 @@ export class CustomersController {
       dateFrom,
       dateTo,
       industry,
+      page: Number(page),
+      limit: Number(limit),
     });
   }
 
