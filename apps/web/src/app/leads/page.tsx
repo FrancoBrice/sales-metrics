@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, CustomerFilters } from "@/lib/api";
-import { Filters } from "@/components/Filters";
+import { Filters } from "@/components/features/Filters";
 import { LeadSourceLabels } from "@vambe/shared";
 import {
   LineChart,

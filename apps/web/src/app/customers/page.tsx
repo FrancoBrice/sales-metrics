@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { api, CustomerFilters, CustomerWithExtraction, PaginatedResponse } from "@/lib/api";
-import { Filters } from "@/components/Filters";
-import { CustomersTable } from "@/components/CustomersTable";
-import { Pagination } from "@/components/Pagination";
+import { Filters } from "@/components/features/Filters";
+import { CustomersTable } from "@/components/features/CustomersTable";
+import { Pagination } from "@/components/features/Pagination";
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<CustomerWithExtraction[]>([]);

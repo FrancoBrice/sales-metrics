@@ -2,12 +2,12 @@
 
 import { useEffect, useState, useRef } from "react";
 import { api, CustomerFilters, MetricsOverview } from "@/lib/api";
-import { Filters } from "@/components/Filters";
-import { MetricsCards } from "@/components/MetricsCards";
-import { ChartsSection } from "@/components/ChartsSection";
-import { UploadModal } from "@/components/UploadModal";
-import { Toast } from "@/components/Toast";
-import { ProgressSnackbar } from "@/components/ProgressSnackbar";
+import { Filters } from "@/components/features/Filters";
+import { MetricsCards } from "@/components/ui/MetricsCards";
+import { ChartsSection } from "@/components/charts/ChartsSection";
+import { UploadModal } from "@/components/ui/UploadModal";
+import { Toast } from "@/components/ui/Toast";
+import { ProgressSnackbar } from "@/components/ui/ProgressSnackbar";
 
 export default function Dashboard() {
   const [metrics, setMetrics] = useState<MetricsOverview | null>(null);

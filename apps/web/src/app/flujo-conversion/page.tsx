@@ -1,6 +1,6 @@
 "use client";
 
-import { SankeyChart } from "@/components/SankeyChart";
+import { SankeyChart } from "@/components/charts/SankeyChart";
 
 export default function FlujoConversionPage() {
   return (

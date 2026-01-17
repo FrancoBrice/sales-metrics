@@ -1,4 +1,4 @@
-import { PainPointsBubbleChart } from "@/components/PainPointsBubbleChart";
+import { PainPointsBubbleChart } from "@/components/charts/PainPointsBubbleChart";
 
 export default function PainPointsPage() {
   return (
