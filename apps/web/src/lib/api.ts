@@ -47,7 +47,12 @@ export interface MetricsOverview {
   conversionRate: number;
   avgVolume: number | null;
   topLeadSources: Array<{ source: string; count: number }>;
-  topPainPoints: Array<{ painPoint: string; count: number }>;
+  topPainPoints: Array<{
+    painPoint: string;
+    count: number;
+    closed: number;
+    conversionRate: number;
+  }>;
   bySeller: Array<{
     seller: string;
     total: number;
@@ -145,6 +150,11 @@ export const api = {
         `/metrics/leads-over-time${query ? `?${query}` : ""}`
       );
     },
+    sankey: () =>
+      fetchApi<{
+        nodes: Array<{ name: string; category: string }>;
+        links: Array<{ source: number; target: number; value: number }>;
+      }>("/metrics/sankey"),
   },
   ingest: {
     uploadCsv: async (file: File) => {

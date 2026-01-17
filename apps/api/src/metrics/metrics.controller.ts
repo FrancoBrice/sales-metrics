@@ -54,5 +54,10 @@ export class MetricsController {
       dateTo,
     });
   }
+  @Get("sankey")
+  @ApiOperation({ summary: "Get sankey diagram data" })
+  async getSankeyData() {
+    return this.metricsService.getSankeyData();
+  }
 }
 

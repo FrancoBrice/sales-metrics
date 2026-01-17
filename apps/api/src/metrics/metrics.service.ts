@@ -49,7 +49,7 @@ export class MetricsService {
     const conversionRate = totalCustomers > 0 ? (closedDeals / totalCustomers) * 100 : 0;
 
     const leadSourceCounts: Record<string, number> = {};
-    const painPointCounts: Record<string, number> = {};
+    const painPointStats: Record<string, { total: number; closed: number }> = {};
     const volumes: number[] = [];
     const sellerStats: Record<string, { total: number; closed: number }> = {};
 
@@ -69,7 +69,13 @@ export class MetricsService {
         }
 
         for (const painPoint of extraction.painPoints || []) {
-          painPointCounts[painPoint] = (painPointCounts[painPoint] || 0) + 1;
+          if (!painPointStats[painPoint]) {
+            painPointStats[painPoint] = { total: 0, closed: 0 };
+          }
+          painPointStats[painPoint].total++;
+          if (customer.closed) {
+            painPointStats[painPoint].closed++;
+          }
         }
 
         if (extraction.volume?.quantity) {
@@ -83,8 +89,13 @@ export class MetricsService {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
-    const topPainPoints = Object.entries(painPointCounts)
-      .map(([painPoint, count]) => ({ painPoint: painPoint as PainPoints, count }))
+    const topPainPoints = Object.entries(painPointStats)
+      .map(([painPoint, stats]) => ({
+        painPoint: painPoint as PainPoints,
+        count: stats.total,
+        closed: stats.closed,
+        conversionRate: stats.total > 0 ? (stats.closed / stats.total) * 100 : 0,
+      }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
@@ -303,6 +314,77 @@ export class MetricsService {
       .sort((a, b) => a.period.localeCompare(b.period));
 
     return { leadsOverTime };
+  }
+
+  async getSankeyData() {
+    const customers = await this.prisma.customer.findMany({
+      include: {
+        meetings: {
+          include: {
+            extractions: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
+
+    const nodesMap = new Map<string, number>();
+    const nodes: { name: string; category: string }[] = [];
+    const linksMap = new Map<string, number>();
+
+    const getNodeIndex = (name: string, category: string) => {
+      const key = `${category}:${name}`;
+      if (!nodesMap.has(key)) {
+        nodesMap.set(key, nodes.length);
+        nodes.push({ name, category });
+      }
+      return nodesMap.get(key)!;
+    };
+
+    const addLink = (source: number, target: number, value: number) => {
+      const key = `${source}-${target}`;
+      linksMap.set(key, (linksMap.get(key) || 0) + value);
+    };
+
+    for (const customer of customers) {
+      const extraction = this.getExtraction(customer);
+      if (!extraction) continue;
+
+      const source = extraction.leadSource || "Desconocido";
+      const painPoints = extraction.painPoints?.length ? extraction.painPoints : ["Ninguno"];
+      const sentiment = extraction.sentiment || "Neutro";
+      const status = customer.closed ? "Cerrada" : "Perdida";
+
+      const weight = 1 / painPoints.length;
+
+      const sourceIdx = getNodeIndex(source, "source");
+      const sentimentIdx = getNodeIndex(sentiment, "sentiment");
+      const statusIdx = getNodeIndex(status, "status");
+
+      for (const painPoint of painPoints) {
+        const painPointIdx = getNodeIndex(painPoint, "painPoint");
+
+        // Source -> Pain Point
+        addLink(sourceIdx, painPointIdx, weight);
+
+        // Pain Point -> Sentiment
+        addLink(painPointIdx, sentimentIdx, weight);
+      }
+
+      // Sentiment -> Status
+      // We add the full weight (1) here, but since we split the previous flows,
+      // the incoming flow to Sentiment for this customer sums to 1.
+      addLink(sentimentIdx, statusIdx, 1);
+    }
+
+    const links = Array.from(linksMap.entries()).map(([key, value]) => {
+      const [source, target] = key.split("-").map(Number);
+      return { source, target, value };
+    });
+
+    return { nodes, links };
   }
 
   private getExtraction(customer: { meetings: { extractions: { resultJson: string }[] }[] }): Extraction | null {
