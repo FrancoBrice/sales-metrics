@@ -3,6 +3,7 @@ import { ExtractController } from "./extract.controller";
 import { ExtractService } from "./extract.service";
 import { LLM_CLIENT } from "./llm/llmClient.interface";
 import { GeminiClient } from "./llm/geminiClient";
+import { OpenAiClient } from "./llm/openAiClient";
 
 @Module({
   controllers: [ExtractController],
@@ -11,6 +12,7 @@ import { GeminiClient } from "./llm/geminiClient";
     {
       provide: LLM_CLIENT,
       useClass: GeminiClient,
+      // useClass: OpenAiClient,
     },
   ],
   exports: [ExtractService],
