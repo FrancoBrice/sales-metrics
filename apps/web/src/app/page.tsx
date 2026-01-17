@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { api, CustomerFilters, MetricsOverview } from "@/lib/api";
 import { Filters } from "@/components/Filters";
 import { MetricsCards } from "@/components/MetricsCards";
 import { ChartsSection } from "@/components/ChartsSection";
 import { UploadModal } from "@/components/UploadModal";
+import { Toast } from "@/components/Toast";
+import { ProgressSnackbar } from "@/components/ProgressSnackbar";
 
 export default function Dashboard() {
   const [metrics, setMetrics] = useState<MetricsOverview | null>(null);
@@ -15,6 +17,9 @@ export default function Dashboard() {
   const [retrying, setRetrying] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [filters, setFilters] = useState<CustomerFilters>({});
+  const [toast, setToast] = useState<{ message: string; type: "info" | "success" | "error" } | null>(null);
+  const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     loadSellers();
@@ -48,13 +53,54 @@ export default function Dashboard() {
 
   async function handleExtractFromDashboard() {
     setExtracting(true);
+    setProgress({ current: 0, total: 0 });
+
+    const startProgressEstimate = () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+
+      setProgress({ current: 0, total: 60 });
+
+      progressIntervalRef.current = setInterval(() => {
+        setProgress((prev) => {
+          if (!prev) return prev;
+          const increment = Math.max(1, Math.floor(prev.total / 20));
+          const newCurrent = Math.min(prev.current + increment, prev.total * 0.95);
+          return { ...prev, current: newCurrent };
+        });
+      }, 500);
+    };
+
+    startProgressEstimate();
+
     try {
-      await api.extract.extractAll();
-      // Reload based on new data
+      const result = await api.extract.extractAll();
+
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+
+      setProgress({ current: result.total, total: result.total });
+
+      setTimeout(() => {
+        setProgress(null);
+        setToast({
+          message: `Análisis completado: ${result.success} exitosos, ${result.failed} fallidos`,
+          type: result.failed === 0 ? "success" : "info",
+        });
+      }, 500);
+
       await loadDashboardData();
     } catch (error) {
-      console.error("Extraction failed:", error);
-      alert("Error al iniciar el análisis");
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      setProgress(null);
+      setToast({
+        message: "Error al iniciar el análisis",
+        type: "error",
+      });
     } finally {
       setExtracting(false);
     }
@@ -62,18 +108,36 @@ export default function Dashboard() {
 
   async function handleRetryFailed() {
     setRetrying(true);
+    setToast({
+      message: "Reintentando análisis fallidos...",
+      type: "info",
+    });
+
     try {
       const result = await api.extract.retryFailed();
-      alert(`Reintento completado:\n• Total: ${result.total}\n• Exitosos: ${result.success}\n• Fallidos: ${result.failed}\n• Omitidos: ${result.skipped}`);
-      // Reload based on new data
+      setToast({
+        message: `Reintento completado: ${result.success} exitosos, ${result.failed} fallidos, ${result.skipped} omitidos`,
+        type: result.failed === 0 ? "success" : "info",
+      });
       await loadDashboardData();
     } catch (error) {
       console.error("Retry failed:", error);
-      alert("Error al reintentar análisis fallidos");
+      setToast({
+        message: "Error al reintentar análisis fallidos",
+        type: "error",
+      });
     } finally {
       setRetrying(false);
     }
   }
+
+  useEffect(() => {
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="container">
@@ -134,6 +198,22 @@ export default function Dashboard() {
             loadDashboardData();
             loadSellers();
           }}
+        />
+      )}
+
+      {progress && (
+        <ProgressSnackbar
+          message="Procesando transcripciones..."
+          progress={progress.current}
+          total={progress.total}
+        />
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
     </div>

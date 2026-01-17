@@ -153,8 +153,7 @@ export function SankeyChart() {
 
   return (
     <div className="card" style={{ height: "600px", display: "flex", flexDirection: "column" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-        <h3 className="section-title" style={{ margin: 0 }}>Flujo de Conversión</h3>
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "1rem", minHeight: "2rem" }}>
         {hiddenNodes.size > 0 && (
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
             <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", alignSelf: "center" }}>Ocultos:</span>

@@ -102,12 +102,23 @@ export class ExtractService {
       failed: 0,
     };
 
-    for (const meeting of meetingsWithoutExtraction) {
-      const result = await this.extractFromMeeting(meeting.id);
-      if (result?.status === ExtractionStatus.SUCCESS) {
-        results.success++;
-      } else {
-        results.failed++;
+    const concurrencyLimit = 10;
+    const batches = [];
+    for (let i = 0; i < meetingsWithoutExtraction.length; i += concurrencyLimit) {
+      batches.push(meetingsWithoutExtraction.slice(i, i + concurrencyLimit));
+    }
+
+    for (const batch of batches) {
+      const batchResults = await Promise.allSettled(
+        batch.map((meeting) => this.extractFromMeeting(meeting.id))
+      );
+
+      for (const result of batchResults) {
+        if (result.status === "fulfilled" && result.value?.status === ExtractionStatus.SUCCESS) {
+          results.success++;
+        } else {
+          results.failed++;
+        }
       }
     }
 
@@ -115,7 +126,6 @@ export class ExtractService {
   }
 
   async retryFailedExtractions() {
-    // Buscar reuniones que tienen extracciones fallidas
     const failedExtractions = await this.prisma.extraction.findMany({
       where: {
         status: ExtractionStatus.FAILED,
@@ -125,15 +135,9 @@ export class ExtractService {
       },
     });
 
-    const results = {
-      total: failedExtractions.length,
-      success: 0,
-      failed: 0,
-      skipped: 0,
-    };
+    const meetingIdsToRetry: string[] = [];
 
     for (const failedExtraction of failedExtractions) {
-      // Verificar si ya hay una extracción exitosa más reciente para esta reunión
       const latestExtraction = await this.prisma.extraction.findFirst({
         where: {
           meetingId: failedExtraction.meetingId,
@@ -143,18 +147,37 @@ export class ExtractService {
         },
       });
 
-      // Si la última extracción es exitosa, saltar esta reunión
       if (latestExtraction && latestExtraction.status === ExtractionStatus.SUCCESS) {
-        results.skipped++;
         continue;
       }
 
-      // Reintentar la extracción
-      const result = await this.extractFromMeeting(failedExtraction.meetingId);
-      if (result?.status === ExtractionStatus.SUCCESS) {
-        results.success++;
-      } else {
-        results.failed++;
+      meetingIdsToRetry.push(failedExtraction.meetingId);
+    }
+
+    const results = {
+      total: failedExtractions.length,
+      success: 0,
+      failed: 0,
+      skipped: failedExtractions.length - meetingIdsToRetry.length,
+    };
+
+    const concurrencyLimit = 10;
+    const batches = [];
+    for (let i = 0; i < meetingIdsToRetry.length; i += concurrencyLimit) {
+      batches.push(meetingIdsToRetry.slice(i, i + concurrencyLimit));
+    }
+
+    for (const batch of batches) {
+      const batchResults = await Promise.allSettled(
+        batch.map((meetingId) => this.extractFromMeeting(meetingId))
+      );
+
+      for (const result of batchResults) {
+        if (result.status === "fulfilled" && result.value?.status === ExtractionStatus.SUCCESS) {
+          results.success++;
+        } else {
+          results.failed++;
+        }
       }
     }
 

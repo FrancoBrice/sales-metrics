@@ -11,6 +11,7 @@ export function Navigation() {
     { href: "/leads", label: "Leads" },
     { href: "/customers", label: "Clientes" },
     { href: "/flujo-conversion", label: "Flujo de Conversión" },
+    { href: "/pain-points", label: "Pain Points" },
   ];
 
   return (
