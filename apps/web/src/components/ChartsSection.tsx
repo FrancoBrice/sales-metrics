@@ -1,6 +1,5 @@
 "use client";
 
-import { SankeyChart } from "./SankeyChart";
 import { MetricsOverview } from "@/lib/api";
 import { LeadSourceLabels, PainPointsLabels, LeadSource, PainPoints } from "@vambe/shared";
 
@@ -216,9 +215,6 @@ export function ChartsSection({ metrics }: ChartsSectionProps) {
             Total
           </span>
         </div>
-      </div>
-      <div className="card" style={{ gridColumn: "1 / -1" }}>
-        <SankeyChart />
       </div>
     </div>
   );

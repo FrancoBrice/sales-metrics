@@ -10,6 +10,7 @@ export function Navigation() {
     { href: "/", label: "Dashboard" },
     { href: "/leads", label: "Leads" },
     { href: "/customers", label: "Clientes" },
+    { href: "/flujo-conversion", label: "Flujo de Conversión" },
   ];
 
   return (
