@@ -89,19 +89,34 @@ export default function LeadsPage() {
     }
   }
 
+  // Get all unique sources present in the data for creating lines
+  const allSources = Array.from(
+    new Set(data.flatMap((d) => Object.keys(d.bySource)))
+  );
+
   // Transform data for Recharts: flatten bySource into the main object
   const chartData = data.map((item) => {
     const flattened: any = { period: item.period, total: item.total };
+    // Initialize all sources to 0 to ensure lines drop to 0
+    allSources.forEach((source) => {
+      flattened[source] = 0;
+    });
     Object.entries(item.bySource).forEach(([source, count]) => {
       flattened[source] = count;
     });
     return flattened;
   });
 
-  // Get all unique sources present in the data for creating lines
-  const allSources = Array.from(
-    new Set(data.flatMap((d) => Object.keys(d.bySource)))
-  );
+  const [hiddenSeries, setHiddenSeries] = useState<string[]>([]);
+
+  const handleLegendClick = (e: any) => {
+    const dataKey = e.dataKey;
+    if (hiddenSeries.includes(dataKey)) {
+      setHiddenSeries(hiddenSeries.filter((s) => s !== dataKey));
+    } else {
+      setHiddenSeries([...hiddenSeries, dataKey]);
+    }
+  };
 
   return (
     <div className="container">
@@ -129,6 +144,15 @@ export default function LeadsPage() {
         <div className="card">
           <div className="card-header">
             <h3 className="card-title">Evolución de Leads por Fuente</h3>
+            <span
+              style={{
+                fontSize: "0.75rem",
+                color: "var(--color-text-muted)",
+                fontWeight: "normal",
+              }}
+            >
+              Haz clic en la leyenda para mostrar/ocultar fuentes
+            </span>
           </div>
 
           <div style={{ height: "500px", padding: "1rem", fontSize: "0.875rem" }}>
@@ -154,21 +178,88 @@ export default function LeadsPage() {
                   allowDecimals={false}
                 />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--color-surface-elevated)",
-                    borderColor: "var(--color-border)",
-                    color: "var(--color-text)",
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div
+                          style={{
+                            backgroundColor: "var(--color-surface-elevated)",
+                            border: "1px solid var(--color-border)",
+                            padding: "0.75rem",
+                            borderRadius: "var(--radius-md)",
+                            boxShadow: "var(--shadow-lg)",
+                          }}
+                        >
+                          <p
+                            style={{
+                              color: "var(--color-text-muted)",
+                              marginBottom: "0.5rem",
+                              fontSize: "0.875rem",
+                            }}
+                          >
+                            {label}
+                          </p>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: "0.25rem",
+                            }}
+                          >
+                            {payload.map((entry: any, index: number) => (
+                              <div
+                                key={index}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "0.5rem",
+                                  fontSize: "0.875rem",
+                                  color: "var(--color-text)",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    width: "8px",
+                                    height: "8px",
+                                    borderRadius: "50%",
+                                    backgroundColor: entry.color,
+                                  }}
+                                />
+                                <span>
+                                  {(LeadSourceLabels as any)[entry.name] ||
+                                    entry.name}
+                                  : {entry.value}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
                   }}
-                  itemStyle={{ color: "var(--color-text)" }}
-                  formatter={(value: number, name: string) => [
-                    value,
-                    LeadSourceLabels[name as any] || name,
-                  ]}
-                  labelStyle={{ color: "var(--color-text-muted)", marginBottom: "0.5rem" }}
                 />
                 <Legend
-                  formatter={(value) => LeadSourceLabels[value as any] || value}
+                  formatter={(value, entry: any) => {
+                    const label = (LeadSourceLabels as any)[value] || value;
+                    return (
+                      <span
+                        style={{
+                          color: hiddenSeries.includes(value)
+                            ? "var(--color-text-muted)"
+                            : "var(--color-text)",
+                          textDecoration: hiddenSeries.includes(value)
+                            ? "line-through"
+                            : "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {label}
+                      </span>
+                    );
+                  }}
                   wrapperStyle={{ paddingTop: "20px" }}
+                  onClick={handleLegendClick}
                 />
                 {allSources.map((source, index) => (
                   <Line
@@ -179,7 +270,7 @@ export default function LeadsPage() {
                     strokeWidth={2}
                     activeDot={{ r: 6 }}
                     dot={{ r: 4 }}
-                    connectNulls
+                    hide={hiddenSeries.includes(source)}
                   />
                 ))}
               </LineChart>

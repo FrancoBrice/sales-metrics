@@ -63,8 +63,8 @@ export function CustomersTable({ customers }: CustomersTableProps) {
               <td>{customer.seller}</td>
               <td>{customer.meetingDate}</td>
               <td>
-                <span className={`badge ${customer.closed ? "badge-success" : "badge-warning"}`}>
-                  {customer.closed ? "Cerrado" : "Abierto"}
+                <span className={`badge ${customer.closed ? "badge-success" : "badge-danger"}`}>
+                  {customer.closed ? "Cerrada" : "Perdida"}
                 </span>
               </td>
               <td>
