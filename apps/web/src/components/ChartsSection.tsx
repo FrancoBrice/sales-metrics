@@ -83,7 +83,7 @@ export function ChartsSection({ metrics }: ChartsSectionProps) {
                 <div
                   className="bar-fill"
                   style={{
-                    width: `${(seller.closed / maxSellerTotal) * 100}%`,
+                    width: `${(seller.total / maxSellerTotal) * (seller.closed / seller.total) * 100}%`,
                     position: "absolute",
                     top: 0,
                     left: 0,
