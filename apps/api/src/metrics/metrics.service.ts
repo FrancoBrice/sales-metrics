@@ -242,6 +242,69 @@ export class MetricsService {
     return { distribution };
   }
 
+  async getLeadsOverTime(filter: MetricsFilter) {
+    const where: Prisma.CustomerWhereInput = {};
+
+    if (filter.seller) {
+      where.seller = filter.seller;
+    }
+
+    if (filter.dateFrom || filter.dateTo) {
+      where.meetingDate = {};
+      if (filter.dateFrom) {
+        where.meetingDate.gte = new Date(filter.dateFrom);
+      }
+      if (filter.dateTo) {
+        where.meetingDate.lte = new Date(filter.dateTo);
+      }
+    }
+
+    const customers = await this.prisma.customer.findMany({
+      where,
+      include: {
+        meetings: {
+          include: {
+            extractions: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+            },
+          },
+        },
+      },
+      orderBy: { meetingDate: "asc" },
+    });
+
+    const timeSeriesMap = new Map<string, { total: number; bySource: Record<string, number> }>();
+
+    for (const customer of customers) {
+      const date = new Date(customer.meetingDate);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`; // YYYY-MM
+
+      if (!timeSeriesMap.has(key)) {
+        timeSeriesMap.set(key, { total: 0, bySource: {} });
+      }
+
+      const entry = timeSeriesMap.get(key)!;
+      entry.total++;
+
+      const extraction = this.getExtraction(customer);
+      const source = extraction?.leadSource || "Desconocido";
+
+      entry.bySource[source] = (entry.bySource[source] || 0) + 1;
+    }
+
+    // Convert map to sorted array
+    const leadsOverTime = Array.from(timeSeriesMap.entries())
+      .map(([period, data]) => ({
+        period,
+        total: data.total,
+        bySource: data.bySource,
+      }))
+      .sort((a, b) => a.period.localeCompare(b.period));
+
+    return { leadsOverTime };
+  }
+
   private getExtraction(customer: { meetings: { extractions: { resultJson: string }[] }[] }): Extraction | null {
     const meeting = customer.meetings[0];
     const extractionRecord = meeting?.extractions[0];

@@ -38,4 +38,21 @@ export class MetricsController {
   async getVolumeDistribution() {
     return this.metricsService.getVolumeDistribution();
   }
+  @Get("leads-over-time")
+  @ApiOperation({ summary: "Get leads evolution over time" })
+  @ApiQuery({ name: "seller", required: false })
+  @ApiQuery({ name: "dateFrom", required: false })
+  @ApiQuery({ name: "dateTo", required: false })
+  async getLeadsOverTime(
+    @Query("seller") seller?: string,
+    @Query("dateFrom") dateFrom?: string,
+    @Query("dateTo") dateTo?: string
+  ) {
+    return this.metricsService.getLeadsOverTime({
+      seller,
+      dateFrom,
+      dateTo,
+    });
+  }
 }
+

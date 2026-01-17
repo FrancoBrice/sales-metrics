@@ -134,6 +134,17 @@ export const api = {
     byDimension: (dimension: string) =>
       fetchApi<MetricsByDimension>(`/metrics/by-dim?dimension=${dimension}`),
     conversionFunnel: () => fetchApi<ConversionFunnel>("/metrics/conversion-funnel"),
+    leadsOverTime: (filters?: { seller?: string; dateFrom?: string; dateTo?: string }) => {
+      const params = new URLSearchParams();
+      if (filters?.seller) params.set("seller", filters.seller);
+      if (filters?.dateFrom) params.set("dateFrom", filters.dateFrom);
+      if (filters?.dateTo) params.set("dateTo", filters.dateTo);
+
+      const query = params.toString();
+      return fetchApi<{ leadsOverTime: Array<{ period: string; total: number; bySource: Record<string, number> }> }>(
+        `/metrics/leads-over-time${query ? `?${query}` : ""}`
+      );
+    },
   },
   ingest: {
     uploadCsv: async (file: File) => {

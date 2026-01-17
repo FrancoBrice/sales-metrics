@@ -11,8 +11,8 @@ import { OpenAiClient } from "./llm/openAiClient";
     ExtractService,
     {
       provide: LLM_CLIENT,
-      useClass: GeminiClient,
-      // useClass: OpenAiClient,
+      //useClass: GeminiClient,
+      useClass: OpenAiClient,
     },
   ],
   exports: [ExtractService],

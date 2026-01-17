@@ -13,7 +13,7 @@ export default function CustomersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState<CustomerFilters>({
     page: 1,
-    limit: 30,
+    limit: 10,
   });
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export default function CustomersPage() {
   }
 
   const handleFilterChange = (newFilters: CustomerFilters) => {
-    setFilters({ ...newFilters, page: 1, limit: 30 });
+    setFilters({ ...newFilters, page: 1, limit: 10 });
   };
 
   const handlePageChange = (newPage: number) => {

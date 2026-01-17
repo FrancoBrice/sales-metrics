@@ -20,7 +20,7 @@ export class CustomersService {
 
   async findAll(filter: CustomerFilter) {
     const page = filter.page || 1;
-    const limit = filter.limit || 30;
+    const limit = filter.limit || 10;
     const skip = (page - 1) * limit;
 
     const where: Prisma.CustomerWhereInput = {};
