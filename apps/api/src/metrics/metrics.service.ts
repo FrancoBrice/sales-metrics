@@ -635,6 +635,160 @@ export class MetricsService {
     };
   }
 
+  async getWinProbabilityMatrix(filter: MetricsFilter) {
+    const where: Prisma.CustomerWhereInput = {};
+
+    if (filter.seller) {
+      where.seller = filter.seller;
+    }
+
+    if (filter.dateFrom || filter.dateTo) {
+      where.meetingDate = {};
+      if (filter.dateFrom) {
+        where.meetingDate.gte = new Date(filter.dateFrom);
+      }
+      if (filter.dateTo) {
+        where.meetingDate.lte = new Date(filter.dateTo);
+      }
+    }
+
+    const customers = await this.prisma.customer.findMany({
+      where,
+      include: {
+        meetings: {
+          include: {
+            extractions: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
+
+    const urgencyOrder = ["BAJA", "MEDIA", "ALTA", "INMEDIATA"];
+    const sentimentOrder = ["ESCEPTICO", "NEUTRAL", "POSITIVO"];
+    const riskOrder = ["ALTO", "MEDIO", "BAJO"];
+
+    const matrix: Record<string, Record<string, { total: number; closed: number; byRisk: Record<string, { total: number; closed: number }> }>> = {};
+
+    for (const urgency of urgencyOrder) {
+      matrix[urgency] = {};
+      for (const sentiment of sentimentOrder) {
+        matrix[urgency][sentiment] = {
+          total: 0,
+          closed: 0,
+          byRisk: {},
+        };
+        for (const risk of riskOrder) {
+          matrix[urgency][sentiment].byRisk[risk] = { total: 0, closed: 0 };
+        }
+      }
+    }
+
+    for (const customer of customers) {
+      const extraction = this.getExtraction(customer);
+      if (!extraction) continue;
+
+      const urgency = extraction.urgency || "MEDIA";
+      const sentiment = extraction.sentiment || "NEUTRAL";
+      const riskLevel = extraction.riskLevel || "MEDIO";
+
+      if (matrix[urgency] && matrix[urgency][sentiment]) {
+        matrix[urgency][sentiment].total++;
+        if (customer.closed) {
+          matrix[urgency][sentiment].closed++;
+        }
+
+        if (matrix[urgency][sentiment].byRisk[riskLevel]) {
+          matrix[urgency][sentiment].byRisk[riskLevel].total++;
+          if (customer.closed) {
+            matrix[urgency][sentiment].byRisk[riskLevel].closed++;
+          }
+        }
+      }
+    }
+
+    const cells = urgencyOrder.flatMap((urgency) =>
+      sentimentOrder.map((sentiment) => {
+        const data = matrix[urgency][sentiment];
+        const conversionRate = data.total > 0 ? (data.closed / data.total) * 100 : 0;
+
+        const riskBreakdown = riskOrder.map((risk) => {
+          const riskData = data.byRisk[risk];
+          const riskConversionRate = riskData.total > 0 ? (riskData.closed / riskData.total) * 100 : 0;
+          return {
+            riskLevel: risk,
+            total: riskData.total,
+            closed: riskData.closed,
+            conversionRate: Math.round(riskConversionRate * 10) / 10,
+          };
+        });
+
+        const weightedProbability =
+          riskOrder.reduce((sum, risk, index) => {
+            const riskWeight = 1 - index * 0.2;
+            const riskData = data.byRisk[risk];
+            const riskRate = riskData.total > 0 ? (riskData.closed / riskData.total) * 100 : 0;
+            return sum + riskRate * riskWeight * (riskData.total / Math.max(data.total, 1));
+          }, 0) * 100;
+
+        return {
+          urgency,
+          sentiment,
+          total: data.total,
+          closed: data.closed,
+          conversionRate: Math.round(conversionRate * 10) / 10,
+          winProbability: Math.min(100, Math.max(0, Math.round(weightedProbability * 10) / 10)),
+          riskBreakdown,
+        };
+      })
+    );
+
+    const urgencyStats = urgencyOrder.map((urgency) => {
+      const urgencyData = Object.values(matrix[urgency] || {}).reduce(
+        (acc, data) => ({
+          total: acc.total + data.total,
+          closed: acc.closed + data.closed,
+        }),
+        { total: 0, closed: 0 }
+      );
+      const conversionRate = urgencyData.total > 0 ? (urgencyData.closed / urgencyData.total) * 100 : 0;
+      return {
+        urgency,
+        total: urgencyData.total,
+        closed: urgencyData.closed,
+        conversionRate: Math.round(conversionRate * 10) / 10,
+      };
+    });
+
+    const sentimentStats = sentimentOrder.map((sentiment) => {
+      const sentimentData = urgencyOrder.reduce(
+        (acc, urgency) => {
+          const data = matrix[urgency]?.[sentiment] || { total: 0, closed: 0 };
+          return {
+            total: acc.total + data.total,
+            closed: acc.closed + data.closed,
+          };
+        },
+        { total: 0, closed: 0 }
+      );
+      const conversionRate = sentimentData.total > 0 ? (sentimentData.closed / sentimentData.total) * 100 : 0;
+      return {
+        sentiment,
+        total: sentimentData.total,
+        closed: sentimentData.closed,
+        conversionRate: Math.round(conversionRate * 10) / 10,
+      };
+    });
+
+    return {
+      matrix: cells,
+      urgencyStats,
+      sentimentStats,
+    };
+  }
+
   private getExtraction(customer: { meetings: { extractions: { resultJson: string }[] }[] }): Extraction | null {
     const meeting = customer.meetings[0];
     const extractionRecord = meeting?.extractions[0];

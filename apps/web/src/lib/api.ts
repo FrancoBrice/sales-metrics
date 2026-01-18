@@ -203,6 +203,42 @@ export const api = {
         };
       }>(`/metrics/opportunity-matrix${query ? `?${query}` : ""}`);
     },
+    winProbability: (filters?: { seller?: string; dateFrom?: string; dateTo?: string }) => {
+      const params = new URLSearchParams();
+      if (filters?.seller) params.set("seller", filters.seller);
+      if (filters?.dateFrom) params.set("dateFrom", filters.dateFrom);
+      if (filters?.dateTo) params.set("dateTo", filters.dateTo);
+
+      const query = params.toString();
+      return fetchApi<{
+        matrix: Array<{
+          urgency: string;
+          sentiment: string;
+          total: number;
+          closed: number;
+          conversionRate: number;
+          winProbability: number;
+          riskBreakdown: Array<{
+            riskLevel: string;
+            total: number;
+            closed: number;
+            conversionRate: number;
+          }>;
+        }>;
+        urgencyStats: Array<{
+          urgency: string;
+          total: number;
+          closed: number;
+          conversionRate: number;
+        }>;
+        sentimentStats: Array<{
+          sentiment: string;
+          total: number;
+          closed: number;
+          conversionRate: number;
+        }>;
+      }>(`/metrics/win-probability${query ? `?${query}` : ""}`);
+    },
   },
   ingest: {
     uploadCsv: async (file: File) => {

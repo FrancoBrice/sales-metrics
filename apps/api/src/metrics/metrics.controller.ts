@@ -93,5 +93,22 @@ export class MetricsController {
       dateTo,
     });
   }
+
+  @Get("win-probability")
+  @ApiOperation({ summary: "Get win probability matrix: Urgency vs Sentiment analysis" })
+  @ApiQuery({ name: "seller", required: false })
+  @ApiQuery({ name: "dateFrom", required: false })
+  @ApiQuery({ name: "dateTo", required: false })
+  async getWinProbabilityMatrix(
+    @Query("seller") seller?: string,
+    @Query("dateFrom") dateFrom?: string,
+    @Query("dateTo") dateTo?: string
+  ) {
+    return this.metricsService.getWinProbabilityMatrix({
+      seller,
+      dateFrom,
+      dateTo,
+    });
+  }
 }
 

@@ -11,6 +11,7 @@ export function Navigation() {
     { href: "/leads", label: "Leads" },
     { href: "/customers", label: "Clientes" },
     { href: "/opportunities", label: "Oportunidades" },
+    { href: "/win-probability", label: "Probabilidad de Cierre" },
     { href: "/industries", label: "Industrias" },
     { href: "/flujo-conversion", label: "Flujo de Conversión" },
     { href: "/pain-points", label: "Pain Points" },
