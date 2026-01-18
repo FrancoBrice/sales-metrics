@@ -218,7 +218,14 @@ export function SankeyChart() {
               bottom: 10,
             }}
           >
-            <Tooltip />
+            <Tooltip
+              formatter={(value: any) => {
+                if (typeof value === "number") {
+                  return value.toFixed(1);
+                }
+                return value;
+              }}
+            />
           </Sankey>
         </ResponsiveContainer>
       </div>
