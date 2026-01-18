@@ -101,7 +101,7 @@ export function CustomersTable({ customers, onCustomerClick }: CustomersTablePro
                     </span>
                     {customer.extraction.volume.isPeak && (
                       <Badge variant={BadgeVariant.Warning} style={{ marginLeft: "0.5rem" }}>
-                        Pico
+                        Peak
                       </Badge>
                     )}
                   </>

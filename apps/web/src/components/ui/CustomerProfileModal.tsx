@@ -278,7 +278,7 @@ export function CustomerProfileModal({ customerId, onClose }: CustomerProfileMod
                         )}
                         {extraction.volume.isPeak && (
                           <span className="badge badge-warning" style={{ marginLeft: "0.5rem" }}>
-                            Pico
+                            Peak
                           </span>
                         )}
                       </span>

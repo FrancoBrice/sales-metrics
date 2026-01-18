@@ -1,8 +1,14 @@
 "use strict";
+
 import React, { useEffect, useState, useMemo } from "react";
 import { ResponsiveContainer, Sankey, Tooltip } from "recharts";
 import { api } from "@/lib/api";
-import { LeadSourceLabels, PainPointsLabels, LeadSource, PainPoints } from "@vambe/shared";
+import {
+  BusinessModelLabels,
+  VolumeUnitLabels,
+  BusinessModel,
+  VolumeUnit,
+} from "@vambe/shared";
 import { sankeyColorList } from "@/constants/colors";
 import { SankeyNode, SankeyLink, SankeyHiddenNodes, useSankeyData } from "./shared";
 
@@ -11,22 +17,22 @@ interface SankeyData {
   links: { source: number; target: number; value: number }[];
 }
 
-export function SankeyChart() {
+export function VolumeSankeyChart() {
   const [data, setData] = useState<SankeyData | null>(null);
   const [loading, setLoading] = useState(true);
   const [hiddenNodes, setHiddenNodes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    api.metrics.sankey()
+    api.metrics.volumeFlow()
       .then(setData)
-      .catch((err) => console.error("Failed to load sankey data", err))
+      .catch((err) => console.error("Failed to load volume flow data", err))
       .finally(() => setLoading(false));
   }, []);
 
   const processedDataResult = useSankeyData({
     data,
     hiddenNodes,
-    firstCategory: "source",
+    firstCategory: "businessModel",
   });
 
   const processedData = processedDataResult
@@ -54,19 +60,49 @@ export function SankeyChart() {
   };
 
   const getLabel = (name: string): string => {
-    return (
-      LeadSourceLabels[name as LeadSource] ||
-      PainPointsLabels[name as PainPoints] ||
-      name
-    );
+    if (name === "Cerrada") return "Cerrada";
+    if (name === "Perdida") return "Perdida";
+    if (name === "Con Picos") return "Con Picos";
+    if (name === "Sin Picos") return "Sin Picos";
+    if (name === "Sin Volumen") return "Sin Volumen";
+    if (name === "Desconocido") return "Desconocido";
+
+    if (BusinessModelLabels[name as BusinessModel]) {
+      return BusinessModelLabels[name as BusinessModel];
+    }
+    if (VolumeUnitLabels[name as VolumeUnit]) {
+      return VolumeUnitLabels[name as VolumeUnit];
+    }
+
+    return name;
   };
 
   const nodesWithColors = processedData.nodes.map((node, i) => {
     if (node.name === "Cerrada") return { ...node, color: "#22c55e" };
     if (node.name === "Perdida") return { ...node, color: "#ef4444" };
-    if (node.name === "Positivo") return { ...node, color: "#22c55e" };
-    if (node.name === "Negativo") return { ...node, color: "#ef4444" };
-    if (node.name === "Neutro" || node.name === "Neutro/Desconocido") return { ...node, color: "#eab308" };
+    if (node.name === "Con Picos") return { ...node, color: "#f59e0b" };
+    if (node.name === "Sin Picos") return { ...node, color: "#6b7280" };
+    if (node.name === "Sin Volumen") return { ...node, color: "#9ca3af" };
+
+    if (node.category === "businessModel") {
+      const colors: Record<string, string> = {
+        [BusinessModel.B2B]: "#3b82f6",
+        [BusinessModel.B2C]: "#ec4899",
+        [BusinessModel.B2B2C]: "#8b5cf6",
+        [BusinessModel.MARKETPLACE]: "#10b981",
+      };
+      return { ...node, color: colors[node.name] || sankeyColorList[i % sankeyColorList.length] };
+    }
+
+    if (node.category === "volumeUnit") {
+      const colors: Record<string, string> = {
+        [VolumeUnit.DIARIO]: "#06b6d4",
+        [VolumeUnit.SEMANAL]: "#6366f1",
+        [VolumeUnit.MENSUAL]: "#f97316",
+      };
+      return { ...node, color: colors[node.name] || sankeyColorList[i % sankeyColorList.length] };
+    }
+
     return { ...node, color: sankeyColorList[i % sankeyColorList.length] };
   });
 
@@ -119,9 +155,9 @@ export function SankeyChart() {
       />
 
       <div className="sankey-columns">
-        <div className="sankey-column">Fuente</div>
-        <div className="sankey-column center">Pain Point</div>
-        <div className="sankey-column center">Sentimiento</div>
+        <div className="sankey-column">Modelo Negocio</div>
+        <div className="sankey-column center">Frecuencia Volumen</div>
+        <div className="sankey-column center">Picos</div>
         <div className="sankey-column right">Estado</div>
       </div>
 

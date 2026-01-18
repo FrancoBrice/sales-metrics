@@ -155,6 +155,11 @@ export const api = {
         nodes: Array<{ name: string; category: string }>;
         links: Array<{ source: number; target: number; value: number }>;
       }>("/metrics/sankey"),
+    volumeFlow: () =>
+      fetchApi<{
+        nodes: Array<{ name: string; category: string }>;
+        links: Array<{ source: number; target: number; value: number }>;
+      }>("/metrics/volume-flow"),
     industryPainPointHeatmap: (filters?: { seller?: string; dateFrom?: string; dateTo?: string }) => {
       const params = new URLSearchParams();
       if (filters?.seller) params.set("seller", filters.seller);

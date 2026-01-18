@@ -110,5 +110,11 @@ export class MetricsController {
       dateTo,
     });
   }
+
+  @Get("volume-flow")
+  @ApiOperation({ summary: "Get volume flow sankey diagram: BusinessModel → VolumeUnit → VolumeIsPeak → Status" })
+  async getVolumeFlowSankeyData() {
+    return this.metricsService.getVolumeFlowSankeyData();
+  }
 }
 
