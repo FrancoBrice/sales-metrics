@@ -1,5 +1,5 @@
-import { Controller, Get, Query } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiQuery } from "@nestjs/swagger";
+import { Controller, Get, Query, Param } from "@nestjs/common";
+import { ApiTags, ApiOperation, ApiQuery, ApiParam } from "@nestjs/swagger";
 import { CustomersService } from "./customers.service";
 
 @ApiTags("Customers")
@@ -43,5 +43,12 @@ export class CustomersController {
   @ApiOperation({ summary: "Get list of unique sellers" })
   async getSellers() {
     return this.customersService.getUniqueSellers();
+  }
+
+  @Get(":id")
+  @ApiOperation({ summary: "Get customer details by ID including transcript" })
+  @ApiParam({ name: "id", description: "Customer ID" })
+  async getCustomer(@Param("id") id: string) {
+    return this.customersService.findOne(id);
   }
 }

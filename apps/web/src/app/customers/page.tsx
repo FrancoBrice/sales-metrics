@@ -5,12 +5,14 @@ import { api, CustomerFilters, CustomerWithExtraction, PaginatedResponse } from 
 import { Filters } from "@/components/features/Filters";
 import { CustomersTable } from "@/components/features/CustomersTable";
 import { Pagination } from "@/components/features/Pagination";
+import { CustomerProfileModal } from "@/components/ui/CustomerProfileModal";
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<CustomerWithExtraction[]>([]);
   const [loading, setLoading] = useState(true);
   const [sellers, setSellers] = useState<string[]>([]);
   const [totalPages, setTotalPages] = useState(1);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [filters, setFilters] = useState<CustomerFilters>({
     page: 1,
     limit: 10,
@@ -80,7 +82,10 @@ export default function CustomersPage() {
         </div>
       ) : (
         <>
-          <CustomersTable customers={customers} />
+          <CustomersTable
+            customers={customers}
+            onCustomerClick={setSelectedCustomerId}
+          />
 
           {customers.length === 0 ? (
             <div className="empty-state">
@@ -95,6 +100,13 @@ export default function CustomersPage() {
             />
           )}
         </>
+      )}
+
+      {selectedCustomerId && (
+        <CustomerProfileModal
+          customerId={selectedCustomerId}
+          onClose={() => setSelectedCustomerId(null)}
+        />
       )}
     </div>
   );

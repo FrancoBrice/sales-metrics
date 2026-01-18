@@ -125,6 +125,7 @@ export const api = {
       });
     },
     getSellers: () => fetchApi<string[]>("/customers/sellers"),
+    getById: (id: string) => fetchApi<CustomerWithExtraction & { transcript: string | null }>(`/customers/${id}`),
   },
   metrics: {
     overview: (filters?: { seller?: string; dateFrom?: string; dateTo?: string }) => {

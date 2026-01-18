@@ -14,6 +14,7 @@ import {
 
 interface CustomersTableProps {
   customers: CustomerWithExtraction[];
+  onCustomerClick?: (customerId: string) => void;
 }
 
 function getLabel<T extends string>(
@@ -24,7 +25,7 @@ function getLabel<T extends string>(
   return labels[value as T] || value;
 }
 
-export function CustomersTable({ customers }: CustomersTableProps) {
+export function CustomersTable({ customers, onCustomerClick }: CustomersTableProps) {
   if (customers.length === 0) {
     return (
       <div className="empty-state">
@@ -51,7 +52,24 @@ export function CustomersTable({ customers }: CustomersTableProps) {
         </thead>
         <tbody>
           {customers.map((customer) => (
-            <tr key={customer.id}>
+            <tr
+              key={customer.id}
+              onClick={() => onCustomerClick?.(customer.id)}
+              style={{
+                cursor: onCustomerClick ? "pointer" : "default",
+                transition: "background-color 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                if (onCustomerClick) {
+                  e.currentTarget.style.backgroundColor = "var(--color-surface-elevated)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (onCustomerClick) {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }
+              }}
+            >
               <td>
                 <div>
                   <strong>{customer.name}</strong>

@@ -133,6 +133,51 @@ export class CustomersService {
     return customers.map((c) => c.seller);
   }
 
+  async findOne(id: string) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id },
+      include: {
+        meetings: {
+          include: {
+            extractions: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
+
+    if (!customer) {
+      return null;
+    }
+
+    const meeting = customer.meetings[0];
+    let extraction: Extraction | null = null;
+
+    if (meeting?.extractions[0]) {
+      try {
+        extraction = JSON.parse(meeting.extractions[0].resultJson);
+      } catch {
+        extraction = null;
+      }
+    }
+
+    return {
+      id: customer.id,
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      seller: customer.seller,
+      meetingDate: customer.meetingDate.toISOString().split("T")[0],
+      closed: customer.closed,
+      createdAt: customer.createdAt.toISOString(),
+      meetingId: meeting?.id ?? null,
+      transcript: meeting?.transcript ?? null,
+      extraction,
+    };
+  }
+
   private mapCustomer(customer: any) {
     const meeting = customer.meetings[0];
     const extractionRecord = meeting?.extractions[0];
