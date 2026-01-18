@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { SankeyChart } from "@/components/charts/SankeyChart";
-import { VolumeSankeyChart } from "@/components/charts/VolumeSankeyChart";
+import { SankeyChart } from "@/components/charts/sankey/SankeyChart";
+import { VolumeSankeyChart } from "@/components/charts/sankey/VolumeSankeyChart";
 
 type SankeyType = "conversion" | "volume";
 
-export default function FlujoConversionPage() {
+export default function ConversionFlowPage() {
   const [sankeyType, setSankeyType] = useState<SankeyType>("conversion");
 
   return (

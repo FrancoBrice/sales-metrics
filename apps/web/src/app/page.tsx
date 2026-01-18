@@ -195,7 +195,7 @@ export default function Dashboard() {
                 description="Industry × Pain Point"
               />
               <LinkCard
-                href="/flujo-conversion"
+                href="/conversion-flow"
                 title="Flujo de Conversión"
                 description="Diagrama Sankey"
               />
