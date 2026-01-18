@@ -1,0 +1,101 @@
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bar-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.bar-label {
+  flex: 0 0 120px;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+.bar-container {
+  flex: 1;
+  height: 24px;
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  border-radius: var(--radius-sm);
+  transition: width 0.5s ease;
+}
+
+.bar-value {
+  flex: 0 0 50px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.funnel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.funnel-stage {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-md);
+}
+
+.funnel-bar {
+  flex: 1;
+  height: 32px;
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: width 0.5s ease;
+}
+
+.funnel-label {
+  flex: 0 0 120px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.funnel-count {
+  flex: 0 0 60px;
+  text-align: right;
+  font-weight: 600;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--color-text);
+}
+
+@media (max-width: 768px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+}

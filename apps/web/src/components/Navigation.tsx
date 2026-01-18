@@ -10,6 +10,7 @@ export function Navigation() {
     { href: "/", label: "Dashboard" },
     { href: "/leads", label: "Leads" },
     { href: "/customers", label: "Clientes" },
+    { href: "/sellers", label: "Vendedores" },
     { href: "/opportunities", label: "Oportunidades" },
     { href: "/win-probability", label: "Probabilidad de Cierre" },
     { href: "/industries", label: "Industrias" },

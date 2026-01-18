@@ -1,5 +1,7 @@
 "use client";
 
+import { Button, ButtonVariant } from "@/components/ui/Button";
+
 interface PaginationProps {
   page: number;
   totalPages: number;
@@ -11,23 +13,23 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
 
   return (
     <div className="pagination">
-      <button
-        className="btn btn-secondary"
+      <Button
+        variant={ButtonVariant.Secondary}
         onClick={() => onPageChange(page - 1)}
         disabled={page <= 1}
       >
         Anterior
-      </button>
+      </Button>
       <span className="pagination-info">
         Página {page} de {totalPages}
       </span>
-      <button
-        className="btn btn-secondary"
+      <Button
+        variant={ButtonVariant.Secondary}
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages}
       >
         Siguiente
-      </button>
+      </Button>
     </div>
   );
 }

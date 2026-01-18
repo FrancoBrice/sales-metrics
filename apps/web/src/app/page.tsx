@@ -6,8 +6,11 @@ import { Filters } from "@/components/features/Filters";
 import { MetricsCards } from "@/components/ui/MetricsCards";
 import { ChartsSection } from "@/components/charts/ChartsSection";
 import { UploadModal } from "@/components/ui/UploadModal";
-import { Toast } from "@/components/ui/Toast";
+import { Toast, ToastType } from "@/components/ui/Toast";
 import { ProgressSnackbar } from "@/components/ui/ProgressSnackbar";
+import { Button, ButtonVariant } from "@/components/ui/Button";
+import { LinkCard, LinkCardGrid } from "@/components/ui/LinkCard";
+import { Loading, EmptyState } from "@/components/ui/Loading";
 
 export default function Dashboard() {
   const [metrics, setMetrics] = useState<MetricsOverview | null>(null);
@@ -17,7 +20,7 @@ export default function Dashboard() {
   const [retrying, setRetrying] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [filters, setFilters] = useState<CustomerFilters>({});
-  const [toast, setToast] = useState<{ message: string; type: "info" | "success" | "error" } | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -87,7 +90,7 @@ export default function Dashboard() {
         setProgress(null);
         setToast({
           message: `Análisis completado: ${result.success} exitosos, ${result.failed} fallidos`,
-          type: result.failed === 0 ? "success" : "info",
+          type: result.failed === 0 ? ToastType.Success : ToastType.Info,
         });
       }, 500);
 
@@ -99,7 +102,7 @@ export default function Dashboard() {
       setProgress(null);
       setToast({
         message: "Error al iniciar el análisis",
-        type: "error",
+        type: ToastType.Error,
       });
     } finally {
       setExtracting(false);
@@ -110,21 +113,21 @@ export default function Dashboard() {
     setRetrying(true);
     setToast({
       message: "Reintentando análisis fallidos...",
-      type: "info",
+      type: ToastType.Info,
     });
 
     try {
       const result = await api.extract.retryFailed();
       setToast({
         message: `Reintento completado: ${result.success} exitosos, ${result.failed} fallidos, ${result.skipped} omitidos`,
-        type: result.failed === 0 ? "success" : "info",
+        type: result.failed === 0 ? ToastType.Success : ToastType.Info,
       });
       await loadDashboardData();
     } catch (error) {
       console.error("Retry failed:", error);
       setToast({
         message: "Error al reintentar análisis fallidos",
-        type: "error",
+        type: ToastType.Error,
       });
     } finally {
       setRetrying(false);
@@ -142,26 +145,22 @@ export default function Dashboard() {
   return (
     <div className="container">
       <div className="header">
-        <h1>Vambe Sales Metrics</h1>
+        <div>
+          <h1>Vambe Sales Metrics</h1>
+          <p className="header-subtitle">
+            Panel de control integral para análisis de métricas de ventas y clientes
+          </p>
+        </div>
         <div className="header-actions">
-          <button
-            className="btn btn-secondary"
-            onClick={handleExtractFromDashboard}
-            disabled={extracting || retrying}
-          >
+          <Button variant={ButtonVariant.Secondary} onClick={handleExtractFromDashboard} disabled={extracting || retrying}>
             {extracting ? "Analizando..." : "Analizar Pendientes"}
-          </button>
-          <button
-            className="btn btn-outline"
-            onClick={handleRetryFailed}
-            disabled={extracting || retrying}
-            style={{ marginRight: "0.5rem" }}
-          >
+          </Button>
+          <Button variant={ButtonVariant.Outline} onClick={handleRetryFailed} disabled={extracting || retrying}>
             {retrying ? "Reintentando..." : "Reintentar Fallidos"}
-          </button>
-          <button className="btn btn-primary" onClick={() => setShowUpload(true)}>
+          </Button>
+          <Button variant={ButtonVariant.Primary} onClick={() => setShowUpload(true)}>
             Importar CSV
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -173,22 +172,43 @@ export default function Dashboard() {
       />
 
       {loading && !metrics ? (
-        <div className="loading">
-          <div className="spinner"></div>
-        </div>
+        <Loading />
       ) : metrics ? (
         <>
           <MetricsCards metrics={metrics} />
-          {/* Note: Charts currently represent global distribution or seller specific data from separate endpoints.
-              Ideally these would also re-fetch based on filters if the API supported it.
-              The MetricsCards reflect the filtered data. */}
+
+          <div className="section-container">
+            <LinkCardGrid>
+              <LinkCard
+                href="/opportunities"
+                title="Matriz de Oportunidades"
+                description="Volumen vs Conversión"
+              />
+              <LinkCard
+                href="/win-probability"
+                title="Probabilidad de Cierre"
+                description="Análisis predictivo"
+              />
+              <LinkCard
+                href="/industries"
+                title="Heatmap Industrias"
+                description="Industry × Pain Point"
+              />
+              <LinkCard
+                href="/flujo-conversion"
+                title="Flujo de Conversión"
+                description="Diagrama Sankey"
+              />
+            </LinkCardGrid>
+          </div>
+
           <ChartsSection metrics={metrics} />
         </>
       ) : (
-        <div className="empty-state">
-          <h3>No hay datos disponibles</h3>
-          <p>Importa un archivo CSV para comenzar</p>
-        </div>
+        <EmptyState
+          title="No hay datos disponibles"
+          message="Importa un archivo CSV para comenzar"
+        />
       )}
 
       {showUpload && (

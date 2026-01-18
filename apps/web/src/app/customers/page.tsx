@@ -6,6 +6,7 @@ import { Filters } from "@/components/features/Filters";
 import { CustomersTable } from "@/components/features/CustomersTable";
 import { Pagination } from "@/components/features/Pagination";
 import { CustomerProfileModal } from "@/components/ui/CustomerProfileModal";
+import { Loading, EmptyState } from "@/components/ui/Loading";
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<CustomerWithExtraction[]>([]);
@@ -40,7 +41,6 @@ export default function CustomersPage() {
     try {
       const response = await api.customers.list(filters);
 
-      // Handle both array and paginated response for backward compatibility during dev
       if ("data" in response && "meta" in response) {
         setCustomers(response.data);
         setTotalPages(response.meta.totalPages);
@@ -77,9 +77,7 @@ export default function CustomersPage() {
       />
 
       {loading ? (
-        <div className="loading">
-          <div className="spinner"></div>
-        </div>
+        <Loading />
       ) : (
         <>
           <CustomersTable
@@ -88,10 +86,10 @@ export default function CustomersPage() {
           />
 
           {customers.length === 0 ? (
-            <div className="empty-state">
-              <h3>No se encontraron clientes</h3>
-              <p>Intenta ajustar los filtros de búsqueda</p>
-            </div>
+            <EmptyState
+              title="No se encontraron clientes"
+              message="Intenta ajustar los filtros de búsqueda"
+            />
           ) : (
             <Pagination
               page={filters.page || 1}

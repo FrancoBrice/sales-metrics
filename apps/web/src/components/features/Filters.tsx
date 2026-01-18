@@ -2,6 +2,8 @@
 
 import { CustomerFilters } from "@/lib/api";
 import { LeadSourceLabels, IndustryLabels } from "@vambe/shared";
+import { Select } from "@/components/ui/Input";
+import { Button, ButtonVariant } from "@/components/ui/Button";
 
 interface FiltersProps {
   sellers: string[];
@@ -26,7 +28,7 @@ export function Filters({ sellers, filters, onChange, variant = "list" }: Filter
     <div className="filters-section">
       <div className="filter-group">
         <label className="filter-label">Vendedor</label>
-        <select
+        <Select
           className="filter-select"
           value={filters.seller || ""}
           onChange={(e) => handleChange("seller", e.target.value)}
@@ -37,14 +39,14 @@ export function Filters({ sellers, filters, onChange, variant = "list" }: Filter
               {seller}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {variant === "list" && (
         <>
           <div className="filter-group">
             <label className="filter-label">Estado</label>
-            <select
+            <Select
               className="filter-select"
               value={filters.closed === undefined ? "" : filters.closed.toString()}
               onChange={(e) =>
@@ -54,12 +56,12 @@ export function Filters({ sellers, filters, onChange, variant = "list" }: Filter
               <option value="">Todos</option>
               <option value="true">Cerrados</option>
               <option value="false">No cerrados</option>
-            </select>
+            </Select>
           </div>
 
           <div className="filter-group">
             <label className="filter-label">Fuente de Lead</label>
-            <select
+            <Select
               className="filter-select"
               value={filters.leadSource || ""}
               onChange={(e) => handleChange("leadSource", e.target.value)}
@@ -70,12 +72,12 @@ export function Filters({ sellers, filters, onChange, variant = "list" }: Filter
                   {label}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div className="filter-group">
             <label className="filter-label">Industria</label>
-            <select
+            <Select
               className="filter-select"
               value={filters.industry || ""}
               onChange={(e) => handleChange("industry", e.target.value)}
@@ -86,7 +88,7 @@ export function Filters({ sellers, filters, onChange, variant = "list" }: Filter
                   {label}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         </>
       )}
@@ -111,10 +113,10 @@ export function Filters({ sellers, filters, onChange, variant = "list" }: Filter
         />
       </div>
 
-      <div className="filter-group" style={{ justifyContent: "flex-end" }}>
-        <button className="btn btn-secondary" onClick={handleClear}>
+      <div className="filter-group justify-end">
+        <Button variant={ButtonVariant.Secondary} onClick={handleClear}>
           Limpiar
-        </button>
+        </Button>
       </div>
     </div>
   );

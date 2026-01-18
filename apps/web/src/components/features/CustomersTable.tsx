@@ -11,6 +11,8 @@ import {
   PainPoints,
   VolumeUnit,
 } from "@vambe/shared";
+import { Badge, BadgeVariant, Tag } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/Loading";
 
 interface CustomersTableProps {
   customers: CustomerWithExtraction[];
@@ -28,12 +30,14 @@ function getLabel<T extends string>(
 export function CustomersTable({ customers, onCustomerClick }: CustomersTableProps) {
   if (customers.length === 0) {
     return (
-      <div className="empty-state">
-        <h3>No hay clientes</h3>
-        <p>Importa un archivo CSV para comenzar</p>
-      </div>
+      <EmptyState
+        title="No hay clientes"
+        message="Importa un archivo CSV para comenzar"
+      />
     );
   }
+
+  const rowClass = onCustomerClick ? "clickable" : "";
 
   return (
     <div className="table-container">
@@ -54,26 +58,13 @@ export function CustomersTable({ customers, onCustomerClick }: CustomersTablePro
           {customers.map((customer) => (
             <tr
               key={customer.id}
+              className={rowClass}
               onClick={() => onCustomerClick?.(customer.id)}
-              style={{
-                cursor: onCustomerClick ? "pointer" : "default",
-                transition: "background-color 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                if (onCustomerClick) {
-                  e.currentTarget.style.backgroundColor = "var(--color-surface-elevated)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (onCustomerClick) {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }
-              }}
             >
               <td>
                 <div>
                   <strong>{customer.name}</strong>
-                  <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
+                  <div className="table-cell-secondary">
                     {customer.email}
                   </div>
                 </div>
@@ -81,17 +72,17 @@ export function CustomersTable({ customers, onCustomerClick }: CustomersTablePro
               <td>{customer.seller}</td>
               <td>{customer.meetingDate}</td>
               <td>
-                <span className={`badge ${customer.closed ? "badge-success" : "badge-danger"}`}>
+                <Badge variant={customer.closed ? BadgeVariant.Success : BadgeVariant.Danger}>
                   {customer.closed ? "Cerrada" : "Perdida"}
-                </span>
+                </Badge>
               </td>
               <td>
                 {customer.extraction ? (
-                  <span className="badge badge-info">
+                  <Badge variant={BadgeVariant.Info}>
                     {getLabel(IndustryLabels, customer.extraction.industry)}
-                  </span>
+                  </Badge>
                 ) : (
-                  <span className="tag">Sin análisis</span>
+                  <Tag>Sin análisis</Tag>
                 )}
               </td>
               <td>
@@ -105,13 +96,13 @@ export function CustomersTable({ customers, onCustomerClick }: CustomersTablePro
                 {customer.extraction?.volume?.quantity ? (
                   <>
                     {customer.extraction.volume.quantity}{" "}
-                    <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
+                    <span className="table-cell-secondary">
                       {getLabel(VolumeUnitLabels, customer.extraction.volume.unit)}
                     </span>
                     {customer.extraction.volume.isPeak && (
-                      <span className="badge badge-warning" style={{ marginLeft: "0.5rem" }}>
+                      <Badge variant={BadgeVariant.Warning} style={{ marginLeft: "0.5rem" }}>
                         Pico
-                      </span>
+                      </Badge>
                     )}
                   </>
                 ) : (
@@ -121,12 +112,12 @@ export function CustomersTable({ customers, onCustomerClick }: CustomersTablePro
               <td>
                 <div className="tag-list">
                   {customer.extraction?.painPoints?.slice(0, 2).map((pp) => (
-                    <span key={pp} className="tag">
+                    <Tag key={pp}>
                       {getLabel(PainPointsLabels, pp)}
-                    </span>
+                    </Tag>
                   ))}
                   {(customer.extraction?.painPoints?.length || 0) > 2 && (
-                    <span className="tag">+{customer.extraction!.painPoints.length - 2}</span>
+                    <Tag>+{customer.extraction!.painPoints.length - 2}</Tag>
                   )}
                   {(!customer.extraction?.painPoints || customer.extraction.painPoints.length === 0) && "-"}
                 </div>
