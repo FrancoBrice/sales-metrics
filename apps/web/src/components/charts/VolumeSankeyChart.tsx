@@ -161,7 +161,7 @@ export function VolumeSankeyChart() {
         <div className="sankey-column right">Estado</div>
       </div>
 
-      <div className="sankey-chart-container">
+      <div className="sankey-chart-container" style={{ position: "relative" }}>
         <ResponsiveContainer width="100%" height="100%">
           <Sankey
             data={processedData}
@@ -169,6 +169,8 @@ export function VolumeSankeyChart() {
             link={CustomSankeyLink}
             nodePadding={20}
             nodeWidth={20}
+            iterations={64}
+            linkCurvature={0.5}
             margin={{
               left: 10,
               right: 150,
