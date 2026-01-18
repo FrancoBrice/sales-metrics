@@ -155,6 +155,26 @@ export const api = {
         nodes: Array<{ name: string; category: string }>;
         links: Array<{ source: number; target: number; value: number }>;
       }>("/metrics/sankey"),
+    industryPainPointHeatmap: (filters?: { seller?: string; dateFrom?: string; dateTo?: string }) => {
+      const params = new URLSearchParams();
+      if (filters?.seller) params.set("seller", filters.seller);
+      if (filters?.dateFrom) params.set("dateFrom", filters.dateFrom);
+      if (filters?.dateTo) params.set("dateTo", filters.dateTo);
+
+      const query = params.toString();
+      return fetchApi<{
+        industries: string[];
+        painPoints: string[];
+        cells: Array<{
+          industry: string;
+          painPoint: string;
+          total: number;
+          closed: number;
+          conversionRate: number;
+          avgVolume: number;
+        }>;
+      }>(`/metrics/industry-painpoint-heatmap${query ? `?${query}` : ""}`);
+    },
   },
   ingest: {
     uploadCsv: async (file: File) => {

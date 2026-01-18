@@ -59,5 +59,22 @@ export class MetricsController {
   async getSankeyData() {
     return this.metricsService.getSankeyData();
   }
+
+  @Get("industry-painpoint-heatmap")
+  @ApiOperation({ summary: "Get industry x pain point heatmap data" })
+  @ApiQuery({ name: "seller", required: false })
+  @ApiQuery({ name: "dateFrom", required: false })
+  @ApiQuery({ name: "dateTo", required: false })
+  async getIndustryPainPointHeatmap(
+    @Query("seller") seller?: string,
+    @Query("dateFrom") dateFrom?: string,
+    @Query("dateTo") dateTo?: string
+  ) {
+    return this.metricsService.getIndustryPainPointHeatmap({
+      seller,
+      dateFrom,
+      dateTo,
+    });
+  }
 }
 
