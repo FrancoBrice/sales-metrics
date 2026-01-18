@@ -2,10 +2,10 @@ import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Extraction } from "@vambe/shared";
-import { LlmClient } from "./llmClient.interface";
-import { ValidationService } from "./validation.service";
-import { EXTRACTION_PROMPT } from "./constants";
-import { tryParseJson } from "./jsonRepair";
+import { LlmClient, DeterministicHints } from "./llmClient.interface";
+import { ValidationService } from "../services/validation.service";
+import { buildExtractionPrompt } from "../prompt/promptBuilder";
+import { tryParseJson } from "../utils/jsonRepair";
 
 @Injectable()
 export class GeminiClient implements LlmClient {
@@ -24,8 +24,10 @@ export class GeminiClient implements LlmClient {
     this.genAI = new GoogleGenerativeAI(apiKey);
   }
 
-  async extractFromTranscript(transcript: string): Promise<Extraction> {
-
+  async extractFromTranscript(
+    transcript: string,
+    hints?: DeterministicHints
+  ): Promise<Extraction> {
     try {
       const model = this.genAI.getGenerativeModel({
         model: this.modelName,
@@ -36,7 +38,7 @@ export class GeminiClient implements LlmClient {
         },
       });
 
-      const prompt = EXTRACTION_PROMPT.replace("{transcript}", transcript);
+      const prompt = buildExtractionPrompt(transcript, hints);
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -58,8 +60,4 @@ export class GeminiClient implements LlmClient {
       throw new Error(`Gemini API extraction failed: ${error}`);
     }
   }
-
-
-
-
 }

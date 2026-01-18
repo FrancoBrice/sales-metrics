@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { Prisma } from "@prisma/client";
 import { Extraction } from "@vambe/shared";
-import { mapExtractionDataToExtraction } from "../extract/llm/extraction.mapper";
+import { mapExtractionDataToExtraction } from "../extract/llm";
 
 interface CustomerFilter {
   seller?: string;

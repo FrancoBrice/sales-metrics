@@ -2,10 +2,10 @@ import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import OpenAI from "openai";
 import { Extraction } from "@vambe/shared";
-import { LlmClient } from "./llmClient.interface";
-import { ValidationService } from "./validation.service";
-import { EXTRACTION_PROMPT } from "./constants";
-import { tryParseJson } from "./jsonRepair";
+import { LlmClient, DeterministicHints } from "./llmClient.interface";
+import { ValidationService } from "../services/validation.service";
+import { buildExtractionPrompt } from "../prompt/promptBuilder";
+import { tryParseJson } from "../utils/jsonRepair";
 
 @Injectable()
 export class OpenAiClient implements LlmClient {
@@ -24,9 +24,12 @@ export class OpenAiClient implements LlmClient {
     this.openai = new OpenAI({ apiKey });
   }
 
-  async extractFromTranscript(transcript: string): Promise<Extraction> {
+  async extractFromTranscript(
+    transcript: string,
+    hints?: DeterministicHints
+  ): Promise<Extraction> {
     try {
-      const prompt = EXTRACTION_PROMPT.replace("{transcript}", transcript);
+      const prompt = buildExtractionPrompt(transcript, hints);
 
       const completion = await this.openai.chat.completions.create({
         messages: [{ role: "user", content: prompt }],
@@ -52,5 +55,4 @@ export class OpenAiClient implements LlmClient {
       throw new Error(`OpenAI extraction failed: ${error}`);
     }
   }
-
 }

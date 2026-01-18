@@ -1,12 +1,14 @@
 import { Injectable, Inject } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-import { LLM_CLIENT, LlmClient } from "./llm/llmClient.interface";
-import { ExtractionStatus } from "@vambe/shared";
-import { ExtractionParser } from "./llm/extraction.parser";
+import { LLM_CLIENT, LlmClient } from "./llm";
+import { ExtractionStatus, LeadSource, Integrations, Volume, Extraction } from "@vambe/shared";
+import { ExtractionParser, mapExtractionDataToExtraction } from "./llm";
+import { detectLeadSource, detectVolume, detectIntegrations } from "./deterministic";
 
 const SCHEMA_VERSION = "1.0.0";
 const PROMPT_VERSION = "1.0.0";
 const MODEL_NAME = "gemini-1.5-flash-latest";
+const MIN_CONFIDENCE_THRESHOLD = 0.7;
 
 @Injectable()
 export class ExtractService {
@@ -27,7 +29,12 @@ export class ExtractService {
     }
 
     try {
-      const extraction = await this.llmClient.extractFromTranscript(meeting.transcript);
+      const deterministicResults = this.runDeterministicExtraction(meeting.transcript);
+      const llmExtraction = await this.llmClient.extractFromTranscript(
+        meeting.transcript,
+        deterministicResults
+      );
+      const extraction = this.mergeExtractionResults(deterministicResults, llmExtraction);
 
       const saved = await this.prisma.extraction.create({
         data: {
@@ -82,7 +89,6 @@ export class ExtractService {
       return null;
     }
 
-    const { mapExtractionDataToExtraction } = await import("./llm/extraction.mapper");
     const extractionData = mapExtractionDataToExtraction(extraction.data);
 
     if (!extractionData) {
@@ -194,5 +200,46 @@ export class ExtractService {
     }
 
     return results;
+  }
+
+  private runDeterministicExtraction(transcript: string) {
+    const leadSourceResult = detectLeadSource(transcript);
+    const volumeResult = detectVolume(transcript);
+    const integrationsResult = detectIntegrations(transcript);
+
+    return {
+      leadSource: leadSourceResult.confidence >= MIN_CONFIDENCE_THRESHOLD
+        ? leadSourceResult.source
+        : null,
+      volume: volumeResult.confidence >= MIN_CONFIDENCE_THRESHOLD
+        ? volumeResult.volume
+        : null,
+      integrations: integrationsResult.confidence >= MIN_CONFIDENCE_THRESHOLD
+        ? integrationsResult.integrations
+        : [],
+      confidence: {
+        leadSource: leadSourceResult.confidence,
+        volume: volumeResult.confidence,
+        integrations: integrationsResult.confidence,
+      },
+    };
+  }
+
+  private mergeExtractionResults(
+    deterministic: {
+      leadSource: LeadSource | null;
+      volume: Volume | null;
+      integrations: Integrations[];
+    },
+    llm: Extraction
+  ): Extraction {
+    return {
+      ...llm,
+      leadSource: deterministic.leadSource || llm.leadSource || null,
+      volume: deterministic.volume || llm.volume || null,
+      integrations: deterministic.integrations.length > 0
+        ? [...new Set([...deterministic.integrations, ...(llm.integrations || [])])]
+        : (llm.integrations || []),
+    };
   }
 }
