@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Extraction } from "@sales-metrics/shared";
+import { Extraction } from "@vambe/shared";
 import { LlmClient } from "./llmClient.interface";
 import { ValidationService } from "./validation.service";
 import { EXTRACTION_PROMPT } from "./constants";
