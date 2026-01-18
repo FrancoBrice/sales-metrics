@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Vambe Sales Metrics | Dashboard de Ventas",
+  title: "Sales Metrics | Dashboard de Ventas",
   description: "Panel interactivo para análisis de métricas de clientes y reuniones de ventas",
 };
 

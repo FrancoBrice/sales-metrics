@@ -146,7 +146,7 @@ export default function Dashboard() {
     <div className="container">
       <div className="header">
         <div>
-          <h1>Vambe Sales Metrics</h1>
+          <h1>Sales Metrics</h1>
           <p className="header-subtitle">
             Panel de control integral para análisis de métricas de ventas y clientes
           </p>
