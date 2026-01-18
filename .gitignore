@@ -6,6 +6,7 @@ dist
 *.db-journal
 .turbo
 .vercel
+*.tsbuildinfo
 vambe_clients.csv
 instructions.md
 test.md
