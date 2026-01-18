@@ -10,7 +10,7 @@ import { Toast, ToastType } from "@/components/ui/Toast";
 import { ProgressSnackbar } from "@/components/ui/ProgressSnackbar";
 import { Button, ButtonVariant } from "@/components/ui/Button";
 import { LinkCard, LinkCardGrid } from "@/components/ui/LinkCard";
-import { Loading, EmptyState } from "@/components/ui/Loading";
+import { Loading, EmptyStateWithType } from "@/components/ui/Loading";
 
 export default function Dashboard() {
   const [metrics, setMetrics] = useState<MetricsOverview | null>(null);
@@ -205,10 +205,7 @@ export default function Dashboard() {
           <ChartsSection metrics={metrics} />
         </>
       ) : (
-        <EmptyState
-          title="No hay datos disponibles"
-          message="Importa un archivo CSV para comenzar"
-        />
+        <EmptyStateWithType type="dashboard" />
       )}
 
       {showUpload && (

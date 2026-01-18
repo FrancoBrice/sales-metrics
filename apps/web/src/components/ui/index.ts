@@ -4,7 +4,7 @@ export { Input, Select } from "./Input";
 export { Badge, BadgeVariant, Tag } from "./Badge";
 export { Modal, ModalFooter } from "./Modal";
 export { LinkCard, LinkCardGrid } from "./LinkCard";
-export { Loading, EmptyState } from "./Loading";
+export { Loading, EmptyState, EmptyStateWithType } from "./Loading";
 export { Toast, ToastType } from "./Toast";
 export { ProgressSnackbar } from "./ProgressSnackbar";
 export { UploadModal } from "./UploadModal";

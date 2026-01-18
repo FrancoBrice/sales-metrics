@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { api } from "@/lib/api";
 import { PainPointsLabels, PainPoints } from "@vambe/shared";
+import { EmptyStateWithType } from "@/components/ui/Loading";
 
 interface PainPointData {
   x: number;
@@ -67,7 +68,11 @@ export function PainPointsBubbleChart() {
   }, [allData, selectedPainPoints]);
 
   if (loading) return <div className="card loading-placeholder">Cargando gráfico...</div>;
-  if (data.length === 0) return <div className="card">No hay datos de Pain Points</div>;
+  if (data.length === 0) return (
+    <div className="card">
+      <EmptyStateWithType type="pain-points" />
+    </div>
+  );
 
   const getColor = (rate: number) => {
     if (rate <= 10) return "#ef4444";

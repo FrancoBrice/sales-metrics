@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { UrgencyLabels, SentimentLabels, Urgency, Sentiment } from "@vambe/shared";
 import { CustomerFilters } from "@/lib/api";
+import { EmptyStateWithType } from "@/components/ui/Loading";
 
 interface WinProbabilityMatrixProps {
   filters?: CustomerFilters;
@@ -67,9 +68,7 @@ export function WinProbabilityMatrix({ filters }: WinProbabilityMatrixProps) {
   if (!data || data.matrix.length === 0) {
     return (
       <div className="card">
-        <p style={{ color: "var(--color-text-muted)", textAlign: "center" }}>
-          No hay datos disponibles para el análisis de probabilidad
-        </p>
+        <EmptyStateWithType type="win-probability" />
       </div>
     );
   }

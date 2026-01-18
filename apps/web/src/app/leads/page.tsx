@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api, CustomerFilters } from "@/lib/api";
 import { Filters } from "@/components/features/Filters";
 import { LeadSourceLabels } from "@vambe/shared";
+import { EmptyStateWithType } from "@/components/ui/Loading";
 import {
   LineChart,
   Line,
@@ -141,10 +142,7 @@ export default function LeadsPage() {
           <div className="spinner"></div>
         </div>
       ) : data.length === 0 ? (
-        <div className="empty-state">
-          <h3>No hay datos disponibles</h3>
-          <p>Intenta ajustar los filtros de búsqueda</p>
-        </div>
+        <EmptyStateWithType type="leads" />
       ) : (
         <div className="card">
           <div className="card-header">

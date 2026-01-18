@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api, CustomerFilters } from "@/lib/api";
 import { Filters } from "@/components/features/Filters";
 import { LeadSourceLabels, IndustryLabels, PainPointsLabels, LeadSource, Industry, PainPoints } from "@vambe/shared";
+import { EmptyStateWithType } from "@/components/ui/Loading";
 
 interface SellerMetrics {
   seller: string;
@@ -136,18 +137,6 @@ export default function SellersMetricsPage() {
     );
   }
 
-  const maxTotal = Math.max(...sellerMetrics.map((s) => s.total), 1);
-  const maxClosed = Math.max(...sellerMetrics.map((s) => s.closed), 1);
-  const maxConversion = Math.max(...sellerMetrics.map((s) => s.conversionRate), 1);
-
-  const allLeadSources = Array.from(
-    new Set(sellerMetrics.flatMap((s) => Object.keys(s.leadSources)))
-  );
-
-  const allIndustries = Array.from(
-    new Set(sellerMetrics.flatMap((s) => Object.keys(s.industries)))
-  );
-
   return (
     <div className="container">
       <div className="header">
@@ -166,7 +155,24 @@ export default function SellersMetricsPage() {
         variant="dashboard"
       />
 
-      <div className="charts-grid">
+      {sellerMetrics.length === 0 ? (
+        <EmptyStateWithType type="sellers" />
+      ) : (
+        (() => {
+          const maxTotal = Math.max(...sellerMetrics.map((s) => s.total), 1);
+          const maxClosed = Math.max(...sellerMetrics.map((s) => s.closed), 1);
+          const maxConversion = Math.max(...sellerMetrics.map((s) => s.conversionRate), 1);
+
+          const allLeadSources = Array.from(
+            new Set(sellerMetrics.flatMap((s) => Object.keys(s.leadSources)))
+          );
+
+          const allIndustries = Array.from(
+            new Set(sellerMetrics.flatMap((s) => Object.keys(s.industries)))
+          );
+
+          return (
+            <div className="charts-grid">
         <div className="card">
           <h3 className="section-title">Ranking de Conversión</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -445,6 +451,9 @@ export default function SellersMetricsPage() {
           </div>
         </div>
       </div>
+        );
+        })()
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { LeadSourceLabels, PainPointsLabels, LeadSource, PainPoints } from "@vambe/shared";
 import { sankeyColorList } from "@/constants/colors";
 import { SankeyNode, SankeyLink, SankeyHiddenNodes, useSankeyData } from "./shared";
+import { EmptyState } from "@/components/ui/Loading";
 
 interface SankeyData {
   nodes: { name: string; category: string }[];
@@ -41,7 +42,14 @@ export function SankeyChart() {
   }, [processedData]);
 
   if (loading) return <div className="card loading-placeholder">Cargando diagrama...</div>;
-  if (!data || !processedData || processedData.nodes.length === 0) return null;
+  if (!data || !processedData || processedData.nodes.length === 0) return (
+    <div className="card">
+      <EmptyState
+        title="No hay datos de conversión"
+        message="Aún no hay datos disponibles para mostrar el flujo de conversión"
+      />
+    </div>
+  );
 
   const toggleNode = (nodeName: string) => {
     const next = new Set(hiddenNodes);

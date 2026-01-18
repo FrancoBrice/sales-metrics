@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { IndustryLabels, PainPointsLabels, Industry, PainPoints } from "@vambe/shared";
 import { CustomerFilters } from "@/lib/api";
+import { EmptyStateWithType } from "@/components/ui/Loading";
 
 interface HeatmapIndustryPainPointProps {
   filters?: CustomerFilters;
@@ -52,9 +53,7 @@ export function HeatmapIndustryPainPoint({ filters }: HeatmapIndustryPainPointPr
   if (!data || data.cells.length === 0) {
     return (
       <div className="card">
-        <p style={{ color: "var(--color-text-muted)", textAlign: "center" }}>
-          No hay datos disponibles para el heatmap
-        </p>
+        <EmptyStateWithType type="industries" />
       </div>
     );
   }
