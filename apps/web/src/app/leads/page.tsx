@@ -121,7 +121,12 @@ export default function LeadsPage() {
   return (
     <div className="container">
       <div className="header">
-        <h1>Análisis de Leads</h1>
+        <div>
+          <h1>Análisis de Leads</h1>
+          <p style={{ marginTop: "0.5rem", color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
+            Evolución temporal de leads por fuente de origen
+          </p>
+        </div>
       </div>
 
       <Filters
