@@ -76,5 +76,22 @@ export class MetricsController {
       dateTo,
     });
   }
+
+  @Get("opportunity-matrix")
+  @ApiOperation({ summary: "Get opportunity matrix: Volume vs Conversion Rate" })
+  @ApiQuery({ name: "seller", required: false })
+  @ApiQuery({ name: "dateFrom", required: false })
+  @ApiQuery({ name: "dateTo", required: false })
+  async getOpportunityMatrix(
+    @Query("seller") seller?: string,
+    @Query("dateFrom") dateFrom?: string,
+    @Query("dateTo") dateTo?: string
+  ) {
+    return this.metricsService.getOpportunityMatrix({
+      seller,
+      dateFrom,
+      dateTo,
+    });
+  }
 }
 

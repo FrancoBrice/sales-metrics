@@ -175,6 +175,34 @@ export const api = {
         }>;
       }>(`/metrics/industry-painpoint-heatmap${query ? `?${query}` : ""}`);
     },
+    opportunityMatrix: (filters?: { seller?: string; dateFrom?: string; dateTo?: string }) => {
+      const params = new URLSearchParams();
+      if (filters?.seller) params.set("seller", filters.seller);
+      if (filters?.dateFrom) params.set("dateFrom", filters.dateFrom);
+      if (filters?.dateTo) params.set("dateTo", filters.dateTo);
+
+      const query = params.toString();
+      return fetchApi<{
+        opportunities: Array<{
+          category: "industry" | "painPoint";
+          name: string;
+          total: number;
+          closed: number;
+          avgVolume: number;
+          conversionRate: number;
+        }>;
+        quadrants: {
+          highValue: Array<{ category: string; name: string; total: number; closed: number; avgVolume: number; conversionRate: number }>;
+          quickWins: Array<{ category: string; name: string; total: number; closed: number; avgVolume: number; conversionRate: number }>;
+          development: Array<{ category: string; name: string; total: number; closed: number; avgVolume: number; conversionRate: number }>;
+          lowPriority: Array<{ category: string; name: string; total: number; closed: number; avgVolume: number; conversionRate: number }>;
+        };
+        thresholds: {
+          volume: number;
+          conversion: number;
+        };
+      }>(`/metrics/opportunity-matrix${query ? `?${query}` : ""}`);
+    },
   },
   ingest: {
     uploadCsv: async (file: File) => {

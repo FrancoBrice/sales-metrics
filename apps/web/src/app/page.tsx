@@ -149,7 +149,7 @@ export default function Dashboard() {
             onClick={handleExtractFromDashboard}
             disabled={extracting || retrying}
           >
-            {extracting ? "Analizando..." : "🔍 Analizar Pendientes"}
+            {extracting ? "Analizando..." : "Analizar Pendientes"}
           </button>
           <button
             className="btn btn-outline"
@@ -157,10 +157,10 @@ export default function Dashboard() {
             disabled={extracting || retrying}
             style={{ marginRight: "0.5rem" }}
           >
-            {retrying ? "Reintentando..." : "🔄 Reintentar Fallidos"}
+            {retrying ? "Reintentando..." : "Reintentar Fallidos"}
           </button>
           <button className="btn btn-primary" onClick={() => setShowUpload(true)}>
-            📤 Importar CSV
+            Importar CSV
           </button>
         </div>
       </div>

@@ -10,6 +10,7 @@ export function Navigation() {
     { href: "/", label: "Dashboard" },
     { href: "/leads", label: "Leads" },
     { href: "/customers", label: "Clientes" },
+    { href: "/opportunities", label: "Oportunidades" },
     { href: "/industries", label: "Industrias" },
     { href: "/flujo-conversion", label: "Flujo de Conversión" },
     { href: "/pain-points", label: "Pain Points" },
