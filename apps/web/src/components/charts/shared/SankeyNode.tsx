@@ -38,7 +38,7 @@ export function SankeyNode({
         fill={color}
         fillOpacity="1"
         onClick={() => onToggle?.(nodeName)}
-        style={{ cursor: onToggle ? "pointer" : "default" }}
+        className={`sankey-node ${onToggle ? "" : "non-interactive"}`}
       />
       <text
         textAnchor={isOut ? "end" : "start"}
@@ -47,12 +47,7 @@ export function SankeyNode({
         fontSize="12"
         fill="var(--color-text)"
         dy="0.35em"
-        style={{
-          fontWeight: 500,
-          textShadow: "0 1px 2px rgba(0,0,0,0.1)",
-          cursor: onToggle ? "pointer" : "default",
-          pointerEvents: "none",
-        }}
+        className={`sankey-node-text ${onToggle ? "interactive" : "non-interactive"}`}
       >
         {label}
       </text>

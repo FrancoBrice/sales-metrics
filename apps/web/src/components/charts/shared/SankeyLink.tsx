@@ -21,13 +21,17 @@ export function SankeyLink({
   linkWidth,
   sourceColor,
 }: SankeyLinkProps) {
+  // Recharts passes the center Y coordinate, but we need the top Y coordinate for the path
+  const sourceTop = sourceY - linkWidth / 2;
+  const targetTop = targetY - linkWidth / 2;
+
   return (
     <path
       d={`
-        M${sourceX},${sourceY}
-        C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}
-        L${targetX},${targetY + linkWidth}
-        C${targetControlX},${targetY + linkWidth} ${sourceControlX},${sourceY + linkWidth} ${sourceX},${sourceY + linkWidth}
+        M${sourceX},${sourceTop}
+        C${sourceControlX},${sourceTop} ${targetControlX},${targetTop} ${targetX},${targetTop}
+        L${targetX},${targetTop + linkWidth}
+        C${targetControlX},${targetTop + linkWidth} ${sourceControlX},${sourceTop + linkWidth} ${sourceX},${sourceTop + linkWidth}
         Z
       `}
       fill={sourceColor}
@@ -39,7 +43,7 @@ export function SankeyLink({
       onMouseLeave={(e) => {
         e.currentTarget.setAttribute("fill-opacity", "0.4");
       }}
-      style={{ transition: "fill-opacity 0.2s" }}
+      className="sankey-link"
     />
   );
 }

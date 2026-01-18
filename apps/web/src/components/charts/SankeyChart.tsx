@@ -148,20 +148,11 @@ export function SankeyChart() {
                 const value = data.value;
                 const percentage = totalValue > 0 ? (value / totalValue) * 100 : 0;
                 return (
-                  <div
-                    style={{
-                      backgroundColor: "var(--color-surface-elevated)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "var(--radius-md)",
-                      padding: "0.75rem",
-                      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-                      fontSize: "0.875rem",
-                    }}
-                  >
-                    <div style={{ color: "var(--color-text)", fontWeight: 600, marginBottom: "0.25rem" }}>
+                  <div className="sankey-tooltip">
+                    <div className="sankey-tooltip-title">
                       Flujo
                     </div>
-                    <div style={{ color: "var(--color-text-muted)" }}>
+                    <div className="sankey-tooltip-value">
                       {value.toFixed(1)} ({percentage.toFixed(1)}%)
                     </div>
                   </div>
