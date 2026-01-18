@@ -41,8 +41,7 @@ export const EXTRACTION_PROMPT = `Analyze the following sales meeting transcript
     "quantity": number or null,
     "unit": "VolumeUnit enum value or null. Valid values: ${getEnumValues(VolumeUnit)}",
     "isPeak": boolean
-  } or null,
-  "confidence": number between 0 and 1
+  } or null
 }
 
 Transcript:

@@ -8,6 +8,7 @@ Panel interactivo para análisis de métricas de clientes basado en transcripcio
 
 - Node.js 18+
 - pnpm 9+
+- Docker and Docker Compose (for PostgreSQL)
 
 ### Setup
 
@@ -15,14 +16,18 @@ Panel interactivo para análisis de métricas de clientes basado en transcripcio
 # Install dependencies
 pnpm install
 
-# Copy environment file
-cp .env.example .env
+# Start PostgreSQL database (Docker)
+docker-compose up -d
+
+# Configure environment variables
+# Create or update apps/api/.env with:
+# DATABASE_URL="postgresql://vambe:vambe_secret@localhost:5433/sales_metrics"
 
 # Generate Prisma client
 pnpm db:generate
 
-# Run database migrations
-pnpm db:migrate
+# Push database schema (creates tables)
+pnpm db:push
 
 # Start development servers (API + Web)
 pnpm dev
@@ -53,7 +58,7 @@ repo/
 │           └── lib/          # API client
 ├── packages/
 │   └── shared/         # Shared code (enums, schemas, types)
-├── docker-compose.yml  # Optional PostgreSQL
+├── docker-compose.yml  # PostgreSQL database
 ├── pnpm-workspace.yaml
 └── package.json
 ```
@@ -132,26 +137,49 @@ Filter customers by:
 
 ## 🗄️ Database
 
-### Development (SQLite)
-By default, uses SQLite for zero-setup development:
-```env
-DATABASE_URL="file:./dev.db"
-```
+### Development (PostgreSQL Local)
 
-### Production (PostgreSQL)
-For production, use PostgreSQL with Supabase:
-```env
-DATABASE_URL="postgresql://user:password@host:5432/database"
-```
+The project uses PostgreSQL running in Docker for local development:
 
-Or run PostgreSQL locally with Docker:
+**Start PostgreSQL:**
 ```bash
 docker-compose up -d
 ```
 
-Then update `.env`:
+**Database connection:**
+- Host: `localhost`
+- Port: `5433` (mapped from container's 5432)
+- Database: `sales_metrics`
+- User: `vambe`
+- Password: `vambe_secret`
+
+**Environment variable** (`apps/api/.env`):
 ```env
-DATABASE_URL="postgresql://vambe:vambe_secret@localhost:5432/sales_metrics"
+DATABASE_URL="postgresql://vambe:vambe_secret@localhost:5433/sales_metrics"
+```
+
+**Database commands:**
+```bash
+# Create database schema (push schema without migrations)
+pnpm db:push
+
+# Or use migrations (create migration files)
+pnpm db:migrate
+
+# Open Prisma Studio (database GUI)
+pnpm db:studio
+```
+
+**Stop PostgreSQL:**
+```bash
+docker-compose down
+```
+
+### Production (PostgreSQL)
+
+For production, use PostgreSQL with Supabase or any PostgreSQL provider:
+```env
+DATABASE_URL="postgresql://user:password@host:5432/database"
 ```
 
 ## 🧪 Testing
@@ -205,7 +233,7 @@ import { LeadSource, ExtractionSchema, LeadSourceLabels } from "@vambe/shared";
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `DATABASE_URL` | Database connection string | `file:./dev.db` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://vambe:vambe_secret@localhost:5433/sales_metrics` |
 | `GEMINI_API_KEY` | Google Gemini API key (Get from [Google AI Studio](https://aistudio.google.com/)) | - |
 | `API_PORT` | API server port | `3001` |
 | `NEXT_PUBLIC_API_URL` | API URL for frontend | `http://localhost:3001` |

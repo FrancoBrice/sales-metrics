@@ -20,7 +20,6 @@ export class ValidationService {
       objections: [],
       sentiment: null,
       volume: null,
-      confidence: 0,
     };
 
     const merged = { ...defaultExtraction, ...partial };
@@ -42,11 +41,6 @@ export class ValidationService {
     }
     if (merged.volume === undefined) {
       merged.volume = null;
-    }
-    if (typeof merged.confidence !== "number" || isNaN(merged.confidence)) {
-      merged.confidence = 0;
-    } else {
-      merged.confidence = Math.max(0, Math.min(1, merged.confidence));
     }
 
     const result = ExtractionSchema.safeParse(merged);

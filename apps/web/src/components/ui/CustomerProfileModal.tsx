@@ -284,12 +284,6 @@ export function CustomerProfileModal({ customerId, onClose }: CustomerProfileMod
                       </span>
                     </div>
                   )}
-                  <div>
-                    <span style={{ color: "var(--color-text-muted)" }}>Confianza Extracción: </span>
-                    <span style={{ fontWeight: 600 }}>
-                      {(extraction.confidence * 100).toFixed(0)}%
-                    </span>
-                  </div>
                 </div>
               </div>
             </div>

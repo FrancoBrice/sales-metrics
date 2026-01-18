@@ -39,7 +39,6 @@ export const ExtractionSchema = z.object({
   objections: z.array(z.nativeEnum(Objections)),
   sentiment: z.nativeEnum(Sentiment).nullable(),
   volume: VolumeSchema.nullable(),
-  confidence: z.number().min(0).max(1),
 });
 
 export const CustomerSchema = z.object({

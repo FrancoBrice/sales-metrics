@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { Prisma } from "@prisma/client";
 import { Extraction } from "@vambe/shared";
+import { mapExtractionDataToExtraction } from "../extract/llm/extraction.mapper";
 
 interface CustomerFilter {
   seller?: string;
@@ -60,6 +61,7 @@ export class CustomersService {
           meetings: {
             include: {
               extractions: {
+                include: { data: true },
                 orderBy: { createdAt: "desc" },
                 take: 1,
               },
@@ -99,6 +101,7 @@ export class CustomersService {
             meetings: {
               include: {
                 extractions: {
+                  include: { data: true },
                   orderBy: { createdAt: "desc" },
                   take: 1,
                 },
@@ -140,6 +143,7 @@ export class CustomersService {
         meetings: {
           include: {
             extractions: {
+              include: { data: true },
               orderBy: { createdAt: "desc" },
               take: 1,
             },
@@ -153,15 +157,10 @@ export class CustomersService {
     }
 
     const meeting = customer.meetings[0];
-    let extraction: Extraction | null = null;
-
-    if (meeting?.extractions[0]) {
-      try {
-        extraction = JSON.parse(meeting.extractions[0].resultJson);
-      } catch {
-        extraction = null;
-      }
-    }
+    const extractionRecord = meeting?.extractions[0];
+    const extraction = extractionRecord
+      ? mapExtractionDataToExtraction(extractionRecord.data)
+      : null;
 
     return {
       id: customer.id,
@@ -182,14 +181,9 @@ export class CustomersService {
     const meeting = customer.meetings[0];
     const extractionRecord = meeting?.extractions[0];
 
-    let extraction: Extraction | null = null;
-    if (extractionRecord) {
-      try {
-        extraction = JSON.parse(extractionRecord.resultJson);
-      } catch {
-        extraction = null;
-      }
-    }
+    const extraction = extractionRecord
+      ? mapExtractionDataToExtraction(extractionRecord.data)
+      : null;
 
     return {
       id: customer.id,

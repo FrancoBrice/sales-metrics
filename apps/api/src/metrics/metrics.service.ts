@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { Prisma } from "@prisma/client";
 import { Extraction, LeadSource, Industry, PainPoints } from "@vambe/shared";
+import { mapExtractionDataToExtraction } from "../extract/llm/extraction.mapper";
 
 interface MetricsFilter {
   seller?: string;
@@ -36,6 +37,7 @@ export class MetricsService {
         meetings: {
           include: {
             extractions: {
+              include: { data: true },
               orderBy: { createdAt: "desc" },
               take: 1,
             },
@@ -125,6 +127,7 @@ export class MetricsService {
         meetings: {
           include: {
             extractions: {
+              include: { data: true },
               orderBy: { createdAt: "desc" },
               take: 1,
             },
@@ -181,6 +184,7 @@ export class MetricsService {
         meetings: {
           include: {
             extractions: {
+              include: { data: true },
               orderBy: { createdAt: "desc" },
               take: 1,
             },
@@ -212,6 +216,7 @@ export class MetricsService {
         meetings: {
           include: {
             extractions: {
+              include: { data: true },
               orderBy: { createdAt: "desc" },
               take: 1,
             },
@@ -276,6 +281,7 @@ export class MetricsService {
         meetings: {
           include: {
             extractions: {
+              include: { data: true },
               orderBy: { createdAt: "desc" },
               take: 1,
             },
@@ -322,6 +328,7 @@ export class MetricsService {
         meetings: {
           include: {
             extractions: {
+              include: { data: true },
               orderBy: { createdAt: "desc" },
               take: 1,
             },
@@ -410,6 +417,7 @@ export class MetricsService {
         meetings: {
           include: {
             extractions: {
+              include: { data: true },
               orderBy: { createdAt: "desc" },
               take: 1,
             },
@@ -510,6 +518,7 @@ export class MetricsService {
         meetings: {
           include: {
             extractions: {
+              include: { data: true },
               orderBy: { createdAt: "desc" },
               take: 1,
             },
@@ -658,6 +667,7 @@ export class MetricsService {
         meetings: {
           include: {
             extractions: {
+              include: { data: true },
               orderBy: { createdAt: "desc" },
               take: 1,
             },
@@ -789,15 +799,11 @@ export class MetricsService {
     };
   }
 
-  private getExtraction(customer: { meetings: { extractions: { resultJson: string }[] }[] }): Extraction | null {
+  private getExtraction(customer: any): Extraction | null {
     const meeting = customer.meetings[0];
     const extractionRecord = meeting?.extractions[0];
     if (!extractionRecord) return null;
 
-    try {
-      return JSON.parse(extractionRecord.resultJson);
-    } catch {
-      return null;
-    }
+    return mapExtractionDataToExtraction(extractionRecord.data);
   }
 }

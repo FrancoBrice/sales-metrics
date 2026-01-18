@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -30,7 +30,7 @@ model Meeting {
 
 model Extraction {
   id             String   @id @default(cuid())
-  meetingId      String
+  meetingId      String   @unique
   meeting        Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
   resultJson     String
   model          String
@@ -39,4 +39,29 @@ model Extraction {
   status         String
   rawModelOutput String?
   createdAt      DateTime @default(now())
+  data           ExtractionData?
+}
+
+model ExtractionData {
+  id               String   @id @default(cuid())
+  extractionId     String   @unique
+  extraction       Extraction @relation(fields: [extractionId], references: [id], onDelete: Cascade)
+  industry         String?
+  businessModel    String?
+  jtbdPrimary      String[]
+  painPoints       String[]
+  leadSource       String?
+  processMaturity  String?
+  toolingMaturity  String?
+  knowledgeComplexity String?
+  riskLevel        String?
+  integrations     String[]
+  urgency          String?
+  successMetrics   String[]
+  objections       String[]
+  sentiment        String?
+  volumeQuantity   Float?
+  volumeUnit       String?
+  volumeIsPeak     Boolean  @default(false)
+  createdAt        DateTime @default(now())
 }

@@ -37,7 +37,6 @@ export interface CustomerWithExtraction {
       unit: string | null;
       isPeak: boolean;
     } | null;
-    confidence: number;
   } | null;
 }
 

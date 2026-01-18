@@ -2,6 +2,7 @@ import { Injectable, Inject } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { LLM_CLIENT, LlmClient } from "./llm/llmClient.interface";
 import { ExtractionStatus } from "@vambe/shared";
+import { ExtractionParser } from "./llm/extraction.parser";
 
 const SCHEMA_VERSION = "1.0.0";
 const PROMPT_VERSION = "1.0.0";
@@ -11,7 +12,8 @@ const MODEL_NAME = "gemini-1.5-flash-latest";
 export class ExtractService {
   constructor(
     private readonly prisma: PrismaService,
-    @Inject(LLM_CLIENT) private readonly llmClient: LlmClient
+    @Inject(LLM_CLIENT) private readonly llmClient: LlmClient,
+    private readonly extractionParser: ExtractionParser
   ) { }
 
   async extractFromMeeting(meetingId: string) {
@@ -37,6 +39,8 @@ export class ExtractService {
           status: ExtractionStatus.SUCCESS,
         },
       });
+
+      await this.extractionParser.parseAndSave(saved.id, extraction);
 
       return {
         id: saved.id,
@@ -70,6 +74,7 @@ export class ExtractService {
   async getExtractionByMeetingId(meetingId: string) {
     const extraction = await this.prisma.extraction.findFirst({
       where: { meetingId },
+      include: { data: true },
       orderBy: { createdAt: "desc" },
     });
 
@@ -77,10 +82,17 @@ export class ExtractService {
       return null;
     }
 
+    const { mapExtractionDataToExtraction } = await import("./llm/extraction.mapper");
+    const extractionData = mapExtractionDataToExtraction(extraction.data);
+
+    if (!extractionData) {
+      return null;
+    }
+
     return {
       id: extraction.id,
       meetingId: extraction.meetingId,
-      extraction: JSON.parse(extraction.resultJson),
+      extraction: extractionData,
       status: extraction.status,
       model: extraction.model,
       createdAt: extraction.createdAt,
