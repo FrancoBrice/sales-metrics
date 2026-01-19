@@ -85,6 +85,7 @@ export interface CustomerFilters {
   dateFrom?: string;
   dateTo?: string;
   industry?: string;
+  search?: string;
   page?: number;
   limit?: number;
 }
@@ -109,6 +110,7 @@ export const api = {
       if (filters?.dateFrom) params.set("dateFrom", filters.dateFrom);
       if (filters?.dateTo) params.set("dateTo", filters.dateTo);
       if (filters?.industry) params.set("industry", filters.industry);
+      if (filters?.search) params.set("search", filters.search);
       if (filters?.page) params.set("page", String(filters.page));
       if (filters?.limit) params.set("limit", String(filters.limit));
 
@@ -135,6 +137,76 @@ export const api = {
 
       const query = params.toString();
       return fetchApi<MetricsOverview>(`/metrics/overview${query ? `?${query}` : ""}`);
+    },
+    sellers: (filters?: { dateFrom?: string; dateTo?: string }) => {
+      const params = new URLSearchParams();
+      if (filters?.dateFrom) params.set("dateFrom", filters.dateFrom);
+      if (filters?.dateTo) params.set("dateTo", filters.dateTo);
+
+      const query = params.toString();
+      return fetchApi<Array<{
+        seller: string;
+        total: number;
+        closed: number;
+        conversionRate: number;
+        sentimentDistribution: Array<{
+          sentiment: string;
+          total: number;
+          closed: number;
+          conversionRate: number;
+          percentage: number;
+        }>;
+      }>>(`/metrics/sellers${query ? `?${query}` : ""}`);
+    },
+    sellerDetails: (seller: string, filters?: { dateFrom?: string; dateTo?: string }) => {
+      const params = new URLSearchParams();
+      if (filters?.dateFrom) params.set("dateFrom", filters.dateFrom);
+      if (filters?.dateTo) params.set("dateTo", filters.dateTo);
+
+      const query = params.toString();
+      return fetchApi<{
+        seller: string;
+        total: number;
+        closed: number;
+        conversionRate: number;
+        avgVolume: number | null;
+        sentimentDistribution: Array<{
+          sentiment: string;
+          total: number;
+          closed: number;
+          conversionRate: number;
+        }>;
+        topIndustries: Array<{
+          industry: string;
+          total: number;
+          closed: number;
+          conversionRate: number;
+        }>;
+        topLeadSources: Array<{
+          source: string;
+          total: number;
+          closed: number;
+          conversionRate: number;
+        }>;
+        topPainPoints: Array<{
+          painPoint: string;
+          total: number;
+          closed: number;
+          conversionRate: number;
+        }>;
+        urgencyBreakdown: Array<{
+          urgency: string;
+          total: number;
+          closed: number;
+          conversionRate: number;
+        }>;
+        riskBreakdown: Array<{
+          riskLevel: string;
+          total: number;
+          closed: number;
+          conversionRate: number;
+        }>;
+      }>(`/metrics/sellers/${encodeURIComponent(seller)}${query ? `?${query}` : ""}`);
     },
     byDimension: (dimension: string) =>
       fetchApi<MetricsByDimension>(`/metrics/by-dim?dimension=${dimension}`),

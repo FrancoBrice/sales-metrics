@@ -1,5 +1,5 @@
-import { Controller, Get, Query } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiQuery } from "@nestjs/swagger";
+import { Controller, Get, Query, Param } from "@nestjs/common";
+import { ApiTags, ApiOperation, ApiQuery, ApiParam } from "@nestjs/swagger";
 import { MetricsService } from "./metrics.service";
 
 @ApiTags("Metrics")
@@ -115,6 +115,30 @@ export class MetricsController {
   @ApiOperation({ summary: "Get volume flow sankey diagram: BusinessModel → VolumeUnit → VolumeIsPeak → Status" })
   async getVolumeFlowSankeyData() {
     return this.metricsService.getVolumeFlowSankeyData();
+  }
+
+  @Get("sellers")
+  @ApiOperation({ summary: "Get sellers metrics with sentiment distribution" })
+  @ApiQuery({ name: "dateFrom", required: false })
+  @ApiQuery({ name: "dateTo", required: false })
+  async getSellersMetrics(
+    @Query("dateFrom") dateFrom?: string,
+    @Query("dateTo") dateTo?: string
+  ) {
+    return this.metricsService.getSellersMetrics({ dateFrom, dateTo });
+  }
+
+  @Get("sellers/:seller")
+  @ApiOperation({ summary: "Get detailed metrics for a specific seller" })
+  @ApiParam({ name: "seller", required: true })
+  @ApiQuery({ name: "dateFrom", required: false })
+  @ApiQuery({ name: "dateTo", required: false })
+  async getSellerDetails(
+    @Param("seller") seller: string,
+    @Query("dateFrom") dateFrom?: string,
+    @Query("dateTo") dateTo?: string
+  ) {
+    return this.metricsService.getSellerDetails(seller, { dateFrom, dateTo });
   }
 }
 

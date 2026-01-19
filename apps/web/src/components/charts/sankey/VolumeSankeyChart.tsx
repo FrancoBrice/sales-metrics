@@ -70,8 +70,8 @@ export function VolumeSankeyChart() {
   const getLabel = (name: string): string => {
     if (name === "Cerrada") return "Cerrada";
     if (name === "Perdida") return "Perdida";
-    if (name === "Con Picos") return "Con Picos";
-    if (name === "Sin Picos") return "Sin Picos";
+    if (name === "Con Peaks") return "Con Peaks";
+    if (name === "Sin Peaks") return "Sin Peaks";
     if (name === "Sin Volumen") return "Sin Volumen";
     if (name === "Desconocido") return "Desconocido";
 
@@ -88,8 +88,8 @@ export function VolumeSankeyChart() {
   const nodesWithColors = processedData.nodes.map((node, i) => {
     if (node.name === "Cerrada") return { ...node, color: "#22c55e" };
     if (node.name === "Perdida") return { ...node, color: "#ef4444" };
-    if (node.name === "Con Picos") return { ...node, color: "#f59e0b" };
-    if (node.name === "Sin Picos") return { ...node, color: "#6b7280" };
+    if (node.name === "Con Peaks") return { ...node, color: "#f59e0b" };
+    if (node.name === "Sin Peaks") return { ...node, color: "#6b7280" };
     if (node.name === "Sin Volumen") return { ...node, color: "#9ca3af" };
 
     if (node.category === "businessModel") {
@@ -165,7 +165,7 @@ export function VolumeSankeyChart() {
       <div className="sankey-columns">
         <div className="sankey-column">Modelo Negocio</div>
         <div className="sankey-column center">Frecuencia Volumen</div>
-        <div className="sankey-column center">Picos</div>
+        <div className="sankey-column center">Peaks</div>
         <div className="sankey-column right">Estado</div>
       </div>
 

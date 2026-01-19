@@ -65,7 +65,7 @@ export const PainPointsLabels: Record<PainPoints, string> = {
   [PainPoints.SOBRECARGA_EQUIPO]: "Sobrecarga del Equipo",
   [PainPoints.CONSULTAS_REPETITIVAS]: "Consultas Repetitivas",
   [PainPoints.GESTION_MANUAL]: "Gestión Manual",
-  [PainPoints.PICOS_DEMANDA]: "Picos de Demanda",
+  [PainPoints.PICOS_DEMANDA]: "Peaks de Demanda",
   [PainPoints.MULTICANAL]: "Gestión Multicanal",
 };
 

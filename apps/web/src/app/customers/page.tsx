@@ -7,6 +7,7 @@ import { CustomersTable } from "@/components/features/CustomersTable";
 import { Pagination } from "@/components/features/Pagination";
 import { CustomerProfileModal } from "@/components/ui/CustomerProfileModal";
 import { Loading, EmptyState } from "@/components/ui/Loading";
+import { SearchInput } from "@/components/ui/SearchInput";
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<CustomerWithExtraction[]>([]);
@@ -67,6 +68,15 @@ export default function CustomersPage() {
     <div className="container">
       <div className="header">
         <h1>Cartera de Clientes</h1>
+      </div>
+
+      <div style={{ marginBottom: "1.5rem" }}>
+        <SearchInput
+          value={filters.search || ""}
+          onChange={(value) => handleFilterChange({ ...filters, search: value || undefined, page: 1 })}
+          placeholder="Buscar por nombre de cliente..."
+          debounceMs={300}
+        />
       </div>
 
       <Filters

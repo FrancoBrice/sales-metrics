@@ -100,3 +100,32 @@
   font-size: 0.75rem;
   color: var(--color-text-muted);
 }
+
+.seller-card {
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.seller-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-primary);
+}
+
+.seller-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.seller-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.seller-card-badges {
+  display: flex;
+  gap: 0.5rem;
+}

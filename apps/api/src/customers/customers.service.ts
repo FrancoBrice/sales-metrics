@@ -11,6 +11,7 @@ interface CustomerFilter {
   dateFrom?: string;
   dateTo?: string;
   industry?: string;
+  search?: string;
   page?: number;
   limit?: number;
 }
@@ -32,6 +33,13 @@ export class CustomersService {
 
     if (filter.closed !== undefined) {
       where.closed = filter.closed;
+    }
+
+    if (filter.search) {
+      where.name = {
+        contains: filter.search,
+        mode: "insensitive" as Prisma.QueryMode,
+      };
     }
 
     if (filter.dateFrom || filter.dateTo) {

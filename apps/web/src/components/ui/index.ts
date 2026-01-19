@@ -10,3 +10,4 @@ export { ProgressSnackbar } from "./ProgressSnackbar";
 export { UploadModal } from "./UploadModal";
 export { MetricsCards } from "./MetricsCards";
 export { CustomerProfileModal } from "./CustomerProfileModal";
+export { SearchInput } from "./SearchInput";
