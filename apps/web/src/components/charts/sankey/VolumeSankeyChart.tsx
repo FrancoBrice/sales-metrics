@@ -26,7 +26,7 @@ export function VolumeSankeyChart() {
   useEffect(() => {
     api.metrics.volumeFlow()
       .then(setData)
-      .catch((err) => console.error("Failed to load volume flow data", err))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 

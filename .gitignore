@@ -10,3 +10,4 @@ dist
 vambe_clients.csv
 instructions.md
 test.md
+dev.db.backup

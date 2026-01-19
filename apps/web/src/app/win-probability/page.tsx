@@ -17,8 +17,8 @@ export default function WinProbabilityPage() {
     try {
       const data = await api.customers.getSellers();
       setSellers(data);
-    } catch (error) {
-      console.error("Failed to load sellers:", error);
+    } catch {
+      setSellers([]);
     }
   }
 

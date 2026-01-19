@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Extraction } from "@vambe/shared";
-import { LlmClient, DeterministicHints } from "./llmClient.interface";
+import { LlmClient, DeterministicHints, LlmExtractionResult } from "./llmClient.interface";
 import { ValidationService } from "../services/validation.service";
 import { buildExtractionPrompt } from "../prompt/promptBuilder";
 import { tryParseJson } from "../utils/jsonRepair";
@@ -11,7 +11,7 @@ import { tryParseJson } from "../utils/jsonRepair";
 export class GeminiClient implements LlmClient {
   private readonly logger = new Logger(GeminiClient.name);
   private readonly genAI: GoogleGenerativeAI;
-  private readonly modelName = "gemini-1.5-flash-latest";
+  private readonly modelName = "gemini-flash-latest";
 
   constructor(
     private readonly configService: ConfigService,
@@ -27,7 +27,8 @@ export class GeminiClient implements LlmClient {
   async extractFromTranscript(
     transcript: string,
     hints?: DeterministicHints
-  ): Promise<Extraction> {
+  ): Promise<LlmExtractionResult> {
+    const startTime = Date.now();
     try {
       const model = this.genAI.getGenerativeModel({
         model: this.modelName,
@@ -43,21 +44,52 @@ export class GeminiClient implements LlmClient {
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
+      const durationMs = Date.now() - startTime;
+
+      const rawResponse = JSON.stringify({
+        text,
+        model: this.modelName,
+        timestamp: new Date().toISOString(),
+      });
 
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        throw new Error("No valid JSON found in Gemini API response");
+        throw new Error(`No valid JSON found in Gemini API response. Raw response: ${text}`);
       }
 
       const parsed = tryParseJson<Partial<Extraction>>(jsonMatch[0]);
       if (!parsed) {
-        throw new Error("Failed to parse JSON from Gemini API response");
+        throw new Error(`Failed to parse JSON from Gemini API response. Raw JSON: ${jsonMatch[0]}`);
       }
 
-      return this.validationService.validateAndMerge(parsed, transcript);
+      const extraction = this.validationService.validateAndMerge(parsed, transcript);
+
+      return {
+        extraction,
+        rawResponse,
+        metadata: {
+          provider: "gemini",
+          model: this.modelName,
+          durationMs,
+        },
+      };
     } catch (error) {
+      const durationMs = Date.now() - startTime;
       this.logger.error(`LLM extraction failed: ${error}`);
-      throw new Error(`Gemini API extraction failed: ${error}`);
+      const errorResponse = JSON.stringify({
+        error: String(error),
+        model: this.modelName,
+        timestamp: new Date().toISOString(),
+      });
+      const errorWithMetadata = Object.assign(new Error(`Gemini API extraction failed: ${error}`), {
+        rawResponse: errorResponse,
+        metadata: {
+          provider: "gemini",
+          model: this.modelName,
+          durationMs,
+        },
+      });
+      throw errorWithMetadata;
     }
   }
 }

@@ -361,7 +361,7 @@ export class MetricsService {
 
       const source = extraction.leadSource || "Desconocido";
       const painPoints = extraction.painPoints?.length ? extraction.painPoints : ["Ninguno"];
-      const sentiment = extraction.sentiment || "Neutro";
+      const sentiment = extraction.sentiment || "NEUTRAL";
       const status = customer.closed ? "Cerrada" : "Perdida";
 
       const weight = 1 / painPoints.length;

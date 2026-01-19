@@ -17,7 +17,6 @@ export default function Dashboard() {
   const [sellers, setSellers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [extracting, setExtracting] = useState(false);
-  const [retrying, setRetrying] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [filters, setFilters] = useState<CustomerFilters>({});
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
@@ -33,8 +32,8 @@ export default function Dashboard() {
     try {
       const data = await api.customers.getSellers();
       setSellers(data);
-    } catch (error) {
-      console.error("Failed to load sellers:", error);
+    } catch {
+      setSellers([]);
     }
   }
 
@@ -47,8 +46,8 @@ export default function Dashboard() {
         dateTo: filters.dateTo,
       });
       setMetrics(metricsData);
-    } catch (error) {
-      console.error("Failed to load dashboard data:", error);
+    } catch {
+      setMetrics(null);
     } finally {
       setLoading(false);
     }
@@ -56,14 +55,14 @@ export default function Dashboard() {
 
   async function handleExtractFromDashboard() {
     setExtracting(true);
-    setProgress({ current: 0, total: 0 });
+    setProgress({ current: 0, total: 1 });
 
-    const startProgressEstimate = () => {
+    const startProgressEstimate = (estimatedTotal: number) => {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
       }
 
-      setProgress({ current: 0, total: 60 });
+      setProgress({ current: 0, total: estimatedTotal });
 
       progressIntervalRef.current = setInterval(() => {
         setProgress((prev) => {
@@ -75,10 +74,24 @@ export default function Dashboard() {
       }, 500);
     };
 
-    startProgressEstimate();
+    startProgressEstimate(1);
 
     try {
-      const result = await api.extract.extractAll();
+      const result = await api.extract.extractPendingAndFailed();
+      const total = result.total || 0;
+
+      if (total === 0) {
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+        }
+        setExtracting(false);
+        setProgress(null);
+        setToast({
+          message: "No hay registros pendientes para procesar",
+          type: ToastType.Info,
+        });
+        return;
+      }
 
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
@@ -88,8 +101,16 @@ export default function Dashboard() {
 
       setTimeout(() => {
         setProgress(null);
+        const messageParts = [];
+        if (result.pending > 0) {
+          messageParts.push(`${result.pending} pendientes`);
+        }
+        if (result.retried > 0) {
+          messageParts.push(`${result.retried} reintentos`);
+        }
+        const statusMessage = messageParts.length > 0 ? ` (${messageParts.join(", ")})` : "";
         setToast({
-          message: `Análisis completado: ${result.success} exitosos, ${result.failed} fallidos`,
+          message: `Análisis completado: ${result.success} exitosos, ${result.failed} fallidos${statusMessage}`,
           type: result.failed === 0 ? ToastType.Success : ToastType.Info,
         });
       }, 500);
@@ -106,31 +127,6 @@ export default function Dashboard() {
       });
     } finally {
       setExtracting(false);
-    }
-  }
-
-  async function handleRetryFailed() {
-    setRetrying(true);
-    setToast({
-      message: "Reintentando análisis fallidos...",
-      type: ToastType.Info,
-    });
-
-    try {
-      const result = await api.extract.retryFailed();
-      setToast({
-        message: `Reintento completado: ${result.success} exitosos, ${result.failed} fallidos, ${result.skipped} omitidos`,
-        type: result.failed === 0 ? ToastType.Success : ToastType.Info,
-      });
-      await loadDashboardData();
-    } catch (error) {
-      console.error("Retry failed:", error);
-      setToast({
-        message: "Error al reintentar análisis fallidos",
-        type: ToastType.Error,
-      });
-    } finally {
-      setRetrying(false);
     }
   }
 
@@ -152,11 +148,8 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="header-actions">
-          <Button variant={ButtonVariant.Secondary} onClick={handleExtractFromDashboard} disabled={extracting || retrying}>
+          <Button variant={ButtonVariant.Secondary} onClick={handleExtractFromDashboard} disabled={extracting}>
             {extracting ? "Analizando..." : "Analizar Pendientes"}
-          </Button>
-          <Button variant={ButtonVariant.Outline} onClick={handleRetryFailed} disabled={extracting || retrying}>
-            {retrying ? "Reintentando..." : "Reintentar Fallidos"}
           </Button>
           <Button variant={ButtonVariant.Primary} onClick={() => setShowUpload(true)}>
             Importar CSV
@@ -214,6 +207,80 @@ export default function Dashboard() {
           onSuccess={() => {
             loadDashboardData();
             loadSellers();
+          }}
+          onUploadComplete={(uploadResult) => {
+            const estimatedTotal = Math.max(uploadResult.created + uploadResult.updated, 1);
+
+            if (estimatedTotal > 0) {
+              setExtracting(true);
+              setProgress({ current: 0, total: estimatedTotal });
+
+              const startProgressEstimate = (total: number) => {
+                if (progressIntervalRef.current) {
+                  clearInterval(progressIntervalRef.current);
+                }
+
+                progressIntervalRef.current = setInterval(() => {
+                  setProgress((prev) => {
+                    if (!prev) return prev;
+                    const increment = Math.max(1, Math.floor(prev.total / 20));
+                    const newCurrent = Math.min(prev.current + increment, prev.total * 0.95);
+                    return { ...prev, current: newCurrent };
+                  });
+                }, 500);
+              };
+
+              startProgressEstimate(estimatedTotal);
+
+              api.extract.extractPendingAndFailed()
+                .then((result) => {
+                  if (progressIntervalRef.current) {
+                    clearInterval(progressIntervalRef.current);
+                  }
+
+                  const actualTotal = result.total || estimatedTotal;
+                  setProgress({ current: actualTotal, total: actualTotal });
+
+                  setTimeout(() => {
+                    setProgress(null);
+                    const messageParts = [];
+                    if (result.pending > 0) {
+                      messageParts.push(`${result.pending} pendientes`);
+                    }
+                    if (result.retried > 0) {
+                      messageParts.push(`${result.retried} reintentos`);
+                    }
+                    const statusMessage = messageParts.length > 0 ? ` (${messageParts.join(", ")})` : "";
+                    const duplicatesMessage = uploadResult.duplicates > 0 ? `, ${uploadResult.duplicates} duplicados` : "";
+                    setToast({
+                      message: `Análisis completado: ${result.success} exitosos, ${result.failed} fallidos${duplicatesMessage}${statusMessage}`,
+                      type: result.failed === 0 ? ToastType.Success : ToastType.Info,
+                    });
+                    loadDashboardData();
+                    loadSellers();
+                  }, 500);
+                })
+                .catch((error) => {
+                  if (progressIntervalRef.current) {
+                    clearInterval(progressIntervalRef.current);
+                  }
+                  setProgress(null);
+                  setToast({
+                    message: "Error al iniciar el análisis",
+                    type: ToastType.Error,
+                  });
+                })
+                .finally(() => {
+                  setExtracting(false);
+                });
+            } else if (uploadResult.duplicates > 0) {
+              setToast({
+                message: `Análisis completado: 0 exitosos, 0 fallidos, ${uploadResult.duplicates} duplicados`,
+                type: ToastType.Success,
+              });
+              loadDashboardData();
+              loadSellers();
+            }
           }}
         />
       )}

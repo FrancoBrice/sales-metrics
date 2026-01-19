@@ -197,10 +197,10 @@ export const api = {
           conversionRate: number;
         }>;
         quadrants: {
-          highValue: Array<{ category: string; name: string; total: number; closed: number; avgVolume: number; conversionRate: number }>;
-          quickWins: Array<{ category: string; name: string; total: number; closed: number; avgVolume: number; conversionRate: number }>;
-          development: Array<{ category: string; name: string; total: number; closed: number; avgVolume: number; conversionRate: number }>;
-          lowPriority: Array<{ category: string; name: string; total: number; closed: number; avgVolume: number; conversionRate: number }>;
+          highValue: Array<{ category: "industry" | "painPoint"; name: string; total: number; closed: number; avgVolume: number; conversionRate: number }>;
+          quickWins: Array<{ category: "industry" | "painPoint"; name: string; total: number; closed: number; avgVolume: number; conversionRate: number }>;
+          development: Array<{ category: "industry" | "painPoint"; name: string; total: number; closed: number; avgVolume: number; conversionRate: number }>;
+          lowPriority: Array<{ category: "industry" | "painPoint"; name: string; total: number; closed: number; avgVolume: number; conversionRate: number }>;
         };
         thresholds: {
           volume: number;
@@ -264,6 +264,7 @@ export const api = {
   },
   extract: {
     extractAll: () => fetchApi<{ total: number; success: number; failed: number }>("/extract/bulk/all", { method: "POST" }),
+    extractPendingAndFailed: () => fetchApi<{ total: number; success: number; failed: number; pending: number; retried: number }>("/extract/bulk/pending-and-failed", { method: "POST" }),
     retryFailed: () => fetchApi<{ total: number; success: number; failed: number; skipped: number }>("/extract/bulk/retry-failed", { method: "POST" }),
   },
 };

@@ -32,14 +32,11 @@ model Extraction {
   id             String   @id @default(cuid())
   meetingId      String   @unique
   meeting        Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
-  resultJson     String
   model          String
-  promptVersion  String
-  schemaVersion  String
   status         String
-  rawModelOutput String?
   createdAt      DateTime @default(now())
   data           ExtractionData?
+  apiLogs        LlmApiLog[]
 }
 
 model ExtractionData {
@@ -64,4 +61,21 @@ model ExtractionData {
   volumeUnit       String?
   volumeIsPeak     Boolean  @default(false)
   createdAt        DateTime @default(now())
+}
+
+model LlmApiLog {
+  id          String   @id @default(cuid())
+  extractionId String
+  extraction  Extraction @relation(fields: [extractionId], references: [id], onDelete: Cascade)
+  provider    String
+  model       String
+  status      String
+  request     String?
+  response    String
+  error       String?
+  durationMs  Int?
+  promptTokens Int?
+  completionTokens Int?
+  totalTokens Int?
+  createdAt   DateTime @default(now())
 }

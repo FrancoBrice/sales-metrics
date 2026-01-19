@@ -6,11 +6,24 @@ export interface DeterministicHints {
   integrations?: Integrations[];
 }
 
+export interface LlmExtractionResult {
+  extraction: Extraction;
+  rawResponse: string;
+  metadata?: {
+    provider: string;
+    model: string;
+    durationMs?: number;
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+  };
+}
+
 export interface LlmClient {
   extractFromTranscript(
     transcript: string,
     hints?: DeterministicHints
-  ): Promise<Extraction>;
+  ): Promise<LlmExtractionResult>;
 }
 
 export const LLM_CLIENT = Symbol("LLM_CLIENT");

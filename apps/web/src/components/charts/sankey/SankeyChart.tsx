@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { ResponsiveContainer, Sankey, Tooltip } from "recharts";
 import { api } from "@/lib/api";
-import { LeadSourceLabels, PainPointsLabels, LeadSource, PainPoints } from "@vambe/shared";
+import { LeadSourceLabels, PainPointsLabels, SentimentLabels, LeadSource, PainPoints, Sentiment } from "@vambe/shared";
 import { sankeyColorList } from "@/constants/colors";
 import { SankeyNode, SankeyLink, SankeyHiddenNodes, useSankeyData } from "./shared";
 import { EmptyState } from "@/components/ui/Loading";
@@ -20,7 +20,7 @@ export function SankeyChart() {
   useEffect(() => {
     api.metrics.sankey()
       .then(setData)
-      .catch((err) => console.error("Failed to load sankey data", err))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
@@ -65,6 +65,7 @@ export function SankeyChart() {
     return (
       LeadSourceLabels[name as LeadSource] ||
       PainPointsLabels[name as PainPoints] ||
+      SentimentLabels[name as Sentiment] ||
       name
     );
   };
@@ -72,9 +73,9 @@ export function SankeyChart() {
   const nodesWithColors = processedData.nodes.map((node, i) => {
     if (node.name === "Cerrada") return { ...node, color: "#22c55e" };
     if (node.name === "Perdida") return { ...node, color: "#ef4444" };
-    if (node.name === "Positivo") return { ...node, color: "#22c55e" };
-    if (node.name === "Negativo") return { ...node, color: "#ef4444" };
-    if (node.name === "Neutro" || node.name === "Neutro/Desconocido") return { ...node, color: "#eab308" };
+    if (node.name === "POSITIVO") return { ...node, color: "#22c55e" };
+    if (node.name === "ESCEPTICO") return { ...node, color: "#ef4444" };
+    if (node.name === "NEUTRAL" || node.name === "Neutro" || node.name === "Neutro/Desconocido") return { ...node, color: "#eab308" };
     return { ...node, color: sankeyColorList[i % sankeyColorList.length] };
   });
 

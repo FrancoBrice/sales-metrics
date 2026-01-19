@@ -69,8 +69,8 @@ export default function LeadsPage() {
     try {
       const data = await api.customers.getSellers();
       setSellers(data);
-    } catch (error) {
-      console.error("Failed to load sellers:", error);
+    } catch {
+      setSellers([]);
     }
   }
 
@@ -83,8 +83,8 @@ export default function LeadsPage() {
         dateTo: filters.dateTo,
       });
       setData(response.leadsOverTime);
-    } catch (error) {
-      console.error("Failed to load leads data:", error);
+    } catch {
+      setData([]);
     } finally {
       setLoading(false);
     }

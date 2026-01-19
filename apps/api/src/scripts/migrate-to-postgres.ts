@@ -28,12 +28,8 @@ interface MeetingRow {
 interface ExtractionRow {
   id: string;
   meetingId: string;
-  resultJson: string;
   model: string;
-  promptVersion: string;
-  schemaVersion: string;
   status: string;
-  rawModelOutput: string | null;
   createdAt: string;
 }
 
@@ -75,12 +71,8 @@ async function migrate() {
             extractions: {
               create: extractions.map((ext) => ({
                 id: ext.id,
-                resultJson: ext.resultJson,
                 model: ext.model,
-                promptVersion: ext.promptVersion,
-                schemaVersion: ext.schemaVersion,
                 status: ext.status,
-                rawModelOutput: ext.rawModelOutput ?? null,
                 createdAt: new Date(ext.createdAt),
               })),
             },

@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import OpenAI from "openai";
 import { Extraction } from "@vambe/shared";
-import { LlmClient, DeterministicHints } from "./llmClient.interface";
+import { LlmClient, DeterministicHints, LlmExtractionResult } from "./llmClient.interface";
 import { ValidationService } from "../services/validation.service";
 import { buildExtractionPrompt } from "../prompt/promptBuilder";
 import { tryParseJson } from "../utils/jsonRepair";
@@ -27,7 +27,8 @@ export class OpenAiClient implements LlmClient {
   async extractFromTranscript(
     transcript: string,
     hints?: DeterministicHints
-  ): Promise<Extraction> {
+  ): Promise<LlmExtractionResult> {
+    const startTime = Date.now();
     try {
       const prompt = buildExtractionPrompt(transcript, hints);
 
@@ -38,21 +39,60 @@ export class OpenAiClient implements LlmClient {
       });
 
       const content = completion.choices[0]?.message?.content || "";
+      const durationMs = Date.now() - startTime;
+
+      const rawResponse = JSON.stringify({
+        content,
+        model: this.modelName,
+        usage: completion.usage ? {
+          promptTokens: completion.usage.prompt_tokens,
+          completionTokens: completion.usage.completion_tokens,
+          totalTokens: completion.usage.total_tokens,
+        } : null,
+        timestamp: new Date().toISOString(),
+      });
 
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        throw new Error("No valid JSON found in OpenAI API response");
+        throw new Error(`No valid JSON found in OpenAI API response. Raw response: ${content}`);
       }
 
       const parsed = tryParseJson<Partial<Extraction>>(jsonMatch[0]);
       if (!parsed) {
-        throw new Error("Failed to parse JSON from OpenAI API response");
+        throw new Error(`Failed to parse JSON from OpenAI API response. Raw JSON: ${jsonMatch[0]}`);
       }
 
-      return this.validationService.validateAndMerge(parsed, transcript);
+      const extraction = this.validationService.validateAndMerge(parsed, transcript);
+
+      return {
+        extraction,
+        rawResponse,
+        metadata: {
+          provider: "openai",
+          model: this.modelName,
+          durationMs,
+          promptTokens: completion.usage?.prompt_tokens,
+          completionTokens: completion.usage?.completion_tokens,
+          totalTokens: completion.usage?.total_tokens,
+        },
+      };
     } catch (error) {
+      const durationMs = Date.now() - startTime;
       this.logger.error(`OpenAI extraction failed: ${error}`);
-      throw new Error(`OpenAI extraction failed: ${error}`);
+      const errorResponse = JSON.stringify({
+        error: String(error),
+        model: this.modelName,
+        timestamp: new Date().toISOString(),
+      });
+      const errorWithMetadata = Object.assign(new Error(`OpenAI API extraction failed: ${error}`), {
+        rawResponse: errorResponse,
+        metadata: {
+          provider: "openai",
+          model: this.modelName,
+          durationMs,
+        },
+      });
+      throw errorWithMetadata;
     }
   }
 }

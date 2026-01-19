@@ -11,8 +11,8 @@ import { LLM_CLIENT, GeminiClient, OpenAiClient, ValidationService, ExtractionPa
     ExtractionParser,
     {
       provide: LLM_CLIENT,
-      //useClass: GeminiClient,
-      useClass: OpenAiClient,
+      useClass: GeminiClient,
+      //useClass: OpenAiClient,
     },
   ],
   exports: [ExtractService],

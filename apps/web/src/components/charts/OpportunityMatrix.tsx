@@ -49,8 +49,8 @@ export function OpportunityMatrix({ filters }: OpportunityMatrixProps) {
         dateTo: filters?.dateTo,
       });
       setData(result);
-    } catch (error) {
-      console.error("Failed to load opportunity matrix data", error);
+    } catch {
+      setData(null);
     } finally {
       setLoading(false);
     }

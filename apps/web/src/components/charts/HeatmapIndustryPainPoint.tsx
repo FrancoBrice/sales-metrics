@@ -39,8 +39,8 @@ export function HeatmapIndustryPainPoint({ filters }: HeatmapIndustryPainPointPr
         dateTo: filters?.dateTo,
       });
       setData(result);
-    } catch (error) {
-      console.error("Failed to load heatmap data", error);
+    } catch {
+      setData(null);
     } finally {
       setLoading(false);
     }

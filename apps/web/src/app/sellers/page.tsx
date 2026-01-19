@@ -32,8 +32,8 @@ export default function SellersMetricsPage() {
     try {
       const data = await api.customers.getSellers();
       setSellers(data);
-    } catch (error) {
-      console.error("Failed to load sellers:", error);
+    } catch {
+      setSellers([]);
     }
   }
 
@@ -120,8 +120,8 @@ export default function SellersMetricsPage() {
       });
 
       setSellerMetrics(metricsArray.sort((a, b) => b.conversionRate - a.conversionRate));
-    } catch (error) {
-      console.error("Failed to load seller metrics:", error);
+    } catch {
+      setSellerMetrics([]);
     } finally {
       setLoading(false);
     }

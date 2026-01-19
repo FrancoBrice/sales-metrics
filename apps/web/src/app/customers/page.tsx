@@ -31,8 +31,8 @@ export default function CustomersPage() {
     try {
       const data = await api.customers.getSellers();
       setSellers(data);
-    } catch (error) {
-      console.error("Failed to load sellers:", error);
+    } catch {
+      setSellers([]);
     }
   }
 
@@ -48,8 +48,8 @@ export default function CustomersPage() {
         setCustomers(response);
         setTotalPages(1);
       }
-    } catch (error) {
-      console.error("Failed to load customers:", error);
+    } catch {
+      setCustomers([]);
     } finally {
       setLoading(false);
     }

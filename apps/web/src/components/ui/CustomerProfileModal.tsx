@@ -73,8 +73,8 @@ export function CustomerProfileModal({ customerId, onClose }: CustomerProfileMod
     try {
       const data = await api.customers.getById(customerId);
       setCustomer(data);
-    } catch (error) {
-      console.error("Failed to load customer details", error);
+    } catch {
+      setCustomer(null);
     } finally {
       setLoading(false);
     }

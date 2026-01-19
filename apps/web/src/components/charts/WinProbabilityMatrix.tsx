@@ -54,8 +54,8 @@ export function WinProbabilityMatrix({ filters }: WinProbabilityMatrixProps) {
         dateTo: filters?.dateTo,
       });
       setData(result);
-    } catch (error) {
-      console.error("Failed to load win probability data", error);
+    } catch {
+      setData(null);
     } finally {
       setLoading(false);
     }

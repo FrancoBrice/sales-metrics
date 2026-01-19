@@ -36,4 +36,10 @@ export class ExtractController {
   async retryFailed() {
     return this.extractService.retryFailedExtractions();
   }
+
+  @Post("bulk/pending-and-failed")
+  @ApiOperation({ summary: "Extract all pending and retry failed extractions" })
+  async extractPendingAndFailed() {
+    return this.extractService.extractAllPendingAndFailed();
+  }
 }

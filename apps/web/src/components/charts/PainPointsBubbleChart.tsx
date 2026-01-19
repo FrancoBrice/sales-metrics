@@ -48,7 +48,7 @@ export function PainPointsBubbleChart() {
         const allPainPoints = new Set(chartData.map(d => d.painPoint));
         setSelectedPainPoints(allPainPoints);
       })
-      .catch((err) => console.error("Failed to load metrics", err))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
