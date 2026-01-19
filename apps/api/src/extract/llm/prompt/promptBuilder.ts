@@ -68,7 +68,35 @@ function buildHintsSection(hints?: DeterministicHints): string {
     return "";
   }
 
-  return `\n\nPre-extracted values (use these if they match the transcript, otherwise extract from transcript):\n${hintParts.join("\n")}\n`;
+  return `\n\n=== PRE-EXTRACTED VALUES ===
+These values were extracted using deterministic methods. Use them as-is if they match the transcript context, otherwise extract from the transcript:
+${hintParts.join("\n")}\n`;
+}
+
+function buildInstructionsSection(): string {
+  return `=== EXTRACTION INSTRUCTIONS ===
+
+1. ROLE: Act as an expert sales analyst specializing in B2B SaaS customer conversations.
+
+2. EXTRACTION GUIDELINES:
+   - Extract only information explicitly mentioned or clearly implied in the transcript
+   - Use null for fields with no clear evidence (never guess or infer)
+   - For arrays (jtbdPrimary, painPoints, integrations, etc.), include all relevant items found
+   - Return empty arrays [] when no items are found (not null)
+
+3. FIELD-SPECIFIC GUIDANCE:
+   - jtbdPrimary: Identify primary jobs-to-be-done (e.g., MULTIIDIOMA if mentions "múltiples idiomas" or "zonas horarias")
+   - painPoints: Extract all pain points mentioned (e.g., VOLUMEN_ALTO, CONSULTAS_REPETITIVAS, SOBRECARGA_EQUIPO)
+   - objections: Include concerns raised (e.g., CONFIDENCIALIDAD if privacy/security mentioned, COSTO if pricing concern)
+   - sentiment: Overall tone (POSITIVO, NEUTRAL, ESCEPTICO)
+   - urgency: Time sensitivity (BAJA, MEDIA, ALTA, INMEDIATA)
+   - riskLevel: Project risk assessment based on complexity and commitment level
+
+4. OUTPUT FORMAT:
+   - Return ONLY valid JSON matching the schema
+   - No explanatory text, comments, or markdown formatting
+   - Ensure all enum values match exactly (case-sensitive)
+   - Use null for optional single fields, [] for optional arrays`;
 }
 
 export function buildExtractionPrompt(
@@ -77,12 +105,18 @@ export function buildExtractionPrompt(
 ): string {
   const schemaSection = buildSchemaSection();
   const hintsSection = buildHintsSection(hints);
+  const instructionsSection = buildInstructionsSection();
 
-  return `Analyze the following sales meeting transcript and extract structured information. Return only valid JSON matching this schema:
+  return `You are an expert sales analyst. Extract structured information from the sales meeting transcript below.
 
-${schemaSection}${hintsSection}
-Transcript:
+${instructionsSection}
+
+=== OUTPUT SCHEMA ===
+${schemaSection}
+${hintsSection}
+=== TRANSCRIPT ===
 ${transcript}
 
-Extract and return only the JSON object, no additional text.`;
+=== OUTPUT ===
+Return only the JSON object matching the schema above. No additional text.`;
 }

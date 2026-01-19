@@ -348,6 +348,25 @@ All tests use mocks for external dependencies (Prisma, LLM clients) to ensure fa
 - Both attempts logged with full metadata (duration, tokens, errors)
 - Failed attempts preserved for debugging and analysis
 
+### Prompt Engineering Best Practices
+
+**Decision**: Follow industry-standard prompt engineering principles for reliable LLM extraction.
+
+**Implementation**:
+- **Role Definition**: Clear expert role assignment ("expert sales analyst")
+- **Structured Sections**: Delimited sections (===) for clear separation of instructions, schema, hints, and input
+- **Field-Specific Guidance**: Explicit examples for complex fields (multiidioma, confidencialidad, personalización)
+- **Positive Instructions**: Focus on what to do rather than what to avoid
+- **Edge Case Handling**: Clear guidance on null vs empty arrays, when to use each
+- **Output Format Specification**: Strict JSON-only output with no additional text
+- **Deterministic Hints Integration**: Clear instructions on how to use pre-extracted regex values
+
+**Benefits**:
+- **Higher Accuracy**: Specific guidance reduces ambiguity and improves extraction quality
+- **Consistency**: Structured format ensures consistent results across different transcripts
+- **Maintainability**: Well-organized prompt is easier to update and improve
+- **Debugging**: Clear sections make it easier to identify prompt-related issues
+
 ### Result Merging Strategy
 
 **Decision**: Deterministic results take priority over LLM results when both exist.
