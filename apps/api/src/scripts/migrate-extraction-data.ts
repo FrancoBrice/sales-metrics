@@ -72,7 +72,43 @@ async function migrateExtractionData() {
 
   for (const extraction of extractions) {
     try {
-      const parsed = JSON.parse(extraction.resultJson);
+      const apiLog = await prisma.llmApiLog.findFirst({
+        where: {
+          extractionId: extraction.id,
+          status: "SUCCESS",
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (!apiLog || !apiLog.response) {
+        failed++;
+        const errorMsg = `Extraction ${extraction.id}: No se encontró respuesta de API para migrar`;
+        errors.push(errorMsg);
+        console.warn(`  ⚠ Extraction ${extraction.id}: Sin datos de API para migrar`);
+        continue;
+      }
+
+      const responseData = JSON.parse(apiLog.response);
+      const content = responseData.content || responseData.text || "";
+
+      if (!content) {
+        failed++;
+        const errorMsg = `Extraction ${extraction.id}: Respuesta de API vacía`;
+        errors.push(errorMsg);
+        console.warn(`  ⚠ Extraction ${extraction.id}: Respuesta de API vacía`);
+        continue;
+      }
+
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        failed++;
+        const errorMsg = `Extraction ${extraction.id}: No se encontró JSON válido en la respuesta`;
+        errors.push(errorMsg);
+        console.warn(`  ⚠ Extraction ${extraction.id}: No se encontró JSON válido`);
+        continue;
+      }
+
+      const parsed = JSON.parse(jsonMatch[0]);
 
       if (parsed.volume?.unit === "SEMANA") {
         parsed.volume.unit = "SEMANAL";

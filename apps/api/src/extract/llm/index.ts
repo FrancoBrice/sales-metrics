@@ -1,4 +1,4 @@
-export { LlmClient, LLM_CLIENT, DeterministicHints } from "./clients";
+export { LlmClient, LLM_CLIENT, DeterministicHints, LlmExtractionResult } from "./clients";
 export { GeminiClient, OpenAiClient } from "./clients";
 export { ValidationService, ExtractionParser, mapExtractionDataToExtraction } from "./services";
 export { buildExtractionPrompt } from "./prompt";

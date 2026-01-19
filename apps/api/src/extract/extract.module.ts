@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ExtractController } from "./extract.controller";
 import { ExtractService } from "./extract.service";
-import { LLM_CLIENT, GeminiClient, OpenAiClient, ValidationService, ExtractionParser } from "./llm";
+import { GeminiClient, OpenAiClient, ValidationService, ExtractionParser } from "./llm";
 
 @Module({
   controllers: [ExtractController],
@@ -9,11 +9,8 @@ import { LLM_CLIENT, GeminiClient, OpenAiClient, ValidationService, ExtractionPa
     ExtractService,
     ValidationService,
     ExtractionParser,
-    {
-      provide: LLM_CLIENT,
-      useClass: GeminiClient,
-      //useClass: OpenAiClient,
-    },
+    GeminiClient,
+    OpenAiClient,
   ],
   exports: [ExtractService],
 })

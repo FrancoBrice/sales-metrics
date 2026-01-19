@@ -1,8 +1,8 @@
-import { Injectable, Inject, Logger } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-import { LLM_CLIENT, LlmClient } from "./llm";
+import { LlmExtractionResult, DeterministicHints } from "./llm";
 import { ExtractionStatus, LeadSource, Integrations, Volume, Extraction } from "@vambe/shared";
-import { ExtractionParser, mapExtractionDataToExtraction } from "./llm";
+import { ExtractionParser, mapExtractionDataToExtraction, GeminiClient, OpenAiClient } from "./llm";
 import { detectLeadSource, detectVolume, detectIntegrations } from "./deterministic";
 
 const MIN_CONFIDENCE_THRESHOLD = 0.7;
@@ -13,7 +13,8 @@ export class ExtractService {
 
   constructor(
     private readonly prisma: PrismaService,
-    @Inject(LLM_CLIENT) private readonly llmClient: LlmClient,
+    private readonly geminiClient: GeminiClient,
+    private readonly openAiClient: OpenAiClient,
     private readonly extractionParser: ExtractionParser
   ) { }
 
@@ -29,10 +30,31 @@ export class ExtractService {
 
     try {
       const deterministicResults = this.runDeterministicExtraction(meeting.transcript);
-      const llmResult = await this.llmClient.extractFromTranscript(
-        meeting.transcript,
-        deterministicResults
-      );
+
+      let llmResult: LlmExtractionResult;
+      let firstError: any = null;
+
+      try {
+        llmResult = await this.geminiClient.extractFromTranscript(
+          meeting.transcript,
+          deterministicResults
+        );
+      } catch (geminiError) {
+        firstError = geminiError;
+        this.logger.warn(`Gemini extraction failed for meeting ${meetingId}, trying OpenAI fallback: ${geminiError instanceof Error ? geminiError.message : String(geminiError)}`);
+
+        try {
+          llmResult = await this.openAiClient.extractFromTranscript(
+            meeting.transcript,
+            deterministicResults
+          );
+        } catch (openAiError) {
+          const errorMessage = `Both LLM providers failed. Gemini: ${firstError instanceof Error ? firstError.message : String(firstError)}. OpenAI: ${openAiError instanceof Error ? openAiError.message : String(openAiError)}`;
+          this.logger.error(`All LLM providers failed for meeting ${meetingId}: ${errorMessage}`);
+          throw openAiError;
+        }
+      }
+
       const extraction = this.mergeExtractionResults(deterministicResults, llmResult.extraction);
       const modelName = llmResult.metadata?.model || "unknown";
 
@@ -62,6 +84,24 @@ export class ExtractService {
           totalTokens: llmResult.metadata?.totalTokens,
         },
       });
+
+      if (firstError) {
+        await this.prisma.llmApiLog.create({
+          data: {
+            extractionId: saved.id,
+            provider: firstError?.metadata?.provider || "gemini",
+            model: firstError?.metadata?.model || "unknown",
+            status: ExtractionStatus.FAILED,
+            response: firstError?.rawResponse || JSON.stringify({
+              error: String(firstError),
+              model: firstError?.metadata?.model || "unknown",
+              timestamp: new Date().toISOString(),
+            }),
+            error: String(firstError),
+            durationMs: firstError?.metadata?.durationMs,
+          },
+        });
+      }
 
       await this.extractionParser.parseAndSave(saved.id, extraction);
 
