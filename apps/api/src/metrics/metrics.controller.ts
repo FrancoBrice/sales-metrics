@@ -93,5 +93,17 @@ export class MetricsController {
   async getSalesFunnelInsights(@Query() query: MetricsFilterDto) {
     return this.metricsService.getSalesFunnelInsights(query);
   }
+
+  @Get("funnel-analysis")
+  @ApiOperation({ summary: "Analyze funnel data quality and validity" })
+  async analyzeFunnelDataQuality(@Query() query: MetricsFilterDto) {
+    return this.metricsService.analyzeFunnelDataQuality(query);
+  }
+
+  @Get("closure-analysis")
+  @ApiOperation({ summary: "Get closure analysis by categories with statistical significance" })
+  async getClosureAnalysis(@Query() query: MetricsFilterDto) {
+    return this.metricsService.getClosureAnalysis(query);
+  }
 }
 

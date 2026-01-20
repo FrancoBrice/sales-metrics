@@ -13,6 +13,8 @@ import {
   VolumeFlowService,
   SellersService,
   SalesFunnelService,
+  FunnelAnalysisService,
+  ClosureAnalysisService,
 } from "./services";
 
 @Injectable()
@@ -29,7 +31,9 @@ export class MetricsService {
     private readonly winProbabilityService: WinProbabilityService,
     private readonly volumeFlowService: VolumeFlowService,
     private readonly sellersService: SellersService,
-    private readonly salesFunnelService: SalesFunnelService
+    private readonly salesFunnelService: SalesFunnelService,
+    private readonly funnelAnalysisService: FunnelAnalysisService,
+    private readonly closureAnalysisService: ClosureAnalysisService
   ) {}
 
   async getOverview(filter: MetricsFilterDto) {
@@ -86,5 +90,13 @@ export class MetricsService {
 
   async getSalesFunnelInsights(filter: MetricsFilterDto) {
     return this.salesFunnelService.getSalesFunnelInsights(filter);
+  }
+
+  async analyzeFunnelDataQuality(filter: MetricsFilterDto) {
+    return this.funnelAnalysisService.analyzeFunnelDataQuality(filter);
+  }
+
+  async getClosureAnalysis(filter: MetricsFilterDto) {
+    return this.closureAnalysisService.getClosureAnalysis(filter);
   }
 }

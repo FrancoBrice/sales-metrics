@@ -97,7 +97,8 @@ export default function Dashboard() {
         clearInterval(progressIntervalRef.current);
       }
 
-      setProgress({ current: result.total, total: result.total });
+      const processed = result.success + result.failed;
+      setProgress({ current: processed, total: result.total });
 
       setTimeout(() => {
         setProgress(null);
@@ -109,8 +110,18 @@ export default function Dashboard() {
           messageParts.push(`${result.retried} reintentos`);
         }
         const statusMessage = messageParts.length > 0 ? ` (${messageParts.join(", ")})` : "";
+
+        let toastMessage = `Análisis completado: ${result.success} exitosos`;
+        if (result.failed > 0) {
+          toastMessage += `, ${result.failed} fallidos`;
+          if (result.failed === result.total - result.success) {
+            toastMessage += " (posible falta de cuota en la API)";
+          }
+        }
+        toastMessage += statusMessage;
+
         setToast({
-          message: `Análisis completado: ${result.success} exitosos, ${result.failed} fallidos${statusMessage}`,
+          message: toastMessage,
           type: result.failed === 0 ? ToastType.Success : ToastType.Info,
         });
       }, 500);

@@ -11,3 +11,5 @@ export { WinProbabilityService } from "./win-probability.service";
 export { VolumeFlowService } from "./volume-flow.service";
 export { SellersService } from "./sellers.service";
 export { SalesFunnelService } from "./sales-funnel.service";
+export { FunnelAnalysisService } from "./funnel-analysis.service";
+export { ClosureAnalysisService } from "./closure-analysis.service";

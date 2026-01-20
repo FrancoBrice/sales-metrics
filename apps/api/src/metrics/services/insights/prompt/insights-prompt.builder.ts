@@ -4,6 +4,7 @@ export function buildInsightsPrompt(data: InsightsData): string {
   const stagesSection = buildStagesSection(data.stages);
   const breakdownSection = buildBreakdownSection(data.breakdown);
   const trendsSection = data.trends ? buildTrendsSection(data.trends.conversionTrend) : "";
+  const statisticalSection = data.statisticalAnalysis ? buildStatisticalSection(data.statisticalAnalysis, data.overallMetrics) : "";
 
   return `Eres un analista de ventas experto especializado en análisis de embudos de ventas B2B SaaS.
 Analiza los siguientes datos del embudo de ventas y genera insights accionables en español.
@@ -15,6 +16,8 @@ ${stagesSection}
 ${breakdownSection}
 
 ${trendsSection}
+
+${statisticalSection}
 
 === INSTRUCCIONES ===
 
@@ -118,4 +121,54 @@ function buildTrendsSection(trends: Array<{ period: string; conversionRate: numb
 ${trendLines}
 
 Tendencia: ${isImproving ? "Mejorando" : "Estable/Decreciendo"}`;
+}
+
+function buildStatisticalSection(
+  analysis: NonNullable<InsightsData["statisticalAnalysis"]>,
+  overall?: InsightsData["overallMetrics"]
+): string {
+  const overallRate = overall?.conversionRate || 0;
+
+  const topPerformersText = analysis.topPerformers.length > 0
+    ? analysis.topPerformers
+        .map((p) => `  - ${p.category}: ${p.conversionRate.toFixed(1)}% conversión (${p.closed}/${p.total}), +${(p.conversionRate - overallRate).toFixed(1)}% vs promedio`)
+        .join("\n")
+    : "  - Sin datos";
+
+  const underperformersText = analysis.underperformers.length > 0
+    ? analysis.underperformers
+        .map((u) => `  - ${u.category}: ${u.conversionRate.toFixed(1)}% conversión (${u.closed}/${u.total}), ${(u.conversionRate - overallRate).toFixed(1)}% vs promedio`)
+        .join("\n")
+    : "  - Sin datos";
+
+  const opportunitiesText = analysis.highVolumeOpportunities.length > 0
+    ? analysis.highVolumeOpportunities
+        .map((o) => `  - ${o.category}: Volumen ${o.volume}, ${o.conversionRate.toFixed(1)}% conversión (${o.total} leads), potencial de mejora`)
+        .join("\n")
+    : "  - Sin datos";
+
+  const significantText = analysis.significantFindings.length > 0
+    ? analysis.significantFindings
+        .slice(0, 5)
+        .map((s) => `  - ${s.category} (${s.dimension}): ${s.significance} - ${s.reasoning}`)
+        .join("\n")
+    : "  - Sin datos";
+
+  return `=== ANÁLISIS ESTADÍSTICO VERIFICADO ===
+
+Tasa de conversión promedio: ${overallRate.toFixed(1)}%
+
+Top Performers (estadísticamente significativos):
+${topPerformersText}
+
+Underperformers (necesitan atención):
+${underperformersText}
+
+Oportunidades de Alto Volumen:
+${opportunitiesText}
+
+Hallazgos Estadísticamente Significativos:
+${significantText}
+
+IMPORTANTE: Prioriza estos hallazgos en tus insights ya que están respaldados por análisis estadístico.`;
 }

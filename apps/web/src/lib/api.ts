@@ -355,7 +355,34 @@ export const api = {
         bottlenecks: string[];
         opportunities: string[];
         recommendations: string[];
+        dataQuality?: {
+          topPerformers: Array<{ category: string; total: number; closed: number; conversionRate: number }>;
+          underperformers: Array<{ category: string; total: number; closed: number; conversionRate: number }>;
+          significantFindings: Array<{ category: string; dimension: string; significance: string; reasoning: string }>;
+        };
       }>(`/metrics/sales-funnel-enhanced/insights${query ? `?${query}` : ""}`);
+    },
+    closureAnalysis: (filters?: { seller?: string; dateFrom?: string; dateTo?: string }) => {
+      const params = new URLSearchParams();
+      if (filters?.seller) params.set("seller", filters.seller);
+      if (filters?.dateFrom) params.set("dateFrom", filters.dateFrom);
+      if (filters?.dateTo) params.set("dateTo", filters.dateTo);
+
+      const query = params.toString();
+      return fetchApi<{
+        byLeadSource: Array<{ category: string; total: number; closed: number; conversionRate: number; confidence: number; volume: number }>;
+        byIndustry: Array<{ category: string; total: number; closed: number; conversionRate: number; confidence: number; volume: number }>;
+        byJTBD: Array<{ category: string; total: number; closed: number; conversionRate: number; confidence: number; volume: number }>;
+        byPainPoint: Array<{ category: string; total: number; closed: number; conversionRate: number; confidence: number; volume: number }>;
+        bySeller: Array<{ category: string; total: number; closed: number; conversionRate: number; confidence: number; volume: number }>;
+        overall: { total: number; closed: number; conversionRate: number };
+        insights: {
+          topPerformers: Array<{ category: string; total: number; closed: number; conversionRate: number; confidence: number; volume: number }>;
+          underperformers: Array<{ category: string; total: number; closed: number; conversionRate: number; confidence: number; volume: number }>;
+          highVolumeOpportunities: Array<{ category: string; total: number; closed: number; conversionRate: number; confidence: number; volume: number }>;
+          statisticalSignificance: Array<{ category: string; dimension: string; significance: "high" | "medium" | "low"; reasoning: string }>;
+        };
+      }>(`/metrics/closure-analysis${query ? `?${query}` : ""}`);
     },
   },
   ingest: {

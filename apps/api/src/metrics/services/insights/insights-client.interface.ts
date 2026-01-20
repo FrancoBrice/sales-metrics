@@ -15,6 +15,17 @@ export interface InsightsData {
   trends?: {
     conversionTrend: Array<{ period: string; conversionRate: number }>;
   };
+  statisticalAnalysis?: {
+    topPerformers: Array<{ category: string; conversionRate: number; total: number; closed: number }>;
+    underperformers: Array<{ category: string; conversionRate: number; total: number; closed: number }>;
+    highVolumeOpportunities: Array<{ category: string; volume: number; conversionRate: number; total: number }>;
+    significantFindings: Array<{ category: string; dimension: string; significance: string; reasoning: string }>;
+  };
+  overallMetrics?: {
+    total: number;
+    closed: number;
+    conversionRate: number;
+  };
 }
 
 export interface InsightsResult {

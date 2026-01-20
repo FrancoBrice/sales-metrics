@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { LlmExtractionResult } from "./llm";
 import { ExtractionStatus, LeadSource, Integrations, Volume, Extraction } from "@vambe/shared";
-import { ExtractionParser, GeminiClient, mapExtractionDataToExtraction } from "./llm";
+import { ExtractionParser, DeepSeekClient, mapExtractionDataToExtraction } from "./llm";
 import { detectLeadSource, detectVolume, detectIntegrations } from "./deterministic";
 import { processInBatches } from "../common/helpers/batching.helper";
 import { CONCURRENCY_LIMIT } from "../common/constants";
@@ -15,7 +15,7 @@ export class ExtractService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly geminiClient: GeminiClient,
+    private readonly deepSeekClient: DeepSeekClient,
     private readonly extractionParser: ExtractionParser
   ) { }
 
@@ -32,13 +32,14 @@ export class ExtractService {
     try {
       const deterministicResults = this.runDeterministicExtraction(meeting.transcript);
 
-      const llmResult = await this.geminiClient.extractFromTranscript(
+      const llmResult = await this.deepSeekClient.extractFromTranscript(
         meeting.transcript,
         deterministicResults
       );
 
       const extraction = this.mergeExtractionResults(deterministicResults, llmResult.extraction);
       const modelName = llmResult.metadata?.model || "unknown";
+      const rawResponse = llmResult.rawResponse;
 
       const saved = await this.prisma.extraction.upsert({
         where: { meetingId: meeting.id },
@@ -59,7 +60,7 @@ export class ExtractService {
           provider: llmResult.metadata?.provider || "unknown",
           model: modelName,
           status: ExtractionStatus.SUCCESS,
-          response: llmResult.rawResponse,
+          response: rawResponse,
           durationMs: llmResult.metadata?.durationMs,
           promptTokens: llmResult.metadata?.promptTokens,
           completionTokens: llmResult.metadata?.completionTokens,
@@ -79,7 +80,7 @@ export class ExtractService {
       const errorMessage = error instanceof Error ? error.message : String(error);
       this.logger.error(`Extraction failed for meeting ${meetingId}: ${errorMessage}`, error instanceof Error ? error.stack : undefined);
 
-      const errorWithMetadata = error as { metadata?: { model?: string; provider?: string; durationMs?: number }; rawResponse?: string };
+      const errorWithMetadata = error as { metadata?: { model?: string; provider?: string; durationMs?: number; promptTokens?: number; completionTokens?: number; totalTokens?: number }; rawResponse?: string };
       const modelName = errorWithMetadata?.metadata?.model || "unknown";
       const rawResponse = errorWithMetadata?.rawResponse || JSON.stringify({
         error: String(error),
@@ -100,17 +101,29 @@ export class ExtractService {
         },
       });
 
-      await this.prisma.llmApiLog.create({
-        data: {
+      const existingLog = await this.prisma.llmApiLog.findFirst({
+        where: {
           extractionId: saved.id,
-          provider: errorWithMetadata?.metadata?.provider || "unknown",
-          model: modelName,
-          status: ExtractionStatus.FAILED,
-          response: rawResponse,
-          error: String(error),
-          durationMs: errorWithMetadata?.metadata?.durationMs,
         },
+        orderBy: { createdAt: "desc" },
       });
+
+      if (!existingLog || existingLog.response !== rawResponse) {
+        await this.prisma.llmApiLog.create({
+          data: {
+            extractionId: saved.id,
+            provider: errorWithMetadata?.metadata?.provider || "unknown",
+            model: modelName,
+            status: ExtractionStatus.FAILED,
+            response: rawResponse,
+            error: String(error),
+            durationMs: errorWithMetadata?.metadata?.durationMs,
+            promptTokens: errorWithMetadata?.metadata?.promptTokens,
+            completionTokens: errorWithMetadata?.metadata?.completionTokens,
+            totalTokens: errorWithMetadata?.metadata?.totalTokens,
+          },
+        });
+      }
 
       return {
         id: saved.id,

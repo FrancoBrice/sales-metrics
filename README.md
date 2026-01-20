@@ -424,7 +424,7 @@ import { LeadSource, ExtractionSchema, LeadSourceLabels } from "@vambe/shared";
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `DATABASE_URL` | PostgreSQL connection string | `postgresql://vambe:vambe_secret@localhost:5433/sales_metrics` |
-| `GEMINI_API_KEY` | Google Gemini API key (Get from [Google AI Studio](https://aistudio.google.com/)) | - |
+| `GEMINI_API_KEY` | Google Gemini API key (Get from [Google AI Studio](https://aistudio.google.com/) or [Google Cloud Console](https://console.cloud.google.com/)) | - |
 | `API_PORT` | API server port | `3001` |
 | `NEXT_PUBLIC_API_URL` | API URL for frontend | `http://localhost:3001` |
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { SalesFunnelChart } from "@/components/charts/SalesFunnelChart";
+import { ClosureAnalysisChart } from "@/components/charts/ClosureAnalysisChart";
 import { Filters } from "@/components/features/Filters";
 import { api } from "@/lib/api";
 
@@ -26,10 +26,10 @@ export default function SalesFunnelPage() {
     <div className="container">
       <div style={{ marginBottom: "2rem" }}>
         <h1 style={{ fontSize: "2rem", fontWeight: 700, marginBottom: "0.5rem" }}>
-          Embudo de Ventas Avanzado
+          Análisis de Cierres por Categoría
         </h1>
         <p style={{ color: "var(--color-text-muted)", fontSize: "1rem" }}>
-          Análisis multidimensional del proceso comercial con insights automáticos
+          Análisis estadístico de cierres por fuente de lead, industria, JTBD, pain points y vendedores
         </p>
       </div>
 
@@ -50,7 +50,7 @@ export default function SalesFunnelPage() {
         variant="dashboard"
       />
 
-      <SalesFunnelChart filters={filters} />
+      <ClosureAnalysisChart filters={filters} />
     </div>
   );
 }

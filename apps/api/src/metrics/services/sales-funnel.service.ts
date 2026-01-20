@@ -5,12 +5,14 @@ import { CustomerWithRelations } from "../../common/types";
 import { BaseMetricsService } from "./base-metrics.service";
 import { UNKNOWN_VALUE } from "../../common/constants";
 import { InsightsService } from "./insights";
+import { ClosureAnalysisService, CategoryStats } from "./closure-analysis.service";
 
 @Injectable()
 export class SalesFunnelService extends BaseMetricsService {
   constructor(
     protected readonly prisma: PrismaService,
-    private readonly insightsService: InsightsService
+    private readonly insightsService: InsightsService,
+    private readonly closureAnalysisService: ClosureAnalysisService
   ) {
     super(prisma);
   }
@@ -471,12 +473,45 @@ export class SalesFunnelService extends BaseMetricsService {
       },
     };
 
-    const insights = await this.insightsService.generateInsights(insightsData, true);
+    const closureAnalysis = await this.closureAnalysisService.getClosureAnalysis(filter);
+
+    const enhancedInsightsData = {
+      ...insightsData,
+      statisticalAnalysis: {
+        topPerformers: closureAnalysis.insights.topPerformers.map((p) => ({
+          category: p.category,
+          conversionRate: p.conversionRate,
+          total: p.total,
+          closed: p.closed,
+        })),
+        underperformers: closureAnalysis.insights.underperformers.map((u) => ({
+          category: u.category,
+          conversionRate: u.conversionRate,
+          total: u.total,
+          closed: u.closed,
+        })),
+        highVolumeOpportunities: closureAnalysis.insights.highVolumeOpportunities.map((o) => ({
+          category: o.category,
+          volume: o.volume,
+          conversionRate: o.conversionRate,
+          total: o.total,
+        })),
+        significantFindings: closureAnalysis.insights.statisticalSignificance,
+      },
+      overallMetrics: closureAnalysis.overall,
+    };
+
+    const insights = await this.insightsService.generateInsights(enhancedInsightsData, true);
 
     return {
       bottlenecks: insights.bottlenecks,
       opportunities: insights.opportunities,
       recommendations: insights.recommendations,
+      dataQuality: {
+        topPerformers: closureAnalysis.insights.topPerformers as CategoryStats[],
+        underperformers: closureAnalysis.insights.underperformers as CategoryStats[],
+        significantFindings: closureAnalysis.insights.statisticalSignificance,
+      },
     };
   }
 }

@@ -8,20 +8,23 @@ import { buildExtractionPrompt } from "../prompt/promptBuilder";
 import { tryParseJson } from "../utils/jsonRepair";
 
 @Injectable()
-export class OpenAiClient implements LlmClient {
-  private readonly logger = new Logger(OpenAiClient.name);
+export class DeepSeekClient implements LlmClient {
+  private readonly logger = new Logger(DeepSeekClient.name);
   private readonly openai: OpenAI;
-  private readonly modelName = "gpt-4o-mini";
+  private readonly modelName = "deepseek-chat";
 
   constructor(
     private readonly configService: ConfigService,
     private readonly validationService: ValidationService
   ) {
-    const apiKey = this.configService.get<string>("OPENAI_API_KEY");
+    const apiKey = this.configService.get<string>("DEEPSEEK_API_KEY");
     if (!apiKey) {
-      throw new Error("OPENAI_API_KEY is required. Please configure it in the environment variables.");
+      throw new Error("DEEPSEEK_API_KEY is required. Please configure it in the environment variables.");
     }
-    this.openai = new OpenAI({ apiKey });
+    this.openai = new OpenAI({
+      apiKey,
+      baseURL: "https://api.deepseek.com",
+    });
   }
 
   async extractFromTranscript(
@@ -29,12 +32,15 @@ export class OpenAiClient implements LlmClient {
     hints?: DeterministicHints
   ): Promise<LlmExtractionResult> {
     const startTime = Date.now();
+    let rawResponse: string | undefined;
     try {
       const prompt = buildExtractionPrompt(transcript, hints);
 
       const completionPromise = this.openai.chat.completions.create({
         messages: [{ role: "user", content: prompt }],
         model: this.modelName,
+        temperature: 0.2,
+        max_tokens: 4096,
       });
 
       const timeoutPromise = new Promise<never>((_, reject) =>
@@ -46,7 +52,7 @@ export class OpenAiClient implements LlmClient {
       const content = completion.choices[0]?.message?.content || "";
       const durationMs = Date.now() - startTime;
 
-      const rawResponse = JSON.stringify({
+      rawResponse = JSON.stringify({
         content,
         model: this.modelName,
         usage: completion.usage ? {
@@ -59,10 +65,10 @@ export class OpenAiClient implements LlmClient {
 
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        const errorWithMetadata = Object.assign(new Error(`No valid JSON found in OpenAI API response. Raw response: ${content}`), {
+        const errorWithMetadata = Object.assign(new Error(`No valid JSON found in DeepSeek API response. Raw response: ${content}`), {
           rawResponse,
           metadata: {
-            provider: "openai",
+            provider: "deepseek",
             model: this.modelName,
             durationMs,
             promptTokens: completion.usage?.prompt_tokens,
@@ -75,10 +81,10 @@ export class OpenAiClient implements LlmClient {
 
       const parsed = tryParseJson<Partial<Extraction>>(jsonMatch[0]);
       if (!parsed) {
-        const errorWithMetadata = Object.assign(new Error(`Failed to parse JSON from OpenAI API response. Raw JSON: ${jsonMatch[0]}`), {
+        const errorWithMetadata = Object.assign(new Error(`Failed to parse JSON from DeepSeek API response. Raw JSON: ${jsonMatch[0]}`), {
           rawResponse,
           metadata: {
-            provider: "openai",
+            provider: "deepseek",
             model: this.modelName,
             durationMs,
             promptTokens: completion.usage?.prompt_tokens,
@@ -96,7 +102,7 @@ export class OpenAiClient implements LlmClient {
           extraction,
           rawResponse,
           metadata: {
-            provider: "openai",
+            provider: "deepseek",
             model: this.modelName,
             durationMs,
             promptTokens: completion.usage?.prompt_tokens,
@@ -108,7 +114,7 @@ export class OpenAiClient implements LlmClient {
         const errorWithMetadata = Object.assign(new Error(`Validation failed: ${validationError}`), {
           rawResponse,
           metadata: {
-            provider: "openai",
+            provider: "deepseek",
             model: this.modelName,
             durationMs,
             promptTokens: completion.usage?.prompt_tokens,
@@ -120,7 +126,7 @@ export class OpenAiClient implements LlmClient {
       }
     } catch (error) {
       const durationMs = Date.now() - startTime;
-      this.logger.error(`OpenAI extraction failed: ${error}`);
+      this.logger.error(`DeepSeek extraction failed: ${error}`);
 
       const errorObj = error as any;
       if (errorObj.rawResponse && errorObj.metadata) {
@@ -130,22 +136,23 @@ export class OpenAiClient implements LlmClient {
       const isQuotaError = errorObj?.code === "insufficient_quota" ||
                           errorObj?.type === "insufficient_quota" ||
                           String(error).includes("insufficient_quota") ||
-                          String(error).includes("quota");
+                          String(error).includes("quota") ||
+                          errorObj?.status === 429;
 
       if (isQuotaError) {
-        this.logger.error(`OpenAI quota exhausted. Please check your billing and quota limits.`);
+        this.logger.error(`DeepSeek quota exhausted or rate limited. Please check your billing and quota limits.`);
       }
 
-      const errorResponse = JSON.stringify({
+      const errorResponse = rawResponse || JSON.stringify({
         error: String(error),
         model: this.modelName,
         timestamp: new Date().toISOString(),
         quotaError: isQuotaError,
       });
-      const errorWithMetadata = Object.assign(new Error(`OpenAI API extraction failed: ${error}`), {
+      const errorWithMetadata = Object.assign(new Error(`DeepSeek API extraction failed: ${error}`), {
         rawResponse: errorResponse,
         metadata: {
-          provider: "openai",
+          provider: "deepseek",
           model: this.modelName,
           durationMs,
         },

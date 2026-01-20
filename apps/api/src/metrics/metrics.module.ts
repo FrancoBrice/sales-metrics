@@ -19,6 +19,8 @@ import {
   VolumeFlowService,
   SellersService,
   SalesFunnelService,
+  FunnelAnalysisService,
+  ClosureAnalysisService,
 } from "./services";
 
 @Module({
@@ -40,6 +42,8 @@ import {
     VolumeFlowService,
     SellersService,
     SalesFunnelService,
+    FunnelAnalysisService,
+    ClosureAnalysisService,
   ],
 })
 export class MetricsModule { }

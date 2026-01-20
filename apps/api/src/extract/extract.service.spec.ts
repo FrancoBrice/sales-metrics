@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ExtractService } from "./extract.service";
 import { PrismaService } from "../prisma/prisma.service";
-import { GeminiClient } from "./llm/clients/geminiClient";
+import { DeepSeekClient } from "./llm/clients/deepseekClient";
 import { ExtractionParser } from "./llm/services/extraction.parser";
 import { ExtractionStatus, LeadSource, VolumeUnit, Industry, PainPoints } from "@vambe/shared";
 import { LlmExtractionResult } from "./llm";
@@ -9,7 +9,7 @@ import { LlmExtractionResult } from "./llm";
 describe("ExtractService", () => {
   let extractService: ExtractService;
   let prismaService: any;
-  let geminiClient: any;
+  let deepSeekClient: any;
   let extractionParser: any;
 
   const mockMeeting = {
@@ -24,7 +24,7 @@ describe("ExtractService", () => {
   const mockExtraction = {
     id: "extraction-1",
     meetingId: "meeting-1",
-    model: "gemini-flash-latest",
+    model: "deepseek-chat",
     status: ExtractionStatus.SUCCESS,
     createdAt: new Date(),
   };
@@ -49,8 +49,8 @@ describe("ExtractService", () => {
     },
     rawResponse: JSON.stringify({ content: "{}" }),
     metadata: {
-      provider: "gemini",
-      model: "gemini-flash-latest",
+      provider: "deepseek",
+      model: "deepseek-chat",
       durationMs: 1500,
       promptTokens: 100,
       completionTokens: 200,
@@ -71,7 +71,7 @@ describe("ExtractService", () => {
       },
     };
 
-    geminiClient = {
+    deepSeekClient = {
       extractFromTranscript: vi.fn(),
     };
 
@@ -82,7 +82,7 @@ describe("ExtractService", () => {
 
     extractService = new ExtractService(
       prismaService,
-      geminiClient,
+      deepSeekClient,
       extractionParser
     );
   });
@@ -100,9 +100,9 @@ describe("ExtractService", () => {
       });
     });
 
-    it("should successfully extract using Gemini on first attempt", async () => {
+    it("should successfully extract using DeepSeek on first attempt", async () => {
       prismaService.meeting.findUnique.mockResolvedValue(mockMeeting);
-      geminiClient.extractFromTranscript.mockResolvedValue(mockLlmResult);
+      deepSeekClient.extractFromTranscript.mockResolvedValue(mockLlmResult);
       prismaService.extraction.upsert.mockResolvedValue(mockExtraction);
       prismaService.llmApiLog.create.mockResolvedValue({});
       extractionParser.parseAndSave.mockResolvedValue(undefined);
@@ -112,7 +112,7 @@ describe("ExtractService", () => {
       expect(result).toBeDefined();
       expect(result?.status).toBe(ExtractionStatus.SUCCESS);
       expect(result?.meetingId).toBe("meeting-1");
-      expect(geminiClient.extractFromTranscript).toHaveBeenCalledWith(
+      expect(deepSeekClient.extractFromTranscript).toHaveBeenCalledWith(
         mockMeeting.transcript,
         expect.objectContaining({
           leadSource: expect.anything(),
@@ -128,21 +128,21 @@ describe("ExtractService", () => {
       );
     });
 
-    it("should fail when Gemini fails", async () => {
-      const geminiError = Object.assign(
-        new Error("Gemini API error"),
+    it("should fail when DeepSeek fails", async () => {
+      const deepSeekError = Object.assign(
+        new Error("DeepSeek API error"),
         {
-          rawResponse: JSON.stringify({ error: "Gemini API error" }),
+          rawResponse: JSON.stringify({ error: "DeepSeek API error" }),
           metadata: {
-            provider: "gemini",
-            model: "gemini-flash-latest",
+            provider: "deepseek",
+            model: "deepseek-chat",
             durationMs: 500,
           },
         }
       );
 
       prismaService.meeting.findUnique.mockResolvedValue(mockMeeting);
-      geminiClient.extractFromTranscript.mockRejectedValue(geminiError);
+      deepSeekClient.extractFromTranscript.mockRejectedValue(deepSeekError);
       prismaService.extraction.upsert.mockResolvedValue({
         ...mockExtraction,
         status: ExtractionStatus.FAILED,
@@ -155,7 +155,7 @@ describe("ExtractService", () => {
       expect(result?.status).toBe(ExtractionStatus.FAILED);
       expect(result?.extraction).toBeNull();
       expect(result?.error).toBeDefined();
-      expect(geminiClient.extractFromTranscript).toHaveBeenCalled();
+      expect(deepSeekClient.extractFromTranscript).toHaveBeenCalled();
       expect(prismaService.llmApiLog.create).toHaveBeenCalledTimes(1);
       expect(extractionParser.parseAndSave).not.toHaveBeenCalled();
     });
@@ -169,7 +169,7 @@ describe("ExtractService", () => {
         transcript: transcriptWithVolume,
       });
 
-      geminiClient.extractFromTranscript.mockResolvedValue(mockLlmResult);
+      deepSeekClient.extractFromTranscript.mockResolvedValue(mockLlmResult);
       prismaService.extraction.upsert.mockResolvedValue(mockExtraction);
       prismaService.llmApiLog.create.mockResolvedValue({});
       extractionParser.parseAndSave.mockResolvedValue(undefined);
@@ -197,8 +197,8 @@ describe("ExtractService", () => {
         return mockMeeting;
       });
 
-      geminiClient.extractFromTranscript.mockImplementation(async () => {
-        callOrder.push("2. gemini extractFromTranscript");
+      deepSeekClient.extractFromTranscript.mockImplementation(async () => {
+        callOrder.push("2. deepSeek extractFromTranscript");
         return mockLlmResult;
       });
 
@@ -221,7 +221,7 @@ describe("ExtractService", () => {
 
       expect(callOrder).toEqual([
         "1. findUnique meeting",
-        "2. gemini extractFromTranscript",
+        "2. deepSeek extractFromTranscript",
         "3. extraction upsert",
         "4. llmApiLog create",
         "5. parseAndSave",
@@ -237,7 +237,7 @@ describe("ExtractService", () => {
         transcript: conferenceTranscript,
       });
 
-      geminiClient.extractFromTranscript.mockResolvedValue(mockLlmResult);
+      deepSeekClient.extractFromTranscript.mockResolvedValue(mockLlmResult);
       prismaService.extraction.upsert.mockResolvedValue(mockExtraction);
       prismaService.llmApiLog.create.mockResolvedValue({});
       extractionParser.parseAndSave.mockResolvedValue(undefined);
@@ -260,7 +260,7 @@ describe("ExtractService", () => {
         transcript: volumeTranscript,
       });
 
-      geminiClient.extractFromTranscript.mockResolvedValue(mockLlmResult);
+      deepSeekClient.extractFromTranscript.mockResolvedValue(mockLlmResult);
       prismaService.extraction.upsert.mockResolvedValue(mockExtraction);
       prismaService.llmApiLog.create.mockResolvedValue({});
       extractionParser.parseAndSave.mockResolvedValue(undefined);
@@ -294,7 +294,7 @@ describe("ExtractService", () => {
         transcript: transcriptWithConference,
       });
 
-      geminiClient.extractFromTranscript.mockResolvedValue(llmResultWithLeadSource);
+      deepSeekClient.extractFromTranscript.mockResolvedValue(llmResultWithLeadSource);
       prismaService.extraction.upsert.mockResolvedValue(mockExtraction);
       prismaService.llmApiLog.create.mockResolvedValue({});
       extractionParser.parseAndSave.mockResolvedValue(undefined);

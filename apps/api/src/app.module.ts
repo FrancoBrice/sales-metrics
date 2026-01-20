@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
 import { APP_GUARD } from "@nestjs/core";
 import { PrismaModule } from "./prisma/prisma.module";
+import { CommonModule } from "./common/common.module";
 import { IngestModule } from "./ingest/ingest.module";
 import { ExtractModule } from "./extract/extract.module";
 import { CustomersModule } from "./customers/customers.module";
@@ -17,6 +18,7 @@ import { MetricsModule } from "./metrics/metrics.module";
         limit: 100,
       },
     ]),
+    CommonModule,
     PrismaModule,
     IngestModule,
     ExtractModule,
