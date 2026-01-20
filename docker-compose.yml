@@ -6,7 +6,8 @@ services:
     environment:
       POSTGRES_USER: vambe
       POSTGRES_PASSWORD: vambe_secret
-      POSTGRES_DB: sales_metrics
+      #POSTGRES_DB: sales_metrics
+      POSTGRES_DB: sales_test
     ports:
       - "5433:5432"
     volumes:
