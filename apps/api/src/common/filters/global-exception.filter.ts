@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  NotFoundException,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
 
@@ -27,8 +28,14 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         ? exceptionResponse
         : (exceptionResponse as { message?: string }).message || message;
     } else if (exception instanceof Error) {
-      message = exception.message;
-      this.logger.error(`Unhandled exception: ${exception.message}`, exception.stack);
+      if (exception.message.includes("not found")) {
+        status = HttpStatus.NOT_FOUND;
+        message = exception.message;
+        this.logger.warn(`Not found: ${exception.message}`);
+      } else {
+        message = exception.message;
+        this.logger.error(`Unhandled exception: ${exception.message}`, exception.stack);
+      }
     }
 
     response.status(status).json({

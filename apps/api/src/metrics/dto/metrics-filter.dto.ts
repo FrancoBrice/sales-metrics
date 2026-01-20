@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from "class-validator";
+import { IsOptional, IsString, IsDateString, ValidateIf } from "class-validator";
 import { ApiPropertyOptional } from "@nestjs/swagger";
 
 export class MetricsFilterDto {
@@ -7,13 +7,14 @@ export class MetricsFilterDto {
   @IsString()
   seller?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: "2024-01-01" })
   @IsOptional()
-  @IsString()
+  @IsDateString()
   dateFrom?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: "2024-12-31" })
   @IsOptional()
-  @IsString()
+  @IsDateString()
+  @ValidateIf((o) => o.dateFrom !== undefined)
   dateTo?: string;
 }

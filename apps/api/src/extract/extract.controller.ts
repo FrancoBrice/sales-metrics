@@ -11,11 +11,7 @@ export class ExtractController {
   @Post(":meetingId")
   @ApiOperation({ summary: "Run extraction on a meeting transcript" })
   async extractMeeting(@Param() params: ExtractMeetingDto) {
-    const result = await this.extractService.extractFromMeeting(params.meetingId);
-    if (!result) {
-      throw new NotFoundException(`Meeting ${params.meetingId} not found`);
-    }
-    return result;
+    return this.extractService.extractFromMeeting(params.meetingId);
   }
 
   @Get("progress")
@@ -27,11 +23,7 @@ export class ExtractController {
   @Get(":meetingId")
   @ApiOperation({ summary: "Get extraction results for a meeting" })
   async getExtraction(@Param() params: ExtractMeetingDto) {
-    const result = await this.extractService.getExtractionByMeetingId(params.meetingId);
-    if (!result) {
-      throw new NotFoundException(`Extraction for meeting ${params.meetingId} not found`);
-    }
-    return result;
+    return this.extractService.getExtractionByMeetingId(params.meetingId);
   }
 
   @Post("bulk/all")

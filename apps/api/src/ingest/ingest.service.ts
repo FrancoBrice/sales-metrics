@@ -1,7 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { parse } from "csv-parse/sync";
 import { PrismaService } from "../prisma/prisma.service";
-import { ExtractService } from "../extract/extract.service";
 import { CsvRow } from "@vambe/shared";
 
 @Injectable()
@@ -9,8 +8,7 @@ export class IngestService {
   private readonly logger = new Logger(IngestService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly extractService: ExtractService
+    private readonly prisma: PrismaService
   ) { }
 
   async processCsv(buffer: Buffer) {
@@ -114,12 +112,6 @@ export class IngestService {
         results.errors.push(`Error processing ${record.Nombre}: ${errorMessage}`);
         results.processed++;
       }
-    }
-
-    if (results.created > 0 || results.updated > 0) {
-      this.extractService.extractAllPendingAndFailed().catch((error) => {
-        this.logger.error("Failed to start extraction after CSV upload", error instanceof Error ? error.stack : undefined);
-      });
     }
 
     return results;

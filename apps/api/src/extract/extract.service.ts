@@ -26,7 +26,7 @@ export class ExtractService {
     });
 
     if (!meeting) {
-      return null;
+      throw new Error(`Meeting ${meetingId} not found`);
     }
 
     try {
@@ -143,13 +143,13 @@ export class ExtractService {
     });
 
     if (!extraction) {
-      return null;
+      throw new Error(`Extraction for meeting ${meetingId} not found`);
     }
 
     const extractionData = mapExtractionDataToExtraction(extraction.data);
 
     if (!extractionData) {
-      return null;
+      throw new Error(`Extraction data for meeting ${meetingId} is invalid`);
     }
 
     return {
@@ -162,84 +162,90 @@ export class ExtractService {
     };
   }
 
-  async extractAllPending() {
-    const meetingsWithoutExtraction = await this.prisma.meeting.findMany({
-      where: {
-        extractions: {
-          none: {},
-        },
-      },
+  async processAllPendingExtractions() {
+    const pendingMeetings = await this.findPendingMeetings();
+    const failedMeetingIds = await this.findFailedMeetings();
+
+    const allMeetingIds = [
+      ...pendingMeetings.map((m) => m.id),
+      ...failedMeetingIds,
+    ];
+
+    const stats = {
+      total: allMeetingIds.length,
+      success: 0,
+      failed: 0,
+      pending: pendingMeetings.length,
+      retried: failedMeetingIds.length,
+    };
+
+    if (allMeetingIds.length === 0) {
+      return stats;
+    }
+
+    this.processMeetingsInBackground(allMeetingIds).catch((error) => {
+      this.logger.error("Background extraction processing failed", error instanceof Error ? error.stack : undefined);
     });
 
-    const results = {
-      total: meetingsWithoutExtraction.length,
+    return stats;
+  }
+
+  async retryFailedExtractions() {
+    const failedMeetingIds = await this.findFailedMeetings();
+
+    const stats = {
+      total: failedMeetingIds.length,
+      success: 0,
+      failed: 0,
+      skipped: 0,
+    };
+
+    if (failedMeetingIds.length === 0) {
+      return stats;
+    }
+
+    const batchResults = await processInBatches(
+      failedMeetingIds,
+      CONCURRENCY_LIMIT,
+      (meetingId) => this.extractFromMeeting(meetingId)
+    );
+
+    return this.calculateExtractionStats(batchResults, stats);
+  }
+
+  async extractAllPending() {
+    const pendingMeetings = await this.findPendingMeetings();
+
+    const stats = {
+      total: pendingMeetings.length,
       success: 0,
       failed: 0,
     };
 
+    if (pendingMeetings.length === 0) {
+      return stats;
+    }
+
     const batchResults = await processInBatches(
-      meetingsWithoutExtraction,
+      pendingMeetings,
       CONCURRENCY_LIMIT,
       (meeting) => this.extractFromMeeting(meeting.id)
     );
 
-    for (const result of batchResults) {
-      if (result.status === "fulfilled" && result.value?.status === ExtractionStatus.SUCCESS) {
-        results.success++;
-      } else {
-        results.failed++;
-      }
-    }
+    return this.calculateExtractionStats(batchResults, stats);
+  }
 
-    return results;
+  async extractAllPendingAndFailed() {
+    return this.processAllPendingExtractions();
   }
 
   async getExtractionProgress() {
-    const meetingsWithoutExtraction = await this.prisma.meeting.findMany({
-      where: {
-        extractions: {
-          none: {},
-        },
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    const failedExtractions = await this.prisma.extraction.findMany({
-      where: {
-        status: ExtractionStatus.FAILED,
-      },
-      select: {
-        meetingId: true,
-      },
-    });
-
-    const meetingIdsToRetry: string[] = [];
-
-    for (const failedExtraction of failedExtractions) {
-      const latestExtraction = await this.prisma.extraction.findFirst({
-        where: {
-          meetingId: failedExtraction.meetingId,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        select: {
-          status: true,
-        },
-      });
-
-      if (latestExtraction && latestExtraction.status === ExtractionStatus.SUCCESS) {
-        continue;
-      }
-
-      meetingIdsToRetry.push(failedExtraction.meetingId);
-    }
+    const pendingMeetings = await this.findPendingMeetings();
+    const failedMeetingIds = await this.findFailedMeetings();
 
     const allMeetingIds = [
-      ...meetingsWithoutExtraction.map((m) => m.id),
-      ...meetingIdsToRetry,
+      ...pendingMeetings.map((m) => m.id),
+      ...failedMeetingIds,
     ];
 
     const recentExtractions = await this.prisma.extraction.findMany({
@@ -271,8 +277,8 @@ export class ExtractService {
         completed: 0,
         success: 0,
         failed: 0,
-        pending: meetingsWithoutExtraction.length,
-        retried: meetingIdsToRetry.length,
+        pending: pendingMeetings.length,
+        retried: failedMeetingIds.length,
       };
     }
 
@@ -307,146 +313,97 @@ export class ExtractService {
       completed,
       success,
       failed,
-      pending: meetingsWithoutExtraction.length,
-      retried: meetingIdsToRetry.length,
+      pending: pendingMeetings.length,
+      retried: failedMeetingIds.length,
     };
   }
 
-  async extractAllPendingAndFailed() {
-    const meetingsWithoutExtraction = await this.prisma.meeting.findMany({
+  private async findPendingMeetings() {
+    return this.prisma.meeting.findMany({
       where: {
         extractions: {
           none: {},
         },
       },
     });
+  }
 
+  private async findFailedMeetings(): Promise<string[]> {
     const failedExtractions = await this.prisma.extraction.findMany({
       where: {
         status: ExtractionStatus.FAILED,
       },
-      include: {
-        meeting: true,
+      select: {
+        meetingId: true,
+        createdAt: true,
+      },
+      distinct: ["meetingId"],
+      orderBy: {
+        createdAt: "desc",
       },
     });
 
-    const meetingIdsToRetry: string[] = [];
-
-    for (const failedExtraction of failedExtractions) {
-      const latestExtraction = await this.prisma.extraction.findFirst({
-        where: {
-          meetingId: failedExtraction.meetingId,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-
-      if (latestExtraction && latestExtraction.status === ExtractionStatus.SUCCESS) {
-        continue;
-      }
-
-      meetingIdsToRetry.push(failedExtraction.meetingId);
+    if (failedExtractions.length === 0) {
+      return [];
     }
 
-    const allMeetingIds = [
-      ...meetingsWithoutExtraction.map((m) => m.id),
-      ...meetingIdsToRetry,
-    ];
+    const meetingIds = failedExtractions.map((e) => e.meetingId);
 
-    const results = {
-      total: allMeetingIds.length,
-      success: 0,
-      failed: 0,
-      pending: meetingsWithoutExtraction.length,
-      retried: meetingIdsToRetry.length,
-    };
-
-    if (allMeetingIds.length === 0) {
-      return results;
-    }
-
-    this.processExtractionsInBackground(allMeetingIds).catch((error) => {
-      this.logger.error("Background extraction processing failed", error instanceof Error ? error.stack : undefined);
+    const allExtractions = await this.prisma.extraction.findMany({
+      where: {
+        meetingId: { in: meetingIds },
+      },
+      select: {
+        meetingId: true,
+        status: true,
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
     });
 
-    return results;
+    const latestByMeetingId = new Map<string, { status: string; createdAt: Date }>();
+    for (const extraction of allExtractions) {
+      if (!latestByMeetingId.has(extraction.meetingId)) {
+        latestByMeetingId.set(extraction.meetingId, {
+          status: extraction.status,
+          createdAt: extraction.createdAt,
+        });
+      }
+    }
+
+    return Array.from(latestByMeetingId.entries())
+      .filter(([_, extraction]) => extraction.status === ExtractionStatus.FAILED)
+      .map(([meetingId]) => meetingId);
   }
 
-  private async processExtractionsInBackground(meetingIds: string[]) {
+  private async processMeetingsInBackground(meetingIds: string[]) {
     const batchResults = await processInBatches(
       meetingIds,
       CONCURRENCY_LIMIT,
       (meetingId) => this.extractFromMeeting(meetingId)
     );
 
-    const results = {
-      success: 0,
-      failed: 0,
-    };
-
-    for (const result of batchResults) {
-      if (result.status === "fulfilled" && result.value?.status === ExtractionStatus.SUCCESS) {
-        results.success++;
-      } else {
-        results.failed++;
-      }
-    }
-
-    this.logger.log(`Background extraction completed: ${results.success} success, ${results.failed} failed`);
+    const stats = this.calculateExtractionStats(batchResults, { success: 0, failed: 0 });
+    this.logger.log(`Background extraction completed: ${stats.success} success, ${stats.failed} failed`);
   }
 
-  async retryFailedExtractions() {
-    const failedExtractions = await this.prisma.extraction.findMany({
-      where: {
-        status: ExtractionStatus.FAILED,
-      },
-      include: {
-        meeting: true,
-      },
-    });
-
-    const meetingIdsToRetry: string[] = [];
-
-    for (const failedExtraction of failedExtractions) {
-      const latestExtraction = await this.prisma.extraction.findFirst({
-        where: {
-          meetingId: failedExtraction.meetingId,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-
-      if (latestExtraction && latestExtraction.status === ExtractionStatus.SUCCESS) {
-        continue;
-      }
-
-      meetingIdsToRetry.push(failedExtraction.meetingId);
-    }
-
-    const results = {
-      total: failedExtractions.length,
-      success: 0,
-      failed: 0,
-      skipped: failedExtractions.length - meetingIdsToRetry.length,
-    };
-
-    const batchResults = await processInBatches(
-      meetingIdsToRetry,
-      CONCURRENCY_LIMIT,
-      (meetingId) => this.extractFromMeeting(meetingId)
-    );
+  private calculateExtractionStats(
+    batchResults: Array<{ status: "fulfilled" | "rejected"; value?: any; reason?: unknown }>,
+    initialStats: { success: number; failed: number; skipped?: number }
+  ) {
+    const stats = { ...initialStats };
 
     for (const result of batchResults) {
       if (result.status === "fulfilled" && result.value?.status === ExtractionStatus.SUCCESS) {
-        results.success++;
+        stats.success++;
       } else {
-        results.failed++;
+        stats.failed++;
       }
     }
 
-    return results;
+    return stats;
   }
 
   private runDeterministicExtraction(transcript: string) {

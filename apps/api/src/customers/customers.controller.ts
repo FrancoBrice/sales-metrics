@@ -24,10 +24,6 @@ export class CustomersController {
   @Get(":id")
   @ApiOperation({ summary: "Get customer details by ID including transcript" })
   async getCustomer(@Param() params: GetCustomerDto) {
-    const customer = await this.customersService.findOne(params.id);
-    if (!customer) {
-      throw new NotFoundException(`Customer with ID ${params.id} not found`);
-    }
-    return customer;
+    return this.customersService.findOne(params.id);
   }
 }

@@ -120,7 +120,7 @@ export class CustomersService {
     return customers.map((c) => c.seller);
   }
 
-  async findOne(id: string): Promise<CustomerDetailMapped | null> {
+  async findOne(id: string): Promise<CustomerDetailMapped> {
     const customer = await this.prisma.customer.findUnique({
       where: { id },
       include: {
@@ -137,7 +137,7 @@ export class CustomersService {
     });
 
     if (!customer) {
-      return null;
+      throw new Error(`Customer with ID ${id} not found`);
     }
 
     const meeting = customer.meetings[0];

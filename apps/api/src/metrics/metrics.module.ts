@@ -1,6 +1,5 @@
 import { Module } from "@nestjs/common";
 import { MetricsController } from "./metrics.controller";
-import { MetricsService } from "./metrics.service";
 import {
   InsightsService,
   LlmInsightsClient,
@@ -26,7 +25,6 @@ import {
 @Module({
   controllers: [MetricsController],
   providers: [
-    MetricsService,
     InsightsService,
     LlmInsightsClient,
     BasicInsightsClient,
