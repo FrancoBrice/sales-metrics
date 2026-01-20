@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { LeadSourceLabels, JtbdPrimaryLabels, IndustryLabels, PainPointsLabels, LeadSource, JtbdPrimary, Industry, PainPoints } from "@vambe/shared";
+import { LeadSourceLabels, JtbdPrimaryLabels, IndustryLabels, PainPointsLabels, ToolingMaturityLabels, KnowledgeComplexityLabels, SuccessMetricLabels, LeadSource, JtbdPrimary, Industry, PainPoints, ToolingMaturity, KnowledgeComplexity, SuccessMetric } from "@vambe/shared";
 import { Loading, EmptyStateWithType, EmptyState } from "@/components/ui/Loading";
 import { Card } from "@/components/ui/Card";
 import { Button, ButtonVariant } from "@/components/ui/Button";
@@ -39,6 +39,9 @@ interface ClosureAnalysisData {
   byJTBD: CategoryStats[];
   byPainPoint: CategoryStats[];
   bySeller: CategoryStats[];
+  byToolingMaturity: CategoryStats[];
+  byKnowledgeComplexity: CategoryStats[];
+  bySuccessMetrics: CategoryStats[];
   overall: {
     total: number;
     closed: number;
@@ -57,7 +60,7 @@ interface ClosureAnalysisData {
   };
 }
 
-type Dimension = "leadSource" | "industry" | "jtbd" | "painPoint" | "seller";
+type Dimension = "leadSource" | "industry" | "jtbd" | "painPoint" | "seller" | "toolingMaturity" | "knowledgeComplexity" | "successMetrics";
 
 export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
   const [data, setData] = useState<ClosureAnalysisData | null>(null);
@@ -65,7 +68,7 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
   const [loading, setLoading] = useState(true);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [selectedDimension, setSelectedDimension] = useState<Dimension>("leadSource");
-  const [sortBy, setSortBy] = useState<"total" | "conversionRate" | "volume">("total");
+  const [sortBy, setSortBy] = useState<"total" | "conversionRate">("total");
 
   useEffect(() => {
     loadData();
@@ -77,7 +80,7 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
     setLoadingInsights(false);
     try {
       const analysisData = await api.metrics.closureAnalysis(filters);
-      setData(analysisData);
+      setData(analysisData as ClosureAnalysisData);
       setLoading(false);
     } catch (error) {
       console.error("Error loading closure analysis:", error);
@@ -119,6 +122,12 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
         return data.byPainPoint;
       case "seller":
         return data.bySeller;
+      case "toolingMaturity":
+        return data.byToolingMaturity;
+      case "knowledgeComplexity":
+        return data.byKnowledgeComplexity;
+      case "successMetrics":
+        return data.bySuccessMetrics;
       default:
         return [];
     }
@@ -131,6 +140,9 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
       jtbd: "JTBD",
       painPoint: "Pain Point",
       seller: "Vendedor",
+      toolingMaturity: "Madurez Herramientas",
+      knowledgeComplexity: "Complejidad",
+      successMetrics: "Métricas Éxito",
     };
     return labels[dim];
   };
@@ -145,6 +157,12 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
         return JtbdPrimaryLabels[category as JtbdPrimary] || category;
       case "painPoint":
         return PainPointsLabels[category as PainPoints] || category;
+      case "toolingMaturity":
+        return ToolingMaturityLabels[category as ToolingMaturity] || category;
+      case "knowledgeComplexity":
+        return KnowledgeComplexityLabels[category as KnowledgeComplexity] || category;
+      case "successMetrics":
+        return SuccessMetricLabels[category as SuccessMetric] || category;
       default:
         return category;
     }
@@ -152,11 +170,12 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
 
   const dimensionData = getDimensionData(selectedDimension);
   const sortedData = [...dimensionData].sort((a, b) => {
+    const rateA = a.total > 0 ? (a.closed / a.total) * 100 : 0;
+    const rateB = b.total > 0 ? (b.closed / b.total) * 100 : 0;
+
     switch (sortBy) {
       case "conversionRate":
-        return b.conversionRate - a.conversionRate;
-      case "volume":
-        return b.volume - a.volume;
+        return rateB - rateA;
       case "total":
       default:
         return b.total - a.total;
@@ -164,7 +183,8 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
   });
 
   const maxTotal = Math.max(...sortedData.map((d) => d.total), 1);
-  const overallRate = data.overall.conversionRate;
+  const overallRate =
+    data.overall.total > 0 ? (data.overall.closed / data.overall.total) * 100 : 0;
 
   const getConversionColor = (rate: number): string => {
     const diff = rate - overallRate;
@@ -267,7 +287,7 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
                 <strong>{data.overall.closed}</strong> cerrados
               </span>
               <span className="stat-item highlight">
-                <strong>{data.overall.conversionRate.toFixed(1)}%</strong> conversión promedio
+                <strong>{data.overall.conversionRate.toFixed(1)}%</strong> promedio de cierres
               </span>
             </div>
           </div>
@@ -275,7 +295,7 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
 
         <div className="dimension-selector">
           <div className="dimension-tabs">
-            {(["leadSource", "industry", "jtbd", "painPoint", "seller"] as Dimension[]).map((dim) => (
+            {(["leadSource", "industry", "jtbd", "painPoint", "seller", "toolingMaturity", "knowledgeComplexity", "successMetrics"] as Dimension[]).map((dim) => (
               <button
                 key={dim}
                 className={`dimension-tab ${selectedDimension === dim ? "active" : ""}`}
@@ -291,8 +311,47 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
             <select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}>
               <option value="total">Total</option>
               <option value="conversionRate">Tasa de Conversión</option>
-              <option value="volume">Volumen</option>
             </select>
+          </div>
+        </div>
+
+        <div className="bar-colors-legend">
+          <span className="legend-title">Interpretación de las barras:</span>
+          <div className="color-legend-items">
+            <span className="legend-text">
+              <strong>Largo de la barra:</strong> Representa la cantidad total de leads (más larga = más leads)
+            </span>
+            <span className="legend-text">
+              <strong>Parte coloreada:</strong> Representa los leads cerrados (el color indica el rendimiento vs promedio de {overallRate.toFixed(1)}%)
+            </span>
+            <span className="legend-text">
+              <strong>Parte gris:</strong> Representa los leads no cerrados
+            </span>
+            <span className="legend-text">
+              <strong>Línea vertical:</strong> Indica el promedio de cierres ({overallRate.toFixed(1)}%)
+            </span>
+          </div>
+          <div className="color-legend-items" style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid var(--color-border)" }}>
+            <span className="color-legend-item">
+              <span className="color-swatch" style={{ backgroundColor: performanceColors.excellent }}></span>
+              <span className="legend-text">Excelente: +15% sobre el promedio</span>
+            </span>
+            <span className="color-legend-item">
+              <span className="color-swatch" style={{ backgroundColor: performanceColors.good }}></span>
+              <span className="legend-text">Bueno: +5% a +15% sobre el promedio</span>
+            </span>
+            <span className="color-legend-item">
+              <span className="color-swatch" style={{ backgroundColor: performanceColors.neutral }}></span>
+              <span className="legend-text">Neutral: -5% a +5% del promedio</span>
+            </span>
+            <span className="color-legend-item">
+              <span className="color-swatch" style={{ backgroundColor: performanceColors.warning }}></span>
+              <span className="legend-text">Atención: -5% a -15% bajo el promedio</span>
+            </span>
+            <span className="color-legend-item">
+              <span className="color-swatch" style={{ backgroundColor: performanceColors.poor }}></span>
+              <span className="legend-text">Bajo: -15% o más bajo el promedio</span>
+            </span>
           </div>
         </div>
 
@@ -301,35 +360,37 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
             <EmptyState title="No hay datos disponibles" message={`No hay datos disponibles para ${getDimensionLabel(selectedDimension)}`} />
           ) : (
             sortedData.map((item) => {
-              const conversionColor = getConversionColor(item.conversionRate);
-              const isBetter = item.conversionRate > overallRate + 5;
-              const isWorse = item.conversionRate < overallRate - 5;
-              const diff = item.conversionRate - overallRate;
+              const conversionRate = item.total > 0 ? (item.closed / item.total) * 100 : 0;
+              const conversionColor = getConversionColor(conversionRate);
+              const diff = conversionRate - overallRate;
 
               return (
                 <div key={item.category} className="closure-item">
                   <div className="closure-item-header">
                     <span className="closure-category">{getCategoryLabel(item.category, selectedDimension)}</span>
-                    <div className="closure-badges">
-                      {item.confidence >= 80 && (
-                        <span className="badge badge-confidence" title={`Confianza estadística: ${item.confidence}%`}>
-                          ✓
-                        </span>
-                      )}
-                      {isBetter && <span className="badge badge-success">↑</span>}
-                      {isWorse && <span className="badge badge-warning">↓</span>}
-                    </div>
                   </div>
 
                   <div className="closure-bar-container">
-                    <div className="closure-bar-total" style={{ width: `${(item.total / maxTotal) * 100}%` }}>
-                      <div
-                        className="closure-bar-closed"
-                        style={{
-                          width: `${(item.closed / item.total) * 100}%`,
-                          backgroundColor: conversionColor,
-                        }}
-                      />
+                    <div className="closure-bar-wrapper">
+                      <div className="closure-bar-total" style={{ width: `${(item.total / maxTotal) * 100}%` }}>
+                        {item.closed > 0 && (
+                          <div
+                            className="closure-bar-closed"
+                            style={{
+                              width: `${(item.closed / item.total) * 100}%`,
+                              backgroundColor: conversionColor,
+                              borderRadius: item.closed === item.total ? "0.375rem" : "0.375rem 0 0 0.375rem"
+                            }}
+                          />
+                        )}
+                        <div
+                          className="closure-bar-average-line"
+                          style={{
+                            left: `${overallRate}%`,
+                          }}
+                          title={`Promedio de cierres: ${overallRate.toFixed(1)}%`}
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -344,16 +405,11 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
                       className="closure-stat highlight"
                       style={{ color: conversionColor }}
                     >
-                      <strong>{item.conversionRate.toFixed(1)}%</strong> conversión
+                      <strong>{conversionRate.toFixed(1)}%</strong> conversión
                     </span>
                     {diff !== 0 && (
-                      <span className={`closure-stat ${isBetter ? "positive" : isWorse ? "negative" : ""}`}>
+                      <span className={`closure-stat ${diff > 0 ? "positive" : "negative"}`}>
                         {diff > 0 ? "+" : ""}{diff.toFixed(1)}% vs promedio
-                      </span>
-                    )}
-                    {item.volume > 0 && (
-                      <span className="closure-stat">
-                        Volumen: <strong>{item.volume}</strong>
                       </span>
                     )}
                   </div>

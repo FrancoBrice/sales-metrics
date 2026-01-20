@@ -20,6 +20,9 @@ export interface ClosureAnalysisResult {
   byJTBD: CategoryStats[];
   byPainPoint: CategoryStats[];
   bySeller: CategoryStats[];
+  byToolingMaturity: CategoryStats[];
+  byKnowledgeComplexity: CategoryStats[];
+  bySuccessMetrics: CategoryStats[];
   overall: {
     total: number;
     closed: number;
@@ -47,39 +50,52 @@ export class ClosureAnalysisService extends BaseMetricsService {
   async getClosureAnalysis(filter: MetricsFilterDto): Promise<ClosureAnalysisResult> {
     const customers = await this.getCustomers(filter);
 
-    const byLeadSource: Record<string, { total: number; closed: number; volume: number }> = {};
-    const byIndustry: Record<string, { total: number; closed: number; volume: number }> = {};
-    const byJTBD: Record<string, { total: number; closed: number; volume: number }> = {};
-    const byPainPoint: Record<string, { total: number; closed: number; volume: number }> = {};
-    const bySeller: Record<string, { total: number; closed: number; volume: number }> = {};
-
-    let totalVolume = 0;
+    const byLeadSource: Record<string, { total: number; closed: number }> = {};
+    const byIndustry: Record<string, { total: number; closed: number }> = {};
+    const byJTBD: Record<string, { total: number; closed: number }> = {};
+    const byPainPoint: Record<string, { total: number; closed: number }> = {};
+    const bySeller: Record<string, { total: number; closed: number }> = {};
+    const byToolingMaturity: Record<string, { total: number; closed: number }> = {};
+    const byKnowledgeComplexity: Record<string, { total: number; closed: number }> = {};
+    const bySuccessMetrics: Record<string, { total: number; closed: number }> = {};
 
     for (const customer of customers) {
       const extraction = this.getExtraction(customer);
-      const volume = extraction?.volume?.quantity || 0;
-      totalVolume += volume;
 
       const leadSource = extraction?.leadSource || UNKNOWN_VALUE;
-      this.addToCategory(byLeadSource, leadSource, customer.closed, volume);
+      this.addToCategory(byLeadSource, leadSource, customer.closed);
 
       if (extraction?.industry) {
-        this.addToCategory(byIndustry, extraction.industry, customer.closed, volume);
+        this.addToCategory(byIndustry, extraction.industry, customer.closed);
       }
 
       if (extraction?.jtbdPrimary && extraction.jtbdPrimary.length > 0) {
         for (const jtbd of extraction.jtbdPrimary) {
-          this.addToCategory(byJTBD, jtbd, customer.closed, volume);
+          this.addToCategory(byJTBD, jtbd, customer.closed);
         }
       }
 
       if (extraction?.painPoints && extraction.painPoints.length > 0) {
         for (const painPoint of extraction.painPoints) {
-          this.addToCategory(byPainPoint, painPoint, customer.closed, volume);
+          this.addToCategory(byPainPoint, painPoint, customer.closed);
         }
       }
 
-      this.addToCategory(bySeller, customer.seller, customer.closed, volume);
+      if (extraction?.toolingMaturity) {
+        this.addToCategory(byToolingMaturity, extraction.toolingMaturity, customer.closed);
+      }
+
+      if (extraction?.knowledgeComplexity) {
+        this.addToCategory(byKnowledgeComplexity, extraction.knowledgeComplexity, customer.closed);
+      }
+
+      if (extraction?.successMetrics && extraction.successMetrics.length > 0) {
+        for (const metric of extraction.successMetrics) {
+          this.addToCategory(bySuccessMetrics, metric, customer.closed);
+        }
+      }
+
+      this.addToCategory(bySeller, customer.seller, customer.closed);
     }
 
     const overallClosed = customers.filter((c) => c.closed).length;
@@ -87,7 +103,7 @@ export class ClosureAnalysisService extends BaseMetricsService {
     const overallConversionRate = overallTotal > 0 ? (overallClosed / overallTotal) * 100 : 0;
 
     const convertToStats = (
-      categoryData: Record<string, { total: number; closed: number; volume: number }>,
+      categoryData: Record<string, { total: number; closed: number }>,
       overallRate: number
     ): CategoryStats[] => {
       return Object.entries(categoryData)
@@ -101,7 +117,7 @@ export class ClosureAnalysisService extends BaseMetricsService {
             closed: data.closed,
             conversionRate: Math.round(conversionRate * 10) / 10,
             confidence,
-            volume: data.volume,
+            volume: 0,
           };
         })
         .sort((a, b) => b.total - a.total);
@@ -112,6 +128,9 @@ export class ClosureAnalysisService extends BaseMetricsService {
     const jtbdStats = convertToStats(byJTBD, overallConversionRate);
     const painPointStats = convertToStats(byPainPoint, overallConversionRate);
     const sellerStats = convertToStats(bySeller, overallConversionRate);
+    const toolingMaturityStats = convertToStats(byToolingMaturity, overallConversionRate);
+    const knowledgeComplexityStats = convertToStats(byKnowledgeComplexity, overallConversionRate);
+    const successMetricsStats = convertToStats(bySuccessMetrics, overallConversionRate);
 
     const allStatsWithDimension = [
       ...leadSourceStats.map((s) => ({ ...s, dimension: "leadSource" as const })),
@@ -119,6 +138,9 @@ export class ClosureAnalysisService extends BaseMetricsService {
       ...jtbdStats.map((s) => ({ ...s, dimension: "jtbd" as const })),
       ...painPointStats.map((s) => ({ ...s, dimension: "painPoint" as const })),
       ...sellerStats.map((s) => ({ ...s, dimension: "seller" as const })),
+      ...toolingMaturityStats.map((s) => ({ ...s, dimension: "toolingMaturity" as const })),
+      ...knowledgeComplexityStats.map((s) => ({ ...s, dimension: "knowledgeComplexity" as const })),
+      ...successMetricsStats.map((s) => ({ ...s, dimension: "successMetrics" as const })),
     ];
 
     const topPerformers = allStatsWithDimension
@@ -163,6 +185,9 @@ export class ClosureAnalysisService extends BaseMetricsService {
       byJTBD: jtbdStats,
       byPainPoint: painPointStats,
       bySeller: sellerStats,
+      byToolingMaturity: toolingMaturityStats,
+      byKnowledgeComplexity: knowledgeComplexityStats,
+      bySuccessMetrics: successMetricsStats,
       overall: {
         total: overallTotal,
         closed: overallClosed,
@@ -178,19 +203,17 @@ export class ClosureAnalysisService extends BaseMetricsService {
   }
 
   private addToCategory(
-    category: Record<string, { total: number; closed: number; volume: number }>,
+    category: Record<string, { total: number; closed: number }>,
     key: string,
-    isClosed: boolean,
-    volume: number
+    isClosed: boolean
   ) {
     if (!category[key]) {
-      category[key] = { total: 0, closed: 0, volume: 0 };
+      category[key] = { total: 0, closed: 0 };
     }
     category[key].total++;
     if (isClosed) {
       category[key].closed++;
     }
-    category[key].volume += volume;
   }
 
   private calculateConfidence(

@@ -381,6 +381,9 @@ export const api = {
         byJTBD: Array<{ category: string; total: number; closed: number; conversionRate: number; confidence: number; volume: number }>;
         byPainPoint: Array<{ category: string; total: number; closed: number; conversionRate: number; confidence: number; volume: number }>;
         bySeller: Array<{ category: string; total: number; closed: number; conversionRate: number; confidence: number; volume: number }>;
+        byToolingMaturity: Array<{ category: string; total: number; closed: number; conversionRate: number; confidence: number; volume: number }>;
+        byKnowledgeComplexity: Array<{ category: string; total: number; closed: number; conversionRate: number; confidence: number; volume: number }>;
+        bySuccessMetrics: Array<{ category: string; total: number; closed: number; conversionRate: number; confidence: number; volume: number }>;
         overall: { total: number; closed: number; conversionRate: number };
         insights: {
           topPerformers: Array<{ category: string; total: number; closed: number; conversionRate: number; confidence: number; volume: number }>;
