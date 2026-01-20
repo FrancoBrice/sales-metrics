@@ -27,7 +27,7 @@ export class LlmInsightsClient implements InsightsClient {
   async generateInsights(data: InsightsData): Promise<InsightsResult> {
     const startTime = Date.now();
     try {
-      const systemInstruction = "Eres un analista de ventas experto. Genera insights accionables basados en datos de embudos de ventas. Responde ÚNICAMENTE con JSON válido, sin markdown, sin code blocks, sin explicaciones adicionales.";
+      const systemInstruction = "Eres un analista de ventas experto. Genera insights accionables basados en datos de tasas de conversión y cierres de ventas por categorías. Responde ÚNICAMENTE con JSON válido, sin markdown, sin code blocks, sin explicaciones adicionales.";
       const prompt = buildInsightsPrompt(data);
 
       const completionPromise = this.openai.chat.completions.create({

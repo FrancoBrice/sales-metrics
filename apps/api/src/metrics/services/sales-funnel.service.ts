@@ -499,6 +499,11 @@ export class SalesFunnelService extends BaseMetricsService {
         significantFindings: closureAnalysis.insights.statisticalSignificance,
       },
       overallMetrics: closureAnalysis.overall,
+      filters: {
+        seller: filter.seller,
+        dateFrom: filter.dateFrom,
+        dateTo: filter.dateTo,
+      },
     };
 
     const insights = await this.insightsService.generateInsights(enhancedInsightsData, true);

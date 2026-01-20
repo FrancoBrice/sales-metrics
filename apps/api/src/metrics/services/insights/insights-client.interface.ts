@@ -26,6 +26,11 @@ export interface InsightsData {
     closed: number;
     conversionRate: number;
   };
+  filters?: {
+    seller?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  };
 }
 
 export interface InsightsResult {

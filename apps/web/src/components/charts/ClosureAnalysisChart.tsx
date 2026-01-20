@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { LeadSourceLabels, JtbdPrimaryLabels, IndustryLabels, PainPointsLabels, LeadSource, JtbdPrimary, Industry, PainPoints } from "@vambe/shared";
 import { Loading, EmptyStateWithType, EmptyState } from "@/components/ui/Loading";
 import { Card } from "@/components/ui/Card";
+import { Button, ButtonVariant } from "@/components/ui/Button";
 import "@/styles/charts/closure-analysis.css";
 
 interface ClosureAnalysisChartProps {
@@ -72,11 +73,11 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
   async function loadData() {
     setLoading(true);
     setInsights(null);
+    setLoadingInsights(false);
     try {
       const analysisData = await api.metrics.closureAnalysis(filters);
       setData(analysisData);
       setLoading(false);
-      loadInsights();
     } catch (error) {
       console.error("Error loading closure analysis:", error);
       setData(null);
@@ -175,6 +176,84 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
 
   return (
     <div className="closure-analysis-container">
+      <div className="closure-insights">
+        <Card>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+            <h3 className="section-title" style={{ margin: 0 }}>Insights y Recomendaciones</h3>
+            <Button
+              variant={insights ? ButtonVariant.Secondary : ButtonVariant.Primary}
+              onClick={loadInsights}
+              disabled={loadingInsights}
+            >
+              {loadingInsights ? "Generando..." : insights ? "Regenerar Insights con IA" : "Generar Insights con IA"}
+            </Button>
+          </div>
+
+          {loadingInsights && (
+            <div className="insights-loading">
+              <div className="spinner"></div>
+              <p className="insights-loading-message">Generando insights relevantes con IA...</p>
+            </div>
+          )}
+
+          {!loadingInsights && insights && (
+            <>
+              {insights.bottlenecks.length > 0 && (
+                <div className="insight-section">
+                  <h4 className="insight-title bottleneck">Cuellos de Botella</h4>
+                  <ul className="insight-list">
+                    {insights.bottlenecks.map((bottleneck, idx) => (
+                      <li key={idx}>{bottleneck}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {insights.opportunities.length > 0 && (
+                <div className="insight-section">
+                  <h4 className="insight-title opportunity">Oportunidades</h4>
+                  <ul className="insight-list">
+                    {insights.opportunities.map((opportunity, idx) => (
+                      <li key={idx}>{opportunity}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {insights.recommendations.length > 0 && (
+                <div className="insight-section">
+                  <h4 className="insight-title recommendation">Recomendaciones</h4>
+                  <ul className="insight-list">
+                    {insights.recommendations.map((recommendation, idx) => (
+                      <li key={idx}>{recommendation}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {insights.dataQuality && insights.dataQuality.significantFindings.length > 0 && (
+                <div className="insight-section">
+                  <h4 className="insight-title">Hallazgos Estadísticos Significativos</h4>
+                  <ul className="insight-list">
+                    {insights.dataQuality.significantFindings.slice(0, 5).map((finding, idx) => (
+                      <li key={idx}>
+                        <strong>{finding.category}</strong> ({finding.dimension}): {finding.significance} - {finding.reasoning}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
+
+          {!loadingInsights && !insights && (
+            <div className="insights-empty">
+              <p>Haz clic en "Generar Insights con IA" para obtener análisis y recomendaciones basados en tus datos.</p>
+            </div>
+          )}
+        </Card>
+      </div>
+
       <Card>
         <div className="closure-header">
           <div>
@@ -297,75 +376,6 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
           </div>
         )}
       </Card>
-
-      <div className="closure-insights">
-        <Card>
-          <h3 className="section-title">Insights y Recomendaciones</h3>
-
-          {loadingInsights && (
-            <div className="insights-loading">
-              <div className="spinner"></div>
-              <p className="insights-loading-message">Generando insights relevantes con IA...</p>
-            </div>
-          )}
-
-          {!loadingInsights && insights && (
-            <>
-              {insights.bottlenecks.length > 0 && (
-                <div className="insight-section">
-                  <h4 className="insight-title bottleneck">Cuellos de Botella</h4>
-                  <ul className="insight-list">
-                    {insights.bottlenecks.map((bottleneck, idx) => (
-                      <li key={idx}>{bottleneck}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {insights.opportunities.length > 0 && (
-                <div className="insight-section">
-                  <h4 className="insight-title opportunity">Oportunidades</h4>
-                  <ul className="insight-list">
-                    {insights.opportunities.map((opportunity, idx) => (
-                      <li key={idx}>{opportunity}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {insights.recommendations.length > 0 && (
-                <div className="insight-section">
-                  <h4 className="insight-title recommendation">Recomendaciones</h4>
-                  <ul className="insight-list">
-                    {insights.recommendations.map((recommendation, idx) => (
-                      <li key={idx}>{recommendation}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {insights.dataQuality && insights.dataQuality.significantFindings.length > 0 && (
-                <div className="insight-section">
-                  <h4 className="insight-title">Hallazgos Estadísticos Significativos</h4>
-                  <ul className="insight-list">
-                    {insights.dataQuality.significantFindings.slice(0, 5).map((finding, idx) => (
-                      <li key={idx}>
-                        <strong>{finding.category}</strong> ({finding.dimension}): {finding.significance} - {finding.reasoning}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </>
-          )}
-
-          {!loadingInsights && !insights && (
-            <div className="insights-error">
-              <p>No se pudieron cargar los insights. Intenta recargar la página.</p>
-            </div>
-          )}
-        </Card>
-      </div>
     </div>
   );
 }

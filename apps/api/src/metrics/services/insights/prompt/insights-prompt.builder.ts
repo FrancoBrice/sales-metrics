@@ -5,11 +5,13 @@ export function buildInsightsPrompt(data: InsightsData): string {
   const breakdownSection = buildBreakdownSection(data.breakdown);
   const trendsSection = data.trends ? buildTrendsSection(data.trends.conversionTrend) : "";
   const statisticalSection = data.statisticalAnalysis ? buildStatisticalSection(data.statisticalAnalysis, data.overallMetrics) : "";
+  const filtersSection = data.filters ? buildFiltersSection(data.filters) : "";
 
-  return `Eres un analista de ventas experto especializado en análisis de embudos de ventas B2B SaaS.
-Analiza los siguientes datos del embudo de ventas y genera insights accionables en español.
+  return `Eres un analista de ventas experto. Analiza los datos de conversión y genera insights accionables en español.
 
-=== DATOS DEL EMBUDO ===
+${filtersSection}
+
+Datos de conversión y cierres:
 
 ${stagesSection}
 
@@ -19,89 +21,83 @@ ${trendsSection}
 
 ${statisticalSection}
 
-=== INSTRUCCIONES ===
+Instrucciones:
 
-Analiza estos datos y genera insights en formato JSON con tres categorías:
+Genera insights en formato JSON con tres categorías:
 
-1. BOTTLENECKS (Cuellos de Botella):
-   - Identifica etapas con alta pérdida (dropOffRate > 50%)
-   - Incluye números específicos y contexto
-   - Explica el impacto en el negocio
-   - Máximo 3 bottlenecks más críticos
+1. Cuellos de botella (máximo 3):
+   - Categorías con baja conversión vs promedio
+   - Incluye números, tasas y comparaciones
+   - Explica impacto y causas
 
-2. OPPORTUNITIES (Oportunidades):
-   - Identifica patrones de alto rendimiento
-   - Destaca dimensiones (JTBD, Industrias, Fuentes) con mejor conversión
-   - Incluye números y comparaciones
-   - Máximo 3 oportunidades más valiosas
+2. Oportunidades (máximo 3):
+   - Patrones de alto rendimiento
+   - Dimensiones con mejor conversión (Fuentes, Industrias, JTBD, Pain Points, Vendedores)
+   - Oportunidades de alto volumen
 
-3. RECOMMENDATIONS (Recomendaciones):
-   - Recomendaciones específicas y accionables
-   - Priorizadas por impacto potencial
-   - Incluye contexto y métricas relevantes
-   - Máximo 4 recomendaciones
+3. Recomendaciones (máximo 4):
+   - Acciones específicas priorizadas por impacto
+   - Cómo mejorar bajo desempeño y replicar éxitos
+   - Incluye métricas relevantes
 
-=== FORMATO DE SALIDA ===
+Formato de salida:
 
-Retorna SOLO un objeto JSON válido con esta estructura:
+Retorna SOLO JSON válido:
 {
-  "bottlenecks": ["insight 1", "insight 2", ...],
-  "opportunities": ["oportunidad 1", "oportunidad 2", ...],
-  "recommendations": ["recomendación 1", "recomendación 2", ...]
+  "bottlenecks": ["insight 1", "insight 2"],
+  "opportunities": ["oportunidad 1", "oportunidad 2"],
+  "recommendations": ["recomendación 1", "recomendación 2"]
 }
 
-IMPORTANTE:
-- Retorna ÚNICAMENTE el JSON, sin markdown, sin code blocks, sin explicaciones
-- NO uses markdown code blocks para envolver el JSON
-- NO agregues texto antes o después del JSON
-- Todos los textos deben estar en español
-- Incluye números específicos cuando sea relevante
-- Sé conciso pero informativo
-- Enfócate en insights accionables
-- El JSON debe comenzar con { y terminar con }`;
+Importante:
+- Solo JSON, sin markdown ni explicaciones
+- Textos en español
+- Incluye números específicos
+- Sé conciso y accionable`;
 }
 
 function buildStagesSection(stages: InsightsData["stages"]): string {
+  if (stages.length === 0) return "";
+
   return stages.map((stage, index) => {
     const previousStage = index > 0 ? stages[index - 1] : null;
     const conversionFromPrevious = previousStage && previousStage.total > 0
       ? ((stage.total / previousStage.total) * 100).toFixed(1)
       : "100.0";
 
-    return `Etapa ${index + 1}: ${stage.name}
-  - Total: ${stage.total} leads
-  - Cerrados: ${stage.closed} (${stage.conversionRate.toFixed(1)}% conversión)
-  - Conversión desde etapa anterior: ${conversionFromPrevious}%
-  - Tasa de pérdida: ${stage.dropOffRate.toFixed(1)}%`;
-  }).join("\n\n");
+    return `${stage.name}: ${stage.total} leads, ${stage.closed} cerrados (${stage.conversionRate.toFixed(1)}%), conversión desde anterior: ${conversionFromPrevious}%, pérdida: ${stage.dropOffRate.toFixed(1)}%`;
+  }).join("\n");
 }
 
 function buildBreakdownSection(breakdown: InsightsData["breakdown"]): string {
   const topLeadSources = Object.entries(breakdown.byLeadSource)
     .sort((a, b) => b[1].conversionRate - a[1].conversionRate)
     .slice(0, 5)
-    .map(([source, stats]) => `  - ${source}: ${stats.total} leads, ${stats.conversionRate.toFixed(1)}% conversión`);
+    .map(([source, stats]) => `  ${source}: ${stats.total} leads, ${stats.conversionRate.toFixed(1)}%`);
 
   const topJTBD = Object.entries(breakdown.byJTBD)
     .sort((a, b) => b[1].conversionRate - a[1].conversionRate)
     .slice(0, 5)
-    .map(([jtbd, stats]) => `  - ${jtbd}: ${stats.total} leads, ${stats.conversionRate.toFixed(1)}% conversión`);
+    .map(([jtbd, stats]) => `  ${jtbd}: ${stats.total} leads, ${stats.conversionRate.toFixed(1)}%`);
 
   const topIndustries = Object.entries(breakdown.byIndustry)
     .sort((a, b) => b[1].conversionRate - a[1].conversionRate)
     .slice(0, 5)
-    .map(([industry, stats]) => `  - ${industry}: ${stats.total} leads, ${stats.conversionRate.toFixed(1)}% conversión`);
+    .map(([industry, stats]) => `  ${industry}: ${stats.total} leads, ${stats.conversionRate.toFixed(1)}%`);
 
-  return `=== DESGLOSE POR DIMENSIONES ===
+  const sections: string[] = [];
 
-Top Fuentes de Leads:
-${topLeadSources.length > 0 ? topLeadSources.join("\n") : "  - Sin datos"}
+  if (topLeadSources.length > 0) {
+    sections.push(`Fuentes de leads:\n${topLeadSources.join("\n")}`);
+  }
+  if (topJTBD.length > 0) {
+    sections.push(`JTBD:\n${topJTBD.join("\n")}`);
+  }
+  if (topIndustries.length > 0) {
+    sections.push(`Industrias:\n${topIndustries.join("\n")}`);
+  }
 
-Top JTBD (Jobs-to-be-Done):
-${topJTBD.length > 0 ? topJTBD.join("\n") : "  - Sin datos"}
-
-Top Industrias:
-${topIndustries.length > 0 ? topIndustries.join("\n") : "  - Sin datos"}`;
+  return sections.length > 0 ? sections.join("\n\n") : "";
 }
 
 function buildTrendsSection(trends: Array<{ period: string; conversionRate: number }>): string {
@@ -109,18 +105,13 @@ function buildTrendsSection(trends: Array<{ period: string; conversionRate: numb
 
   const trendLines = trends
     .slice(-6)
-    .map(t => `  - ${t.period}: ${t.conversionRate.toFixed(1)}%`)
+    .map(t => `  ${t.period}: ${t.conversionRate.toFixed(1)}%`)
     .join("\n");
 
   const isImproving = trends.length >= 2 &&
     trends[trends.length - 1].conversionRate > trends[trends.length - 2].conversionRate;
 
-  return `=== TENDENCIAS TEMPORALES ===
-
-Últimos períodos:
-${trendLines}
-
-Tendencia: ${isImproving ? "Mejorando" : "Estable/Decreciendo"}`;
+  return `Tendencias (últimos períodos):\n${trendLines}\nTendencia: ${isImproving ? "Mejorando" : "Estable/Decreciendo"}`;
 }
 
 function buildStatisticalSection(
@@ -128,47 +119,65 @@ function buildStatisticalSection(
   overall?: InsightsData["overallMetrics"]
 ): string {
   const overallRate = overall?.conversionRate || 0;
+  const sections: string[] = [];
 
-  const topPerformersText = analysis.topPerformers.length > 0
-    ? analysis.topPerformers
-        .map((p) => `  - ${p.category}: ${p.conversionRate.toFixed(1)}% conversión (${p.closed}/${p.total}), +${(p.conversionRate - overallRate).toFixed(1)}% vs promedio`)
-        .join("\n")
-    : "  - Sin datos";
+  if (overallRate > 0) {
+    sections.push(`Conversión promedio: ${overallRate.toFixed(1)}%`);
+  }
 
-  const underperformersText = analysis.underperformers.length > 0
-    ? analysis.underperformers
-        .map((u) => `  - ${u.category}: ${u.conversionRate.toFixed(1)}% conversión (${u.closed}/${u.total}), ${(u.conversionRate - overallRate).toFixed(1)}% vs promedio`)
-        .join("\n")
-    : "  - Sin datos";
+  if (analysis.topPerformers.length > 0) {
+    const performers = analysis.topPerformers
+      .map((p) => `  ${p.category}: ${p.conversionRate.toFixed(1)}% (${p.closed}/${p.total}), +${(p.conversionRate - overallRate).toFixed(1)}% vs promedio`)
+      .join("\n");
+    sections.push(`Top performers:\n${performers}`);
+  }
 
-  const opportunitiesText = analysis.highVolumeOpportunities.length > 0
-    ? analysis.highVolumeOpportunities
-        .map((o) => `  - ${o.category}: Volumen ${o.volume}, ${o.conversionRate.toFixed(1)}% conversión (${o.total} leads), potencial de mejora`)
-        .join("\n")
-    : "  - Sin datos";
+  if (analysis.underperformers.length > 0) {
+    const underperformers = analysis.underperformers
+      .map((u) => `  ${u.category}: ${u.conversionRate.toFixed(1)}% (${u.closed}/${u.total}), ${(u.conversionRate - overallRate).toFixed(1)}% vs promedio`)
+      .join("\n");
+    sections.push(`Bajo desempeño:\n${underperformers}`);
+  }
 
-  const significantText = analysis.significantFindings.length > 0
-    ? analysis.significantFindings
-        .slice(0, 5)
-        .map((s) => `  - ${s.category} (${s.dimension}): ${s.significance} - ${s.reasoning}`)
-        .join("\n")
-    : "  - Sin datos";
+  if (analysis.highVolumeOpportunities.length > 0) {
+    const opportunities = analysis.highVolumeOpportunities
+      .map((o) => `  ${o.category}: Volumen ${o.volume}, ${o.conversionRate.toFixed(1)}% (${o.total} leads)`)
+      .join("\n");
+    sections.push(`Oportunidades alto volumen:\n${opportunities}`);
+  }
 
-  return `=== ANÁLISIS ESTADÍSTICO VERIFICADO ===
+  if (analysis.significantFindings.length > 0) {
+    const findings = analysis.significantFindings
+      .slice(0, 5)
+      .map((s) => {
+        const significanceLabel = s.significance === "high" ? "alta" : s.significance === "medium" ? "media" : "baja";
+        return `  ${s.category} (${s.dimension}): Significancia ${significanceLabel} - ${s.reasoning}`;
+      })
+      .join("\n");
+    sections.push(`Hallazgos significativos:\n${findings}`);
+  }
 
-Tasa de conversión promedio: ${overallRate.toFixed(1)}%
+  return sections.length > 0 ? sections.join("\n\n") : "";
+}
 
-Top Performers (estadísticamente significativos):
-${topPerformersText}
+function buildFiltersSection(filters: NonNullable<InsightsData["filters"]>): string {
+  const filterParts: string[] = [];
 
-Underperformers (necesitan atención):
-${underperformersText}
+  if (filters.seller) {
+    filterParts.push(`Vendedor: ${filters.seller}`);
+  }
 
-Oportunidades de Alto Volumen:
-${opportunitiesText}
+  if (filters.dateFrom) {
+    filterParts.push(`Desde: ${filters.dateFrom}`);
+  }
 
-Hallazgos Estadísticamente Significativos:
-${significantText}
+  if (filters.dateTo) {
+    filterParts.push(`Hasta: ${filters.dateTo}`);
+  }
 
-IMPORTANTE: Prioriza estos hallazgos en tus insights ya que están respaldados por análisis estadístico.`;
+  if (filterParts.length === 0) {
+    return "";
+  }
+
+  return `Filtros aplicados: ${filterParts.join(", ")}\nNota: Los insights se basan en estos datos filtrados.`;
 }
