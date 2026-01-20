@@ -137,18 +137,8 @@
 }
 
 .badge-confidence {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.badge-success {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.badge-warning {
-  background: #fef3c7;
-  color: #92400e;
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--color-primary);
 }
 
 .closure-bar-container {
@@ -347,6 +337,19 @@
 .insights-error p {
   margin: 0;
   font-size: 0.9375rem;
+}
+
+.insights-empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-text-muted);
+  background: var(--color-bg-secondary);
+  border-radius: 8px;
+}
+
+.insights-empty p {
+  margin: 0;
+  font-size: 0.95rem;
 }
 
 @media (max-width: 768px) {
