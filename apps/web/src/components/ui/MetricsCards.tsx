@@ -22,14 +22,8 @@ export function MetricsCards({ metrics }: MetricsCardsProps) {
     },
     {
       value: metrics.conversionRate,
-      label: "Tasa de Conversión",
+      label: "Porcentaje de Cierre",
       format: "percent",
-    },
-    {
-      value: metrics.avgVolume,
-      label: "Volumen Promedio",
-      format: "number",
-      suffix: "/día",
     },
   ];
 

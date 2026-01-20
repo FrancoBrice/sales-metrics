@@ -52,6 +52,12 @@ export interface MetricsOverview {
     closed: number;
     conversionRate: number;
   }>;
+  topJobsToBeDone: Array<{
+    jtbd: string;
+    count: number;
+    closed: number;
+    conversionRate: number;
+  }>;
   bySeller: Array<{
     seller: string;
     total: number;

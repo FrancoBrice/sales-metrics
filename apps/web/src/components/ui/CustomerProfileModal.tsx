@@ -34,18 +34,14 @@ import {
   Sentiment,
   VolumeUnit,
 } from "@vambe/shared";
+import { ModalOverlay } from "./ModalOverlay";
+import { ModalContent } from "./ModalContent";
+import { ModalCloseButton } from "./ModalCloseButton";
+import { getLabel } from "./helpers";
 
 interface CustomerProfileModalProps {
   customerId: string;
   onClose: () => void;
-}
-
-function getLabel<T extends string>(
-  labels: Record<T, string>,
-  value: string | null | undefined
-): string {
-  if (!value) return "-";
-  return labels[value as T] || value;
 }
 
 export function CustomerProfileModal({ customerId, onClose }: CustomerProfileModalProps) {
@@ -82,24 +78,13 @@ export function CustomerProfileModal({ customerId, onClose }: CustomerProfileMod
 
   if (loading) {
     return (
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0, 0, 0, 0.7)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1000,
-        }}
-        onClick={onClose}
-      >
-        <div className="card" style={{ maxWidth: "800px", width: "90%", maxHeight: "90vh" }} onClick={(e) => e.stopPropagation()}>
+      <ModalOverlay onClose={onClose}>
+        <ModalContent onClick={(e) => e.stopPropagation()}>
           <div className="loading">
             <div className="spinner"></div>
           </div>
-        </div>
-      </div>
+        </ModalContent>
+      </ModalOverlay>
     );
   }
 
@@ -110,62 +95,11 @@ export function CustomerProfileModal({ customerId, onClose }: CustomerProfileMod
   const extraction = customer.extraction;
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0, 0, 0, 0.7)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-        padding: "1rem",
-      }}
-      onClick={onClose}
-    >
-      <div
-        className="card"
-        style={{
-          maxWidth: "900px",
-          width: "100%",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          position: "relative",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={onClose}
-          style={{
-            position: "absolute",
-            top: "1rem",
-            right: "1rem",
-            background: "none",
-            border: "none",
-            color: "var(--color-text-muted)",
-            fontSize: "1.5rem",
-            cursor: "pointer",
-            width: "32px",
-            height: "32px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: "50%",
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "var(--color-surface-elevated)";
-            e.currentTarget.style.color = "var(--color-text)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "none";
-            e.currentTarget.style.color = "var(--color-text-muted)";
-          }}
-        >
-          ×
-        </button>
+    <ModalOverlay onClose={onClose}>
+      <ModalContent size="large" onClick={(e) => e.stopPropagation()}>
+        <ModalCloseButton onClose={onClose} />
 
-        <div style={{ paddingRight: "3rem" }}>
+        <div className="modal-body" style={{ paddingRight: "3rem" }}>
           <h2 style={{ marginBottom: "0.5rem", fontSize: "1.75rem" }}>{customer.name}</h2>
           <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "2rem" }}>
             <div>
@@ -190,7 +124,6 @@ export function CustomerProfileModal({ customerId, onClose }: CustomerProfileMod
               </span>
             </div>
           </div>
-        </div>
 
         {extraction ? (
           <>
@@ -385,7 +318,8 @@ export function CustomerProfileModal({ customerId, onClose }: CustomerProfileMod
             </blockquote>
           </div>
         )}
-      </div>
-    </div>
+        </div>
+      </ModalContent>
+    </ModalOverlay>
   );
 }

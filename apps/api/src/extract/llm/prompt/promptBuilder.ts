@@ -166,12 +166,12 @@ function buildInstructionsSection(): string {
      Identify concerns about: cost, integration challenges, confidentiality/security, personalization needs, complexity
 
    - sentiment: Overall tone throughout conversation. Valid enum values: ${getEnumValues(Sentiment)}
-     Assess the FINAL sentiment, considering sentiment evolution:
-     * POSITIVO: enthusiastic, interested, positive engagement, active interest
-     * NEUTRAL: professional, balanced, exploratory but not enthusiastic
-     * ESCEPTICO: persistent doubts, hesitancy, concerns without resolution
+     Assess the OVERALL sentiment across the ENTIRE conversation, not just the end:
+     * POSITIVO: Strong enthusiasm, excitement, clear commitment signals, proactive engagement about implementation or next steps. Requires genuine enthusiasm, not just basic interest or politeness.
+     * NEUTRAL: Professional and courteous, but reserved. Shows interest without excitement. Standard exploratory conversation. This is the default for professional but non-enthusiastic conversations.
+     * ESCEPTICO: Persistent concerns, doubts, hesitancy, or negative signals throughout the conversation. Significant reservations or objections that remain unresolved.
 
-     IMPORTANT: Focus on final state. If doubts were resolved and interest shown = POSITIVO
+     IMPORTANT: Be strict with POSITIVO - it requires genuine enthusiasm and commitment signals. If the conversation is mostly neutral with some interest, use NEUTRAL. Consider the entire conversation tone, not just the final minutes.
 
    - volume: Extract quantity, unit, and if it's peak volume. Valid unit enum values: ${getEnumValues(VolumeUnit)}
      Look for numbers with units like "consultas", "mensajes", "tickets", "interacciones", "usuarios".

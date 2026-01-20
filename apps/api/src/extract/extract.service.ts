@@ -302,8 +302,6 @@ export class ExtractService {
     const success = completedExtractions.filter((e) => e.status === ExtractionStatus.SUCCESS).length;
     const failed = completedExtractions.filter((e) => e.status === ExtractionStatus.FAILED).length;
 
-    this.logger.debug(`Extraction progress: total=${total}, completed=${completed}, success=${success}, failed=${failed}, pending=${meetingsWithoutExtraction.length}, retried=${meetingIdsToRetry.length}`);
-
     return {
       total,
       completed,

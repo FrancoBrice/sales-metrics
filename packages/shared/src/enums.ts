@@ -140,3 +140,8 @@ export enum ExtractionStatus {
   FAILED = "FAILED",
   PENDING = "PENDING",
 }
+
+export enum SellerSortOrder {
+  CLOSED = "CLOSED",
+  CONVERSION_RATE = "CONVERSION_RATE",
+}

@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { LeadSource, PainPoints } from "@vambe/shared";
+import { LeadSource, PainPoints, JtbdPrimary } from "@vambe/shared";
 import { MetricsFilterDto } from "../dto/metrics-filter.dto";
 import { BaseMetricsService } from "./base-metrics.service";
 
@@ -14,6 +14,7 @@ export class OverviewService extends BaseMetricsService {
 
     const leadSourceCounts: Record<string, number> = {};
     const painPointStats: Record<string, { total: number; closed: number }> = {};
+    const jtbdStats: Record<string, { total: number; closed: number }> = {};
     const volumes: number[] = [];
     const sellerStats: Record<string, { total: number; closed: number }> = {};
 
@@ -42,6 +43,16 @@ export class OverviewService extends BaseMetricsService {
           }
         }
 
+        for (const jtbd of extraction.jtbdPrimary || []) {
+          if (!jtbdStats[jtbd]) {
+            jtbdStats[jtbd] = { total: 0, closed: 0 };
+          }
+          jtbdStats[jtbd].total++;
+          if (customer.closed) {
+            jtbdStats[jtbd].closed++;
+          }
+        }
+
         if (extraction.volume?.quantity) {
           volumes.push(extraction.volume.quantity);
         }
@@ -56,6 +67,16 @@ export class OverviewService extends BaseMetricsService {
     const topPainPoints = Object.entries(painPointStats)
       .map(([painPoint, stats]) => ({
         painPoint: painPoint as PainPoints,
+        count: stats.total,
+        closed: stats.closed,
+        conversionRate: stats.total > 0 ? (stats.closed / stats.total) * 100 : 0,
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    const topJobsToBeDone = Object.entries(jtbdStats)
+      .map(([jtbd, stats]) => ({
+        jtbd: jtbd as JtbdPrimary,
         count: stats.total,
         closed: stats.closed,
         conversionRate: stats.total > 0 ? (stats.closed / stats.total) * 100 : 0,
@@ -79,6 +100,7 @@ export class OverviewService extends BaseMetricsService {
       avgVolume: avgVolume ? Math.round(avgVolume) : null,
       topLeadSources,
       topPainPoints,
+      topJobsToBeDone,
       bySeller,
     };
   }

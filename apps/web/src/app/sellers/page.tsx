@@ -5,7 +5,7 @@ import { api, CustomerFilters } from "@/lib/api";
 import { Filters } from "@/components/features/Filters";
 import { EmptyStateWithType, Loading } from "@/components/ui/Loading";
 import { SellerProfileModal } from "@/components/ui/SellerProfileModal";
-import { SentimentLabels, Sentiment } from "@vambe/shared";
+import { SentimentLabels, Sentiment, SellerSortOrder, SellerSortOrderLabels } from "@vambe/shared";
 
 interface SellerMetrics {
   seller: string;
@@ -27,6 +27,7 @@ export default function SellersMetricsPage() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<CustomerFilters>({});
   const [selectedSeller, setSelectedSeller] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<SellerSortOrder>(SellerSortOrder.CONVERSION_RATE);
 
   useEffect(() => {
     loadSellers();
@@ -66,7 +67,20 @@ export default function SellersMetricsPage() {
   }
 
   const maxConversion = Math.max(...sellerMetrics.map((s) => s.conversionRate), 1);
-  const maxTotal = Math.max(...sellerMetrics.map((s) => s.total), 1);
+
+  const sortedSellerMetrics = [...sellerMetrics].sort((a, b) => {
+    if (sortOrder === SellerSortOrder.CLOSED) {
+      if (b.closed !== a.closed) {
+        return b.closed - a.closed;
+      }
+      return b.conversionRate - a.conversionRate;
+    } else {
+      if (b.conversionRate !== a.conversionRate) {
+        return b.conversionRate - a.conversionRate;
+      }
+      return b.closed - a.closed;
+    }
+  });
 
   return (
     <div className="container">
@@ -84,29 +98,60 @@ export default function SellersMetricsPage() {
         filters={filters}
         onChange={setFilters}
         variant="dashboard"
+        hideSellerFilter={true}
       />
+
+      <div style={{ marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "1rem" }}>
+        <label style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", fontWeight: 500 }}>
+          Ordenar por:
+        </label>
+        <select
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value as SellerSortOrder)}
+          style={{
+            padding: "0.5rem 1rem",
+            borderRadius: "var(--radius-md)",
+            border: "1px solid var(--color-border)",
+            background: "var(--color-surface)",
+            color: "var(--color-text)",
+            fontSize: "0.875rem",
+            cursor: "pointer",
+          }}
+        >
+          {Object.values(SellerSortOrder).map((order) => (
+            <option key={order} value={order}>
+              {SellerSortOrderLabels[order]}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {sellerMetrics.length === 0 ? (
         <EmptyStateWithType type="sellers" />
       ) : (
-        <>
-          <div className="charts-grid">
-            {sellerMetrics.map((seller, index) => {
-              const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "";
-              const conversionWidth = (seller.conversionRate / maxConversion) * 100;
-              const totalSentiment = seller.sentimentDistribution.reduce((sum, s) => sum + s.total, 0);
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          {sortedSellerMetrics.map((seller) => {
+            const conversionWidth = Math.min(100, Math.max(0, (seller.conversionRate / maxConversion) * 100));
+            const totalSentiment = seller.sentimentDistribution.reduce((sum, s) => sum + s.total, 0);
 
-              return (
-                <div
-                  key={seller.seller}
-                  className="card seller-card"
-                  onClick={() => setSelectedSeller(seller.seller)}
-                >
-                  <div className="seller-card-header">
-                    <div className="seller-card-title">
-                      {medal && <span style={{ fontSize: "1.5rem", marginRight: "0.5rem" }}>{medal}</span>}
-                      <h3 style={{ margin: 0, fontSize: "1.25rem" }}>{seller.seller}</h3>
-                    </div>
+            return (
+              <div
+                key={seller.seller}
+                className="card seller-card"
+                onClick={() => setSelectedSeller(seller.seller)}
+                style={{
+                  width: "100%",
+                  padding: "1.5rem",
+                  display: "grid",
+                  gridTemplateColumns: "250px 1fr 200px",
+                  gap: "2rem",
+                  alignItems: "center"
+                }}
+              >
+                {/* Column 1: Seller Info & Stats */}
+                <div>
+                  <div className="seller-card-header" style={{ marginBottom: "1rem", justifyContent: "flex-start", gap: "1rem" }}>
+                    <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 700 }}>{seller.seller}</h3>
                     <div className="seller-card-badges">
                       <span className={`badge ${seller.conversionRate >= 50 ? "badge-success" : seller.conversionRate >= 30 ? "badge-warning" : "badge-danger"}`}>
                         {seller.conversionRate.toFixed(1)}%
@@ -114,195 +159,104 @@ export default function SellersMetricsPage() {
                     </div>
                   </div>
 
-                  <div className="metrics-grid" style={{ marginTop: "1rem", marginBottom: "1rem" }}>
-                    <div className="metric-card" style={{ padding: "1rem" }}>
-                      <div className="metric-value" style={{ fontSize: "2rem" }}>{seller.total}</div>
-                      <div className="metric-label">Oportunidades</div>
+                  <div style={{ display: "flex", gap: "1.5rem" }}>
+                    <div>
+                      <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--color-text)" }}>{seller.total}</div>
+                      <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", textTransform: "uppercase", fontWeight: 600 }}>Oportunidades</div>
                     </div>
-                    <div className="metric-card" style={{ padding: "1rem" }}>
-                      <div className="metric-value" style={{ fontSize: "2rem" }}>{seller.closed}</div>
-                      <div className="metric-label">Cerradas</div>
+                    <div>
+                      <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--color-text)" }}>{seller.closed}</div>
+                      <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", textTransform: "uppercase", fontWeight: 600 }}>Cerradas</div>
                     </div>
                   </div>
+                </div>
 
+                {/* Column 2: Conversion Bar & Sentiment */}
+                <div style={{ borderLeft: "1px solid var(--color-border)", borderRight: "1px solid var(--color-border)", padding: "0 2rem" }}>
                   <div style={{ marginBottom: "1rem" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-                      <span style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}>Tasa de Conversión</span>
-                      <span style={{ fontSize: "0.875rem", fontWeight: 600 }}>{seller.conversionRate.toFixed(1)}%</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem", alignItems: "center" }}>
+                      <span style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", fontWeight: 500 }}>Tasa de Conversión</span>
+                      <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--color-text)" }}>{seller.conversionRate.toFixed(1)}%</span>
                     </div>
-                    <div className="bar-container">
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "8px",
+                        background: "var(--color-surface-elevated)",
+                        borderRadius: "var(--radius-sm)",
+                        overflow: "hidden",
+                        boxShadow: "inset 0 1px 2px rgba(0,0,0,0.1)"
+                      }}
+                    >
                       <div
-                        className="bar-fill"
                         style={{
                           width: `${conversionWidth}%`,
+                          height: "100%",
                           background: seller.conversionRate >= 50
                             ? "linear-gradient(90deg, var(--color-success) 0%, var(--color-secondary) 100%)"
                             : seller.conversionRate >= 30
                             ? "linear-gradient(90deg, var(--color-warning) 0%, var(--color-secondary) 100%)"
                             : "linear-gradient(90deg, var(--color-danger) 0%, var(--color-secondary) 100%)",
+                          borderRadius: "var(--radius-sm)",
+                          transition: "width 0.5s ease"
                         }}
                       />
                     </div>
                   </div>
 
                   {totalSentiment > 0 && (
-                    <div style={{ marginTop: "1.5rem" }}>
-                      <h4 className="section-title" style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>
-                        Distribución de Sentimientos
-                      </h4>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                        {seller.sentimentDistribution.map((sentiment) => {
-                          if (sentiment.total === 0) return null;
-
-                          const sentimentColor =
-                            sentiment.sentiment === "POSITIVO" ? "var(--color-success)" :
-                            sentiment.sentiment === "ESCEPTICO" ? "var(--color-danger)" :
-                            "var(--color-warning)";
-
-                          return (
-                            <div key={sentiment.sentiment} style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                              <div style={{ minWidth: "80px", fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
-                                {SentimentLabels[sentiment.sentiment as Sentiment]}
-                              </div>
-                              <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                                <div className="bar-container" style={{ height: "20px" }}>
-                                  <div
-                                    className="bar-fill"
-                                    style={{
-                                      width: `${sentiment.percentage}%`,
-                                      background: `linear-gradient(90deg, ${sentimentColor} 0%, ${sentimentColor}dd 100%)`,
-                                    }}
-                                  />
-                                </div>
-                                <div style={{ minWidth: "60px", fontSize: "0.75rem", textAlign: "right", color: "var(--color-text-muted)" }}>
-                                  {sentiment.total} ({sentiment.percentage.toFixed(0)}%)
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--color-border)", textAlign: "center" }}>
-                    <span style={{ fontSize: "0.875rem", color: "var(--color-primary)", cursor: "pointer" }}>
-                      Ver detalles →
-                    </span>
-                  </div>
+                     <div style={{ display: "flex", gap: "1rem", fontSize: "0.75rem" }}>
+                       {seller.sentimentDistribution.map((sentiment) => {
+                         if (sentiment.total === 0) return null;
+                         return (
+                           <div key={sentiment.sentiment} style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                             <span style={{
+                               width: "8px",
+                               height: "8px",
+                               borderRadius: "50%",
+                               background: sentiment.sentiment === "POSITIVO" ? "var(--color-success)" :
+                                           sentiment.sentiment === "ESCEPTICO" ? "var(--color-danger)" : "var(--color-warning)"
+                             }}></span>
+                             <span style={{ color: "var(--color-text-muted)" }}>
+                               {SentimentLabels[sentiment.sentiment as Sentiment]}
+                             </span>
+                             <span style={{ fontWeight: 600, color: "var(--color-text)" }}>
+                               {sentiment.total}
+                             </span>
+                           </div>
+                         );
+                       })}
+                     </div>
+                   )}
                 </div>
-              );
-            })}
-          </div>
 
-          <div className="card" style={{ marginTop: "2rem" }}>
-            <h3 className="section-title">Comparativa de Sentimientos por Vendedor</h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-              {sellerMetrics.map((seller) => {
-                const totalSentiment = seller.sentimentDistribution.reduce((sum, s) => sum + s.total, 0);
-                if (totalSentiment === 0) return null;
-
-                const orderedSentiments = [
-                  seller.sentimentDistribution.find((s) => s.sentiment === "POSITIVO"),
-                  seller.sentimentDistribution.find((s) => s.sentiment === "NEUTRAL"),
-                  seller.sentimentDistribution.find((s) => s.sentiment === "ESCEPTICO"),
-                ].filter((s) => s && s.total > 0);
-
-                return (
-                  <div key={seller.seller}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-                      <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--color-text)" }}>
-                        {seller.seller}
-                      </span>
-                      <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
-                        {totalSentiment} {totalSentiment === 1 ? "cliente" : "clientes"}
-                      </span>
-                    </div>
-                    <div style={{ position: "relative", height: "32px", borderRadius: "var(--radius-sm)", overflow: "hidden", background: "var(--color-surface-elevated)" }}>
-                      {orderedSentiments.map((sentiment, idx) => {
-                        if (!sentiment || sentiment.total === 0) return null;
-
-                        const sentimentColor =
-                          sentiment.sentiment === "POSITIVO" ? "var(--color-success)" :
-                          sentiment.sentiment === "ESCEPTICO" ? "var(--color-danger)" :
-                          "var(--color-warning)";
-
-                        const leftOffset = orderedSentiments.slice(0, idx).reduce((sum, s) => sum + (s?.percentage || 0), 0);
-
-                        return (
-                          <div
-                            key={sentiment.sentiment}
-                            style={{
-                              position: "absolute",
-                              left: `${leftOffset}%`,
-                              width: `${sentiment.percentage}%`,
-                              height: "100%",
-                              background: sentimentColor,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "0.7rem",
-                              fontWeight: 600,
-                              color: "white",
-                              textShadow: "0 1px 2px rgba(0,0,0,0.2)",
-                            }}
-                            title={`${SentimentLabels[sentiment.sentiment as Sentiment]}: ${sentiment.total} (${sentiment.percentage.toFixed(1)}%)`}
-                          >
-                            {sentiment.percentage > 15 && (
-                              <span>{SentimentLabels[sentiment.sentiment as Sentiment].charAt(0)}</span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="card" style={{ marginTop: "1.5rem" }}>
-            <h3 className="section-title">Ranking de Conversión</h3>
-            <div className="bar-chart">
-              {[...sellerMetrics]
-                .sort((a, b) => {
-                  if (b.conversionRate !== a.conversionRate) {
-                    return b.conversionRate - a.conversionRate;
-                  }
-                  return b.total - a.total;
-                })
-                .map((seller, index) => {
-                  const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "";
-                  const width = maxConversion > 0 ? (seller.conversionRate / maxConversion) * 100 : 0;
-
-                  return (
-                    <div key={seller.seller} className="bar-item">
-                      <div className="bar-label" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                        {medal && <span>{medal}</span>}
-                        <span>{seller.seller}</span>
-                      </div>
-                      <div className="bar-container">
-                        <div
-                          className="bar-fill"
-                          style={{
-                            width: `${width}%`,
-                            background: seller.conversionRate >= 50
-                              ? "linear-gradient(90deg, var(--color-success) 0%, var(--color-secondary) 100%)"
-                              : seller.conversionRate >= 30
-                              ? "linear-gradient(90deg, var(--color-warning) 0%, var(--color-secondary) 100%)"
-                              : "linear-gradient(90deg, var(--color-danger) 0%, var(--color-secondary) 100%)",
-                          }}
-                        />
-                      </div>
-                      <div className="bar-value">
-                        {seller.conversionRate.toFixed(1)}% ({seller.closed}/{seller.total})
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
-        </>
+                {/* Column 3: Action */}
+                <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
+                  <button
+                    style={{
+                        background: "none",
+                        border: "none",
+                        color: "var(--color-primary)",
+                        fontSize: "0.875rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.25rem",
+                        padding: "0.5rem 1rem",
+                        borderRadius: "var(--radius-md)",
+                        transition: "var(--transition-base)"
+                    }}
+                    className="btn-details"
+                  >
+                    Ver detalles
+                    <span>→</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {selectedSeller && (

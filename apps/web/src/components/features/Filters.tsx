@@ -10,9 +10,10 @@ interface FiltersProps {
   filters: CustomerFilters;
   onChange: (filters: CustomerFilters) => void;
   variant?: "dashboard" | "list";
+  hideSellerFilter?: boolean;
 }
 
-export function Filters({ sellers, filters, onChange, variant = "list" }: FiltersProps) {
+export function Filters({ sellers, filters, onChange, variant = "list", hideSellerFilter = false }: FiltersProps) {
   const handleChange = (key: keyof CustomerFilters, value: string | boolean | undefined) => {
     onChange({
       ...filters,
@@ -26,24 +27,26 @@ export function Filters({ sellers, filters, onChange, variant = "list" }: Filter
 
   return (
     <div className="filters-section">
-      <div className="filter-group">
-        <label className="filter-label">Vendedor</label>
-        <Select
-          className="filter-select"
-          value={filters.seller || ""}
-          onChange={(e) => handleChange("seller", e.target.value)}
-        >
-          <option value="">Todos</option>
-          {sellers.map((seller) => (
-            <option key={seller} value={seller}>
-              {seller}
-            </option>
-          ))}
-        </Select>
-      </div>
-
       {variant === "list" && (
         <>
+          {!hideSellerFilter && (
+            <div className="filter-group">
+              <label className="filter-label">Vendedor</label>
+              <Select
+                className="filter-select"
+                value={filters.seller || ""}
+                onChange={(e) => handleChange("seller", e.target.value)}
+              >
+                <option value="">Todos</option>
+                {sellers.map((seller) => (
+                  <option key={seller} value={seller}>
+                    {seller}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
+
           <div className="filter-group">
             <label className="filter-label">Estado</label>
             <Select
@@ -91,6 +94,24 @@ export function Filters({ sellers, filters, onChange, variant = "list" }: Filter
             </Select>
           </div>
         </>
+      )}
+
+      {variant === "dashboard" && !hideSellerFilter && (
+        <div className="filter-group">
+          <label className="filter-label">Vendedor</label>
+          <Select
+            className="filter-select"
+            value={filters.seller || ""}
+            onChange={(e) => handleChange("seller", e.target.value)}
+          >
+            <option value="">Todos</option>
+            {sellers.map((seller) => (
+              <option key={seller} value={seller}>
+                {seller}
+              </option>
+            ))}
+          </Select>
+        </div>
       )}
 
       <div className="filter-group">

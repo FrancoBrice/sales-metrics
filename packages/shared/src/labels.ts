@@ -14,6 +14,7 @@ import {
   Objections,
   Sentiment,
   VolumeUnit,
+  SellerSortOrder,
 } from "./enums";
 
 export const IndustryLabels: Record<Industry, string> = {
@@ -151,4 +152,9 @@ export const VolumeUnitLabels: Record<VolumeUnit, string> = {
   [VolumeUnit.DIARIO]: "Diario",
   [VolumeUnit.SEMANAL]: "Semanal",
   [VolumeUnit.MENSUAL]: "Mensual",
+};
+
+export const SellerSortOrderLabels: Record<SellerSortOrder, string> = {
+  [SellerSortOrder.CLOSED]: "Cantidad de Cierres",
+  [SellerSortOrder.CONVERSION_RATE]: "Porcentaje de Conversión",
 };

@@ -8,5 +8,6 @@ export const CSV_MAX_SIZE = 5 * 1024 * 1024;
 
 export const UNKNOWN_VALUE = "Desconocido";
 export const NO_PAIN_POINTS = "SIN_PAIN_POINTS";
+export const NO_JTBD = "SIN_JTBD";
 
 export const DEFAULT_PORT = 3001;
