@@ -15,6 +15,7 @@ import {
 import { api } from "@/lib/api";
 import { PainPointsLabels, PainPoints } from "@vambe/shared";
 import { EmptyStateWithType } from "@/components/ui/Loading";
+import { quadrantColors, chartColors } from "@/constants/colors";
 
 interface PainPointData {
   x: number;
@@ -75,9 +76,9 @@ export function PainPointsBubbleChart() {
   );
 
   const getColor = (rate: number) => {
-    if (rate <= 10) return "#ef4444";
-    if (rate <= 30) return "#eab308";
-    return "#22c55e";
+    if (rate <= 10) return quadrantColors.lowPriority;
+    if (rate <= 30) return quadrantColors.quickWins;
+    return quadrantColors.highValue;
   };
 
   const getColorWithOpacity = (rate: number, opacity: number = 0.7) => {
@@ -106,39 +107,17 @@ export function PainPointsBubbleChart() {
   const availablePainPoints = Array.from(new Set(allData.map(d => d.painPoint)));
 
   return (
-    <div className="card" style={{
-      height: "650px",
-      display: "flex",
-      flexDirection: "column",
-      background: "var(--color-surface)",
-      borderRadius: "12px",
-      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
-    }}>
-      <div style={{ padding: "1.5rem 1.5rem 1rem" }}>
-        <h3 className="section-title" style={{ marginBottom: "0.75rem" }}>Mapa de Impacto: Pain Points</h3>
-        <p style={{
-          fontSize: "0.85rem",
-          color: "var(--color-text-muted)",
-          marginBottom: "1rem",
-          lineHeight: "1.5"
-        }}>
+    <div className="card pain-points-chart-container">
+      <div className="pain-points-chart-header">
+        <h3 className="pain-points-chart-title">Mapa de Impacto: Pain Points</h3>
+        <p className="pain-points-chart-description">
           Volumen de Leads vs. Tasa de Conversión.
         </p>
-        <div style={{ marginBottom: "1rem" }}>
-          <label style={{
-            fontSize: "0.875rem",
-            color: "var(--color-text-muted)",
-            fontWeight: 500,
-            display: "block",
-            marginBottom: "0.5rem"
-          }}>
+        <div className="pain-points-filter-section">
+          <label className="pain-points-filter-label">
             Filtrar Pain Points:
           </label>
-          <div style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "0.5rem"
-          }}>
+          <div className="pain-points-filter-buttons">
             {availablePainPoints.map((pp) => {
               const label = PainPointsLabels[pp as PainPoints] || pp;
               const isSelected = selectedPainPoints.has(pp);
@@ -146,34 +125,7 @@ export function PainPointsBubbleChart() {
                 <button
                   key={pp}
                   onClick={() => togglePainPoint(pp)}
-                  style={{
-                    padding: "0.5rem 1rem",
-                    borderRadius: "6px",
-                    border: `2px solid ${isSelected ? "var(--color-primary)" : "var(--color-border)"}`,
-                    background: isSelected
-                      ? "var(--color-primary)"
-                      : "var(--color-surface-elevated)",
-                    color: isSelected
-                      ? "white"
-                      : "var(--color-text)",
-                    fontSize: "0.875rem",
-                    fontWeight: isSelected ? 600 : 500,
-                    cursor: "pointer",
-                    transition: "all 0.2s ease",
-                    whiteSpace: "nowrap"
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSelected) {
-                      e.currentTarget.style.borderColor = "var(--color-primary)";
-                      e.currentTarget.style.background = "rgba(var(--color-primary-rgb), 0.1)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSelected) {
-                      e.currentTarget.style.borderColor = "var(--color-border)";
-                      e.currentTarget.style.background = "var(--color-surface-elevated)";
-                    }
-                  }}
+                  className={`pain-points-filter-button ${isSelected ? 'selected' : ''}`}
                 >
                   {label}
                 </button>
@@ -181,20 +133,14 @@ export function PainPointsBubbleChart() {
             })}
           </div>
         </div>
-        <div style={{
-          fontSize: "0.75rem",
-          color: "var(--color-text-muted)",
-          display: "flex",
-          gap: "1.5rem",
-          flexWrap: "wrap"
-        }}>
+        <div className="pain-points-legend-section">
           <span>• <strong>Eje X:</strong> Cantidad de leads (Volumen)</span>
           <span>• <strong>Eje Y:</strong> Efectividad de venta (Conversión %)</span>
           <span>• <strong>Tamaño:</strong> Número de casos (Count)</span>
         </div>
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, padding: "0 1.5rem 1.5rem" }}>
+      <div className="pain-points-chart-body">
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ top: 30, right: 30, bottom: 50, left: 50 }}>
             <CartesianGrid
@@ -246,48 +192,28 @@ export function PainPointsBubbleChart() {
                 if (active && payload && payload.length) {
                   const data = payload[0].payload;
                   return (
-                    <div style={{
-                      background: "var(--color-surface-elevated)",
-                      border: "1px solid var(--color-border)",
-                      padding: "1rem",
-                      borderRadius: "10px",
-                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-                      minWidth: "200px"
-                    }}>
-                      <p style={{
-                        fontWeight: 700,
-                        marginBottom: "0.5rem",
-                        fontSize: "0.95rem",
-                        color: "var(--color-text)"
-                      }}>
+                    <div className="pain-points-tooltip">
+                      <p className="pain-points-tooltip-title">
                         {data.name}
                       </p>
-                      <div style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "0.375rem",
-                        fontSize: "0.875rem"
-                      }}>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ color: "var(--color-text-muted)" }}>Volumen:</span>
-                          <span style={{ fontWeight: 600, color: "var(--color-text)" }}>{data.x} leads</span>
+                      <div className="pain-points-tooltip-content">
+                        <div className="pain-points-tooltip-row">
+                          <span className="pain-points-tooltip-label">Volumen:</span>
+                          <span className="pain-points-tooltip-value">{data.x} leads</span>
                         </div>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ color: "var(--color-text-muted)" }}>Conversión:</span>
-                          <span style={{
-                            fontWeight: 600,
-                            color: getColor(data.y)
-                          }}>
+                        <div className="pain-points-tooltip-row">
+                          <span className="pain-points-tooltip-label">Conversión:</span>
+                          <span className="pain-points-tooltip-value conversion" style={{ color: getColor(data.y) }}>
                             {data.y}%
                           </span>
                         </div>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ color: "var(--color-text-muted)" }}>Casos (Count):</span>
-                          <span style={{ fontWeight: 600, color: "var(--color-text)" }}>{data.z}</span>
+                        <div className="pain-points-tooltip-row">
+                          <span className="pain-points-tooltip-label">Casos (Count):</span>
+                          <span className="pain-points-tooltip-value">{data.z}</span>
                         </div>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ color: "var(--color-text-muted)" }}>Cerrados:</span>
-                          <span style={{ fontWeight: 600, color: "#22c55e" }}>{data.closed}</span>
+                        <div className="pain-points-tooltip-row">
+                          <span className="pain-points-tooltip-label">Cerrados:</span>
+                          <span className="pain-points-tooltip-value" style={{ color: quadrantColors.highValue }}>{data.closed}</span>
                         </div>
                       </div>
                     </div>
@@ -305,13 +231,13 @@ export function PainPointsBubbleChart() {
             <Scatter
               name="Pain Points"
               data={data}
-              fill="#8884d8"
+              fill={chartColors.default}
               shape={(props: any) => {
                 const { cx, cy, payload, r } = props;
                 const validCx = typeof cx === 'number' ? cx : 0;
                 const validCy = typeof cy === 'number' ? cy : 0;
                 const validR = typeof r === 'number' && r > 0 ? Math.max(8, r) : 10;
-                const color = payload?.y !== undefined ? getColor(payload.y) : "#8884d8";
+                const color = payload?.y !== undefined ? getColor(payload.y) : chartColors.default;
                 const colorWithOpacity = payload?.y !== undefined ? getColorWithOpacity(payload.y, 0.7) : "rgba(136, 132, 216, 0.7)";
                 return (
                   <g>
@@ -322,18 +248,14 @@ export function PainPointsBubbleChart() {
                       fill={colorWithOpacity}
                       stroke={color}
                       strokeWidth={2.5}
-                      style={{
-                        filter: "drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15))",
-                        transition: "all 0.3s ease",
-                        cursor: "pointer"
-                      }}
+                      className="pain-points-bubble"
                     />
                     <circle
                       cx={validCx}
                       cy={validCy}
                       r={Math.max(4, validR * 0.35)}
                       fill={color}
-                      opacity={0.9}
+                      className="pain-points-bubble-core"
                     />
                   </g>
                 );

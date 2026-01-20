@@ -5,6 +5,7 @@ import { api, CustomerFilters } from "@/lib/api";
 import { Filters } from "@/components/features/Filters";
 import { LeadSourceLabels } from "@vambe/shared";
 import { EmptyStateWithType } from "@/components/ui/Loading";
+import { leadSourceColors, chartPalette } from "@/constants/colors";
 import {
   LineChart,
   Line,
@@ -22,28 +23,8 @@ interface LeadsTimeData {
   bySource: Record<string, number>;
 }
 
-const SOURCE_COLORS: Record<string, string> = {
-  Google: "#4285F4",
-  Linkedin: "#0077B5",
-  LinkedIn: "#0077B5",
-  Recomendación: "#34A853",
-  Conferencia: "#EA4335",
-  Feria: "#FBBC05",
-  Artículo: "#FF6D01",
-  Webinar: "#46BDC6",
-  Email: "#D44638",
-  Networking: "#7B1FA2",
-  Podcast: "#C2185B",
-  Desconocido: "#9E9E9E",
-  Otro: "#607D8B",
-};
-
-const PALETTE = [
-  "#F44336", "#E91E63", "#9C27B0", "#673AB7", "#3F51B5",
-  "#2196F3", "#03A9F4", "#00BCD4", "#009688", "#4CAF50",
-  "#8BC34A", "#CDDC39", "#FFEB3B", "#FFC107", "#FF9800",
-  "#FF5722", "#795548", "#9E9E9E", "#607D8B"
-];
+const SOURCE_COLORS = leadSourceColors;
+const PALETTE = chartPalette;
 
 const getColor = (source: string, index: number) => {
   if (SOURCE_COLORS[source]) return SOURCE_COLORS[source];

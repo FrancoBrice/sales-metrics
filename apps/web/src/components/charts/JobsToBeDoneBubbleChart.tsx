@@ -15,6 +15,7 @@ import {
 import { api } from "@/lib/api";
 import { JtbdPrimaryLabels, JtbdPrimary } from "@vambe/shared";
 import { EmptyStateWithType } from "@/components/ui/Loading";
+import { quadrantColors, chartColors } from "@/constants/colors";
 
 interface JtbdData {
   x: number;
@@ -75,9 +76,9 @@ export function JobsToBeDoneBubbleChart() {
   );
 
   const getColor = (rate: number) => {
-    if (rate <= 10) return "#ef4444";
-    if (rate <= 30) return "#eab308";
-    return "#22c55e";
+    if (rate <= 10) return quadrantColors.lowPriority;
+    if (rate <= 30) return quadrantColors.quickWins;
+    return quadrantColors.highValue;
   };
 
   const getColorWithOpacity = (rate: number, opacity: number = 0.7) => {
@@ -212,7 +213,7 @@ export function JobsToBeDoneBubbleChart() {
                         </div>
                         <div className="jtbd-tooltip-row">
                           <span className="jtbd-tooltip-label">Cerrados:</span>
-                          <span className="jtbd-tooltip-value" style={{ color: "#22c55e" }}>{data.closed}</span>
+                          <span className="jtbd-tooltip-value" style={{ color: quadrantColors.highValue }}>{data.closed}</span>
                         </div>
                       </div>
                     </div>
@@ -230,13 +231,13 @@ export function JobsToBeDoneBubbleChart() {
             <Scatter
               name="Jobs to be Done"
               data={data}
-              fill="#8884d8"
+              fill={chartColors.default}
               shape={(props: any) => {
                 const { cx, cy, payload, r } = props;
                 const validCx = typeof cx === 'number' ? cx : 0;
                 const validCy = typeof cy === 'number' ? cy : 0;
                 const validR = typeof r === 'number' && r > 0 ? Math.max(8, r) : 10;
-                const color = payload?.y !== undefined ? getColor(payload.y) : "#8884d8";
+                const color = payload?.y !== undefined ? getColor(payload.y) : chartColors.default;
                 const colorWithOpacity = payload?.y !== undefined ? getColorWithOpacity(payload.y, 0.7) : "rgba(136, 132, 216, 0.7)";
                 return (
                   <g>

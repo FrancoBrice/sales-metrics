@@ -115,50 +115,32 @@ export function WinProbabilityMatrix({ filters }: WinProbabilityMatrixProps) {
   };
 
   return (
-    <div className="card" style={{ padding: "1.5rem" }}>
-      <div style={{ marginBottom: "1.5rem" }}>
-        <h3 className="section-title" style={{ marginBottom: "0.5rem" }}>
+    <div className="card win-probability-matrix-card">
+      <div className="win-probability-matrix-header-section">
+        <h3 className="section-title win-probability-matrix-section-title">
           Matriz de Probabilidad de Cierre
         </h3>
-        <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
+        <p className="win-probability-matrix-description">
           Análisis predictivo combinando <strong>Urgencia</strong>, <strong>Sentimiento</strong> y <strong>Nivel de Riesgo</strong> extraídos del LLM.
           El color indica la probabilidad de cierre calculada, el tamaño representa el volumen de leads.
         </p>
       </div>
 
-      <div style={{ overflowX: "auto", marginBottom: "2rem" }}>
+      <div className="win-probability-matrix-scroll-container">
         <div
+          className="win-probability-matrix-grid"
           style={{
-            display: "grid",
             gridTemplateColumns: `120px repeat(${sentimentOrder.length}, minmax(150px, 1fr))`,
-            gap: "0.75rem",
-            minWidth: "fit-content",
           }}
         >
-          <div
-            style={{
-              padding: "1rem",
-              fontSize: "0.75rem",
-              fontWeight: 600,
-              color: "var(--color-text-muted)",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-            }}
-          >
+          <div className="win-probability-matrix-header-cell win-probability-matrix-header-cell.first">
             Urgencia / Sentimiento
           </div>
 
           {sentimentOrder.map((sentiment) => (
             <div
               key={sentiment}
-              style={{
-                padding: "1rem",
-                fontSize: "0.875rem",
-                fontWeight: 600,
-                color: "var(--color-text)",
-                textAlign: "center",
-                borderBottom: "2px solid var(--color-border)",
-              }}
+              className="win-probability-matrix-sentiment-header"
             >
               {SentimentLabels[sentiment as Sentiment] || sentiment}
             </div>
@@ -166,16 +148,7 @@ export function WinProbabilityMatrix({ filters }: WinProbabilityMatrixProps) {
 
           {urgencyOrder.map((urgency) => (
             <React.Fragment key={urgency}>
-              <div
-                style={{
-                  padding: "1rem",
-                  fontSize: "0.875rem",
-                  fontWeight: 600,
-                  color: "var(--color-text)",
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
+              <div className="win-probability-matrix-row-header">
                 {UrgencyLabels[urgency as Urgency] || urgency}
               </div>
 
@@ -184,36 +157,11 @@ export function WinProbabilityMatrix({ filters }: WinProbabilityMatrixProps) {
                 return (
                   <div
                     key={`${urgency}-${sentiment}`}
+                    className={cell ? "win-probability-matrix-cell" : "win-probability-matrix-cell win-probability-matrix-cell-empty"}
                     style={{
                       background: getColor(cell),
-                      borderRadius: "var(--radius-lg)",
-                      padding: "1.5rem",
                       minHeight: getCellSize(cell),
                       minWidth: getCellSize(cell),
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      cursor: cell ? "pointer" : "default",
-                      transition: "all 0.3s ease",
-                      border: cell ? "2px solid rgba(255, 255, 255, 0.2)" : "2px dashed var(--color-border)",
-                      position: "relative",
-                      boxShadow: cell ? "0 4px 12px rgba(0, 0, 0, 0.2)" : "none",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (cell) {
-                        e.currentTarget.style.transform = "scale(1.05)";
-                        e.currentTarget.style.zIndex = "20";
-                        e.currentTarget.style.boxShadow = "0 8px 24px rgba(0, 0, 0, 0.4)";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (cell) {
-                        e.currentTarget.style.transform = "scale(1)";
-                        e.currentTarget.style.zIndex = "1";
-                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.2)";
-                      }
                     }}
                     title={
                       cell
@@ -223,35 +171,13 @@ export function WinProbabilityMatrix({ filters }: WinProbabilityMatrixProps) {
                   >
                     {cell && (
                       <>
-                        <div
-                          style={{
-                            fontSize: "2rem",
-                            fontWeight: 700,
-                            color: "rgba(255, 255, 255, 0.95)",
-                            textShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
-                          }}
-                        >
+                        <div className="win-probability-matrix-cell-probability">
                           {cell.winProbability.toFixed(0)}%
                         </div>
-                        <div
-                          style={{
-                            fontSize: "0.75rem",
-                            fontWeight: 600,
-                            color: "rgba(255, 255, 255, 0.9)",
-                            textShadow: "0 1px 4px rgba(0, 0, 0, 0.3)",
-                            textAlign: "center",
-                          }}
-                        >
+                        <div className="win-probability-matrix-cell-count">
                           {cell.total} leads
                         </div>
-                        <div
-                          style={{
-                            fontSize: "0.7rem",
-                            fontWeight: 500,
-                            color: "rgba(255, 255, 255, 0.85)",
-                            textShadow: "0 1px 3px rgba(0, 0, 0, 0.3)",
-                          }}
-                        >
+                        <div className="win-probability-matrix-cell-percentage">
                           {cell.conversionRate.toFixed(1)}% real
                         </div>
                       </>
@@ -264,27 +190,18 @@ export function WinProbabilityMatrix({ filters }: WinProbabilityMatrixProps) {
         </div>
       </div>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-        gap: "1rem",
-        marginTop: "2rem"
-      }}>
-        <div style={{
-          padding: "1rem",
-          background: "var(--color-surface-elevated)",
-          borderRadius: "var(--radius-md)",
-        }}>
-          <h4 style={{ fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.75rem", color: "var(--color-text)" }}>
+      <div className="win-probability-matrix-stats-section">
+        <div className="win-probability-matrix-stats-card">
+          <h4 className="win-probability-matrix-stats-title">
             Estadísticas por Urgencia
           </h4>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <div className="win-probability-matrix-stats-list">
             {data.urgencyStats.map((stat) => (
-              <div key={stat.urgency} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
-                <span style={{ color: "var(--color-text-muted)" }}>
+              <div key={stat.urgency} className="win-probability-matrix-stats-item">
+                <span className="win-probability-matrix-stats-label">
                   {UrgencyLabels[stat.urgency as Urgency] || stat.urgency}:
                 </span>
-                <span style={{ fontWeight: 600, color: "var(--color-text)" }}>
+                <span className="win-probability-matrix-stats-value">
                   {stat.conversionRate.toFixed(1)}% ({stat.closed}/{stat.total})
                 </span>
               </div>
@@ -292,21 +209,17 @@ export function WinProbabilityMatrix({ filters }: WinProbabilityMatrixProps) {
           </div>
         </div>
 
-        <div style={{
-          padding: "1rem",
-          background: "var(--color-surface-elevated)",
-          borderRadius: "var(--radius-md)",
-        }}>
-          <h4 style={{ fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.75rem", color: "var(--color-text)" }}>
+        <div className="win-probability-matrix-stats-card">
+          <h4 className="win-probability-matrix-stats-title">
             Estadísticas por Sentimiento
           </h4>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <div className="win-probability-matrix-stats-list">
             {data.sentimentStats.map((stat) => (
-              <div key={stat.sentiment} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
-                <span style={{ color: "var(--color-text-muted)" }}>
+              <div key={stat.sentiment} className="win-probability-matrix-stats-item">
+                <span className="win-probability-matrix-stats-label">
                   {SentimentLabels[stat.sentiment as Sentiment] || stat.sentiment}:
                 </span>
-                <span style={{ fontWeight: 600, color: "var(--color-text)" }}>
+                <span className="win-probability-matrix-stats-value">
                   {stat.conversionRate.toFixed(1)}% ({stat.closed}/{stat.total})
                 </span>
               </div>
@@ -315,33 +228,24 @@ export function WinProbabilityMatrix({ filters }: WinProbabilityMatrixProps) {
         </div>
       </div>
 
-      <div
-        style={{
-          marginTop: "1.5rem",
-          padding: "1rem",
-          background: "var(--color-surface-elevated)",
-          borderRadius: "var(--radius-md)",
-          fontSize: "0.75rem",
-          color: "var(--color-text-muted)",
-        }}
-      >
-        <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap", alignItems: "center" }}>
-          <div>
-            <strong style={{ color: "var(--color-text)" }}>Leyenda:</strong>
+      <div className="win-probability-matrix-legend">
+        <div className="win-probability-matrix-legend-content">
+          <div className="win-probability-matrix-legend-item">
+            <strong>Leyenda:</strong>
           </div>
-          <div>
-            <span style={{ display: "inline-block", width: "16px", height: "16px", background: "rgba(239, 68, 68, 0.6)", borderRadius: "4px", marginRight: "0.5rem" }} />
+          <div className="win-probability-matrix-legend-item">
+            <span className="win-probability-matrix-legend-color" style={{ background: "rgba(239, 68, 68, 0.6)" }} />
             Baja probabilidad (0-40%)
           </div>
-          <div>
-            <span style={{ display: "inline-block", width: "16px", height: "16px", background: "rgba(234, 179, 8, 0.7)", borderRadius: "4px", marginRight: "0.5rem" }} />
+          <div className="win-probability-matrix-legend-item">
+            <span className="win-probability-matrix-legend-color" style={{ background: "rgba(234, 179, 8, 0.7)" }} />
             Media probabilidad (40-70%)
           </div>
-          <div>
-            <span style={{ display: "inline-block", width: "16px", height: "16px", background: "rgba(34, 197, 94, 0.8)", borderRadius: "4px", marginRight: "0.5rem" }} />
+          <div className="win-probability-matrix-legend-item">
+            <span className="win-probability-matrix-legend-color" style={{ background: "rgba(34, 197, 94, 0.8)" }} />
             Alta probabilidad (70-100%)
           </div>
-          <div style={{ marginLeft: "auto", fontSize: "0.7rem" }}>
+          <div className="win-probability-matrix-legend-note">
             * Probabilidad calculada usando Urgencia, Sentimiento y Nivel de Riesgo
           </div>
         </div>

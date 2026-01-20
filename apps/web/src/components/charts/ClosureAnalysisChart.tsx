@@ -6,6 +6,7 @@ import { LeadSourceLabels, JtbdPrimaryLabels, IndustryLabels, PainPointsLabels, 
 import { Loading, EmptyStateWithType, EmptyState } from "@/components/ui/Loading";
 import { Card } from "@/components/ui/Card";
 import { Button, ButtonVariant } from "@/components/ui/Button";
+import { performanceColors } from "@/constants/colors";
 import "@/styles/charts/closure-analysis.css";
 
 interface ClosureAnalysisChartProps {
@@ -167,11 +168,11 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
 
   const getConversionColor = (rate: number): string => {
     const diff = rate - overallRate;
-    if (diff > 15) return "#22c55e";
-    if (diff > 5) return "#84cc16";
-    if (diff > -5) return "#eab308";
-    if (diff > -15) return "#f59e0b";
-    return "#ef4444";
+    if (diff > 15) return performanceColors.excellent;
+    if (diff > 5) return performanceColors.good;
+    if (diff > -5) return performanceColors.neutral;
+    if (diff > -15) return performanceColors.warning;
+    return performanceColors.poor;
   };
 
   return (

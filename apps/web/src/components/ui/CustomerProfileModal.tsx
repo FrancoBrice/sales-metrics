@@ -99,24 +99,24 @@ export function CustomerProfileModal({ customerId, onClose }: CustomerProfileMod
       <ModalContent size="large" onClick={(e) => e.stopPropagation()}>
         <ModalCloseButton onClose={onClose} />
 
-        <div className="modal-body" style={{ paddingRight: "3rem" }}>
-          <h2 style={{ marginBottom: "0.5rem", fontSize: "1.75rem" }}>{customer.name}</h2>
-          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "2rem" }}>
-            <div>
-              <span style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}>Email: </span>
-              <span style={{ fontSize: "0.875rem" }}>{customer.email}</span>
+        <div className="customer-profile-body">
+          <h2 className="customer-profile-header">{customer.name}</h2>
+          <div className="customer-profile-badges">
+            <div className="customer-profile-info-item">
+              <span className="customer-profile-info-label">Email: </span>
+              <span className="customer-profile-info-value">{customer.email}</span>
             </div>
-            <div>
-              <span style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}>Teléfono: </span>
-              <span style={{ fontSize: "0.875rem" }}>{customer.phone}</span>
+            <div className="customer-profile-info-item">
+              <span className="customer-profile-info-label">Teléfono: </span>
+              <span className="customer-profile-info-value">{customer.phone}</span>
             </div>
-            <div>
-              <span style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}>Vendedor: </span>
-              <span style={{ fontSize: "0.875rem" }}>{customer.seller}</span>
+            <div className="customer-profile-info-item">
+              <span className="customer-profile-info-label">Vendedor: </span>
+              <span className="customer-profile-info-value">{customer.seller}</span>
             </div>
-            <div>
-              <span style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}>Fecha Reunión: </span>
-              <span style={{ fontSize: "0.875rem" }}>{customer.meetingDate}</span>
+            <div className="customer-profile-info-item">
+              <span className="customer-profile-info-label">Fecha Reunión: </span>
+              <span className="customer-profile-info-value">{customer.meetingDate}</span>
             </div>
             <div>
               <span className={`badge ${customer.closed ? "badge-success" : "badge-danger"}`}>
@@ -127,9 +127,9 @@ export function CustomerProfileModal({ customerId, onClose }: CustomerProfileMod
 
         {extraction ? (
           <>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
-              <div className="card" style={{ padding: "1rem", background: "var(--color-surface-elevated)" }}>
-                <h4 style={{ fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.75rem", color: "var(--color-text-muted)" }}>
+            <div className="customer-profile-info-group">
+              <div className="customer-profile-card" style={{ padding: "1rem" }}>
+                <h4 className="customer-profile-section-title">
                   Información Básica
                 </h4>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.875rem" }}>

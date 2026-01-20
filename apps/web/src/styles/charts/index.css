@@ -3,5 +3,8 @@
 @import './bubble-chart.css';
 @import './funnel.css';
 @import './heatmap.css';
+@import './opportunity-matrix.css';
+@import './pain-points-bubble-chart.css';
 @import './sankey-chart.css';
+@import './win-probability-matrix.css';
 @import './closure-analysis.css';

@@ -3,7 +3,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { ResponsiveContainer, Sankey, Tooltip } from "recharts";
 import { api } from "@/lib/api";
 import { LeadSourceLabels, PainPointsLabels, SentimentLabels, JtbdPrimaryLabels, LeadSource, PainPoints, Sentiment, JtbdPrimary } from "@vambe/shared";
-import { sankeyColorList } from "@/constants/colors";
+import { sankeyColorList, quadrantColors } from "@/constants/colors";
 import { SankeyNode, SankeyLink, SankeyHiddenNodes, useSankeyData } from "./shared";
 import { EmptyState } from "@/components/ui/Loading";
 
@@ -74,18 +74,18 @@ export function SankeyChart() {
   };
 
   const nodesWithColors = processedData.nodes.map((node, i) => {
-    if (node.name === "Cerrada") return { ...node, color: "#22c55e" };
-    if (node.name === "Perdida") return { ...node, color: "#ef4444" };
-    if (node.name === "POSITIVO") return { ...node, color: "#22c55e" };
-    if (node.name === "ESCEPTICO") return { ...node, color: "#ef4444" };
-    if (node.name === "NEUTRAL" || node.name === "Neutro" || node.name === "Neutro/Desconocido") return { ...node, color: "#eab308" };
+    if (node.name === "Cerrada") return { ...node, color: quadrantColors.highValue };
+    if (node.name === "Perdida") return { ...node, color: quadrantColors.lowPriority };
+    if (node.name === "POSITIVO") return { ...node, color: quadrantColors.highValue };
+    if (node.name === "ESCEPTICO") return { ...node, color: quadrantColors.lowPriority };
+    if (node.name === "NEUTRAL" || node.name === "Neutro" || node.name === "Neutro/Desconocido") return { ...node, color: quadrantColors.quickWins };
     return { ...node, color: sankeyColorList[i % sankeyColorList.length] };
   });
 
   const CustomSankeyLink = (props: any) => {
     const { sourceX, sourceY, targetX, targetY, sourceControlX, targetControlX, linkWidth, payload } = props;
     const sourceNode = nodesWithColors[payload.source.index];
-    const sourceColor = sourceNode ? sourceNode.color : "#ccc";
+    const sourceColor = sourceNode ? sourceNode.color : "#cccccc";
 
     return (
       <SankeyLink

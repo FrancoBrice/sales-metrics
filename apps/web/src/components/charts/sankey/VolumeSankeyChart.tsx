@@ -9,7 +9,7 @@ import {
   BusinessModel,
   VolumeUnit,
 } from "@vambe/shared";
-import { sankeyColorList } from "@/constants/colors";
+import { sankeyColorList, quadrantColors, businessModelColors, volumeUnitColors, volumeStatusColors } from "@/constants/colors";
 import { SankeyNode, SankeyLink, SankeyHiddenNodes, useSankeyData } from "./shared";
 import { EmptyState } from "@/components/ui/Loading";
 
@@ -86,29 +86,18 @@ export function VolumeSankeyChart() {
   };
 
   const nodesWithColors = processedData.nodes.map((node, i) => {
-    if (node.name === "Cerrada") return { ...node, color: "#22c55e" };
-    if (node.name === "Perdida") return { ...node, color: "#ef4444" };
-    if (node.name === "Con Peaks") return { ...node, color: "#f59e0b" };
-    if (node.name === "Sin Peaks") return { ...node, color: "#6b7280" };
-    if (node.name === "Sin Volumen") return { ...node, color: "#9ca3af" };
+    if (node.name === "Cerrada") return { ...node, color: quadrantColors.highValue };
+    if (node.name === "Perdida") return { ...node, color: quadrantColors.lowPriority };
+    if (node.name === "Con Peaks") return { ...node, color: volumeStatusColors.withPeaks };
+    if (node.name === "Sin Peaks") return { ...node, color: volumeStatusColors.withoutPeaks };
+    if (node.name === "Sin Volumen") return { ...node, color: volumeStatusColors.noVolume };
 
     if (node.category === "businessModel") {
-      const colors: Record<string, string> = {
-        [BusinessModel.B2B]: "#3b82f6",
-        [BusinessModel.B2C]: "#ec4899",
-        [BusinessModel.B2B2C]: "#8b5cf6",
-        [BusinessModel.MARKETPLACE]: "#10b981",
-      };
-      return { ...node, color: colors[node.name] || sankeyColorList[i % sankeyColorList.length] };
+      return { ...node, color: businessModelColors[node.name as keyof typeof businessModelColors] || sankeyColorList[i % sankeyColorList.length] };
     }
 
     if (node.category === "volumeUnit") {
-      const colors: Record<string, string> = {
-        [VolumeUnit.DIARIO]: "#06b6d4",
-        [VolumeUnit.SEMANAL]: "#6366f1",
-        [VolumeUnit.MENSUAL]: "#f97316",
-      };
-      return { ...node, color: colors[node.name] || sankeyColorList[i % sankeyColorList.length] };
+      return { ...node, color: volumeUnitColors[node.name as keyof typeof volumeUnitColors] || sankeyColorList[i % sankeyColorList.length] };
     }
 
     return { ...node, color: sankeyColorList[i % sankeyColorList.length] };
@@ -117,7 +106,7 @@ export function VolumeSankeyChart() {
   const CustomSankeyLink = (props: any) => {
     const { sourceX, sourceY, targetX, targetY, sourceControlX, targetControlX, linkWidth, payload } = props;
     const sourceNode = nodesWithColors[payload.source.index];
-    const sourceColor = sourceNode ? sourceNode.color : "#ccc";
+    const sourceColor = sourceNode ? sourceNode.color : volumeStatusColors.default;
 
     return (
       <SankeyLink
