@@ -25,7 +25,7 @@ export default function SalesFunnelPage() {
   return (
     <div className="container">
       <div style={{ marginBottom: "2rem" }}>
-        <h1 style={{ fontSize: "2rem", fontWeight: 700, marginBottom: "0.5rem" }}>
+        <h1>
           Análisis de Cierres por Categoría
         </h1>
         <p style={{ color: "var(--color-text-muted)", fontSize: "1rem" }}>

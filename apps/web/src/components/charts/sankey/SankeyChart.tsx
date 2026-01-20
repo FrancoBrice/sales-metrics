@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { ResponsiveContainer, Sankey, Tooltip } from "recharts";
 import { api } from "@/lib/api";
-import { LeadSourceLabels, PainPointsLabels, SentimentLabels, JtbdPrimaryLabels, LeadSource, PainPoints, Sentiment, JtbdPrimary } from "@vambe/shared";
+import { LeadSourceLabels, PainPointsLabels, SentimentLabels, LeadSource, PainPoints, Sentiment } from "@vambe/shared";
 import { sankeyColorList, quadrantColors } from "@/constants/colors";
 import { SankeyNode, SankeyLink, SankeyHiddenNodes, useSankeyData } from "./shared";
 import { EmptyState } from "@/components/ui/Loading";
@@ -62,12 +62,10 @@ export function SankeyChart() {
   };
 
   const getLabel = (name: string): string => {
-    if (name === "SIN_JTBD") return "Sin Jobs to be Done";
     if (name === "SIN_PAIN_POINTS") return "Sin Pain Points";
     return (
       LeadSourceLabels[name as LeadSource] ||
       PainPointsLabels[name as PainPoints] ||
-      JtbdPrimaryLabels[name as JtbdPrimary] ||
       SentimentLabels[name as Sentiment] ||
       name
     );
@@ -133,7 +131,6 @@ export function SankeyChart() {
       <div className="sankey-columns">
         <div className="sankey-column">Fuente</div>
         <div className="sankey-column center">Pain Point</div>
-        <div className="sankey-column center">Jobs to be Done</div>
         <div className="sankey-column center">Sentimiento</div>
         <div className="sankey-column right">Estado</div>
       </div>

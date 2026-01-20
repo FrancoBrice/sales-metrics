@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { BaseMetricsService } from "./base-metrics.service";
-import { UNKNOWN_VALUE, NO_PAIN_POINTS, NO_JTBD } from "../../common/constants";
+import { UNKNOWN_VALUE, NO_PAIN_POINTS } from "../../common/constants";
 
 @Injectable()
 export class SankeyService extends BaseMetricsService {
@@ -43,12 +43,10 @@ export class SankeyService extends BaseMetricsService {
 
       const source = extraction.leadSource || UNKNOWN_VALUE;
       const painPoints = extraction.painPoints?.length ? extraction.painPoints : [NO_PAIN_POINTS];
-      const jtbds = extraction.jtbdPrimary?.length ? extraction.jtbdPrimary : [NO_JTBD];
       const sentiment = extraction.sentiment || "NEUTRAL";
       const status = customer.closed ? "Cerrada" : "Perdida";
 
       const painPointWeight = 1 / painPoints.length;
-      const jtbdWeight = 1 / jtbds.length;
 
       const sourceIdx = getNodeIndex(source, "source");
       const sentimentIdx = getNodeIndex(sentiment, "sentiment");
@@ -57,12 +55,7 @@ export class SankeyService extends BaseMetricsService {
       for (const painPoint of painPoints) {
         const painPointIdx = getNodeIndex(painPoint, "painPoint");
         addLink(sourceIdx, painPointIdx, painPointWeight);
-
-        for (const jtbd of jtbds) {
-          const jtbdIdx = getNodeIndex(jtbd, "jtbd");
-          addLink(painPointIdx, jtbdIdx, painPointWeight * jtbdWeight);
-          addLink(jtbdIdx, sentimentIdx, painPointWeight * jtbdWeight);
-        }
+        addLink(painPointIdx, sentimentIdx, painPointWeight);
       }
 
       addLink(sentimentIdx, statusIdx, 1);

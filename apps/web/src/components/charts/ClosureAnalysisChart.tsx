@@ -278,7 +278,7 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
       <Card>
         <div className="closure-header">
           <div>
-            <h3 className="section-title">Análisis de Cierres por Categoría</h3>
+            <h1 className="section-title">Análisis de Cierres por Categoría</h1>
             <div className="overall-stats">
               <span className="stat-item">
                 <strong>{data.overall.total}</strong> total

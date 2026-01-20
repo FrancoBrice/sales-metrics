@@ -9,7 +9,6 @@
   font-size: 1.25rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: var(--color-text);
 }
 
 @keyframes slideDown {
