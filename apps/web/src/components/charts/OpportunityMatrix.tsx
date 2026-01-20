@@ -75,9 +75,10 @@ export function OpportunityMatrix({ filters }: OpportunityMatrixProps) {
     ? data.opportunities
     : data.opportunities.filter((o) => o.category === showCategory);
 
-  const maxVolume = Math.max(...data.opportunities.map((o) => o.avgVolume), 1);
-  const maxConversion = Math.max(...data.opportunities.map((o) => o.conversionRate), 1);
   const maxTotal = Math.max(...data.opportunities.map((o) => o.total), 1);
+  const maxVolume = Math.max(...data.opportunities.map((o) => o.avgVolume), data.thresholds.volume * 2);
+  const maxConversion = Math.min(Math.max(...data.opportunities.map((o) => o.conversionRate), data.thresholds.conversion * 2), 100);
+  const yAxisMax = 100;
 
   const getQuadrantColor = (opportunity: Opportunity): string => {
     if (data.quadrants.highValue.some((q) => q.name === opportunity.name && q.category === opportunity.category)) {
@@ -164,65 +165,12 @@ export function OpportunityMatrix({ filters }: OpportunityMatrixProps) {
             margin={{ top: 20, right: 30, bottom: 60, left: 60 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.3} />
-
-            <ReferenceLine
-              x={data.thresholds.volume}
-              stroke="var(--color-text-muted)"
-              strokeDasharray="3 3"
-              strokeWidth={2}
-              opacity={0.5}
-            />
-            <ReferenceLine
-              y={data.thresholds.conversion}
-              stroke="var(--color-text-muted)"
-              strokeDasharray="3 3"
-              strokeWidth={2}
-              opacity={0.5}
-            />
-
-            <ReferenceArea
-              x1={data.thresholds.volume}
-              y1={data.thresholds.conversion}
-              x2={maxVolume * 1.1}
-              y2={maxConversion * 1.1}
-              fill={quadrantColors.highValue}
-              fillOpacity={0.05}
-              stroke="none"
-            />
-            <ReferenceArea
-              x1={0}
-              y1={data.thresholds.conversion}
-              x2={data.thresholds.volume}
-              y2={maxConversion * 1.1}
-              fill={quadrantColors.quickWins}
-              fillOpacity={0.05}
-              stroke="none"
-            />
-            <ReferenceArea
-              x1={data.thresholds.volume}
-              y1={0}
-              x2={maxVolume * 1.1}
-              y2={data.thresholds.conversion}
-              fill={quadrantColors.development}
-              fillOpacity={0.05}
-              stroke="none"
-            />
-            <ReferenceArea
-              x1={0}
-              y1={0}
-              x2={data.thresholds.volume}
-              y2={data.thresholds.conversion}
-              fill={quadrantColors.lowPriority}
-              fillOpacity={0.05}
-              stroke="none"
-            />
-
             <XAxis
               type="number"
               dataKey="x"
               name="Volumen"
               unit=""
-              domain={[0, 'auto']}
+              domain={[0, maxVolume * 1.1]}
               label={{
                 value: 'Volumen Promedio',
                 position: 'insideBottom',
@@ -237,7 +185,7 @@ export function OpportunityMatrix({ filters }: OpportunityMatrixProps) {
               dataKey="y"
               name="Conversión"
               unit="%"
-              domain={[0, 'auto']}
+              domain={[0, yAxisMax]}
               label={{
                 value: 'Tasa de Conversión (%)',
                 angle: -90,
@@ -246,6 +194,56 @@ export function OpportunityMatrix({ filters }: OpportunityMatrixProps) {
               }}
               tick={{ fill: "var(--color-text-muted)", fontSize: "0.75rem" }}
               axisLine={{ stroke: "var(--color-border)" }}
+            />
+            <ReferenceArea
+              x1={0}
+              y1={0}
+              x2={data.thresholds.volume}
+              y2={data.thresholds.conversion}
+              fill={quadrantColors.lowPriority}
+              fillOpacity={0.25}
+              stroke="none"
+            />
+            <ReferenceArea
+              x1={0}
+              y1={data.thresholds.conversion}
+              x2={data.thresholds.volume}
+              y2={yAxisMax}
+              fill={quadrantColors.quickWins}
+              fillOpacity={0.25}
+              stroke="none"
+            />
+            <ReferenceArea
+              x1={data.thresholds.volume}
+              y1={0}
+              x2={maxVolume * 1.1}
+              y2={data.thresholds.conversion}
+              fill={quadrantColors.development}
+              fillOpacity={0.25}
+              stroke="none"
+            />
+            <ReferenceArea
+              x1={data.thresholds.volume}
+              y1={data.thresholds.conversion}
+              x2={maxVolume * 1.1}
+              y2={yAxisMax}
+              fill={quadrantColors.highValue}
+              fillOpacity={0.25}
+              stroke="none"
+            />
+            <ReferenceLine
+              x={data.thresholds.volume}
+              stroke="var(--color-text-muted)"
+              strokeDasharray="3 3"
+              strokeWidth={2}
+              opacity={0.5}
+            />
+            <ReferenceLine
+              y={data.thresholds.conversion}
+              stroke="var(--color-text-muted)"
+              strokeDasharray="3 3"
+              strokeWidth={2}
+              opacity={0.5}
             />
             <ZAxis type="number" dataKey="z" range={[30, 120]} name="Cantidad" />
             <Tooltip
