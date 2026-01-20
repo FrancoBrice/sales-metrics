@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ExtractService } from "./extract.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { GeminiClient } from "./llm/clients/geminiClient";
-import { OpenAiClient } from "./llm/clients/openAiClient";
 import { ExtractionParser } from "./llm/services/extraction.parser";
 import { ExtractionStatus, LeadSource, VolumeUnit, Industry, PainPoints } from "@vambe/shared";
 import { LlmExtractionResult } from "./llm";
@@ -11,7 +10,6 @@ describe("ExtractService", () => {
   let extractService: ExtractService;
   let prismaService: any;
   let geminiClient: any;
-  let openAiClient: any;
   let extractionParser: any;
 
   const mockMeeting = {
@@ -77,9 +75,6 @@ describe("ExtractService", () => {
       extractFromTranscript: vi.fn(),
     };
 
-    openAiClient = {
-      extractFromTranscript: vi.fn(),
-    };
 
     extractionParser = {
       parseAndSave: vi.fn(),
@@ -88,7 +83,6 @@ describe("ExtractService", () => {
     extractService = new ExtractService(
       prismaService,
       geminiClient,
-      openAiClient,
       extractionParser
     );
   });
@@ -126,7 +120,6 @@ describe("ExtractService", () => {
           integrations: expect.any(Array),
         })
       );
-      expect(openAiClient.extractFromTranscript).not.toHaveBeenCalled();
       expect(extractionParser.parseAndSave).toHaveBeenCalledWith(
         "extraction-1",
         expect.objectContaining({
@@ -135,33 +128,7 @@ describe("ExtractService", () => {
       );
     });
 
-    it("should fallback to OpenAI when Gemini fails", async () => {
-      const openAiResult: LlmExtractionResult = {
-        extraction: {
-          industry: Industry.SERVICIOS_FINANCIEROS,
-          businessModel: null,
-          jtbdPrimary: [],
-          painPoints: [PainPoints.SOBRECARGA_EQUIPO],
-          leadSource: null,
-          processMaturity: null,
-          toolingMaturity: null,
-          knowledgeComplexity: null,
-          riskLevel: null,
-          integrations: [],
-          urgency: null,
-          successMetrics: [],
-          objections: [],
-          sentiment: null,
-          volume: null,
-        },
-        rawResponse: JSON.stringify({ content: "{}" }),
-        metadata: {
-          provider: "openai",
-          model: "gpt-4.1-nano",
-          durationMs: 2000,
-        },
-      };
-
+    it("should fail when Gemini fails", async () => {
       const geminiError = Object.assign(
         new Error("Gemini API error"),
         {
@@ -176,56 +143,6 @@ describe("ExtractService", () => {
 
       prismaService.meeting.findUnique.mockResolvedValue(mockMeeting);
       geminiClient.extractFromTranscript.mockRejectedValue(geminiError);
-      openAiClient.extractFromTranscript.mockResolvedValue(openAiResult);
-      prismaService.extraction.upsert.mockResolvedValue(mockExtraction);
-      prismaService.llmApiLog.create.mockResolvedValue({});
-      extractionParser.parseAndSave.mockResolvedValue(undefined);
-
-      const result = await extractService.extractFromMeeting("meeting-1");
-
-      expect(result).toBeDefined();
-      expect(result?.status).toBe(ExtractionStatus.SUCCESS);
-      expect(geminiClient.extractFromTranscript).toHaveBeenCalled();
-      expect(openAiClient.extractFromTranscript).toHaveBeenCalledWith(
-        mockMeeting.transcript,
-        expect.objectContaining({
-          leadSource: expect.anything(),
-          volume: expect.anything(),
-          integrations: expect.any(Array),
-        })
-      );
-      expect(prismaService.llmApiLog.create).toHaveBeenCalledTimes(2);
-      expect(extractionParser.parseAndSave).toHaveBeenCalled();
-    });
-
-    it("should fail when both LLM providers fail", async () => {
-      const geminiError = Object.assign(
-        new Error("Gemini API error"),
-        {
-          rawResponse: JSON.stringify({ error: "Gemini API error" }),
-          metadata: {
-            provider: "gemini",
-            model: "gemini-flash-latest",
-            durationMs: 500,
-          },
-        }
-      );
-
-      const openAiError = Object.assign(
-        new Error("OpenAI API error"),
-        {
-          rawResponse: JSON.stringify({ error: "OpenAI API error" }),
-          metadata: {
-            provider: "openai",
-            model: "gpt-4.1-nano",
-            durationMs: 300,
-          },
-        }
-      );
-
-      prismaService.meeting.findUnique.mockResolvedValue(mockMeeting);
-      geminiClient.extractFromTranscript.mockRejectedValue(geminiError);
-      openAiClient.extractFromTranscript.mockRejectedValue(openAiError);
       prismaService.extraction.upsert.mockResolvedValue({
         ...mockExtraction,
         status: ExtractionStatus.FAILED,
@@ -239,9 +156,10 @@ describe("ExtractService", () => {
       expect(result?.extraction).toBeNull();
       expect(result?.error).toBeDefined();
       expect(geminiClient.extractFromTranscript).toHaveBeenCalled();
-      expect(openAiClient.extractFromTranscript).toHaveBeenCalled();
+      expect(prismaService.llmApiLog.create).toHaveBeenCalledTimes(1);
       expect(extractionParser.parseAndSave).not.toHaveBeenCalled();
     });
+
 
     it("should merge deterministic extraction results with LLM results", async () => {
       const transcriptWithVolume = "Manejamos cerca de 500 interacciones semanales. En una conferencia de tecnologia conocimos Vambe.";
@@ -310,65 +228,6 @@ describe("ExtractService", () => {
       ]);
     });
 
-    it("should log failed Gemini attempt when using OpenAI fallback", async () => {
-      const openAiResult: LlmExtractionResult = {
-        extraction: {
-          industry: Industry.SERVICIOS_FINANCIEROS,
-          businessModel: null,
-          jtbdPrimary: [],
-          painPoints: [],
-          leadSource: null,
-          processMaturity: null,
-          toolingMaturity: null,
-          knowledgeComplexity: null,
-          riskLevel: null,
-          integrations: [],
-          urgency: null,
-          successMetrics: [],
-          objections: [],
-          sentiment: null,
-          volume: null,
-        },
-        rawResponse: JSON.stringify({ content: "{}" }),
-        metadata: {
-          provider: "openai",
-          model: "gpt-4.1-nano",
-          durationMs: 2000,
-        },
-      };
-
-      const geminiError = Object.assign(
-        new Error("Gemini API timeout"),
-        {
-          rawResponse: JSON.stringify({ error: "Timeout" }),
-          metadata: {
-            provider: "gemini",
-            model: "gemini-flash-latest",
-            durationMs: 10000,
-          },
-        }
-      );
-
-      prismaService.meeting.findUnique.mockResolvedValue(mockMeeting);
-      geminiClient.extractFromTranscript.mockRejectedValue(geminiError);
-      openAiClient.extractFromTranscript.mockResolvedValue(openAiResult);
-      prismaService.extraction.upsert.mockResolvedValue(mockExtraction);
-      prismaService.llmApiLog.create.mockResolvedValue({});
-      extractionParser.parseAndSave.mockResolvedValue(undefined);
-
-      await extractService.extractFromMeeting("meeting-1");
-
-      expect(prismaService.llmApiLog.create).toHaveBeenCalledTimes(2);
-
-      const firstCall = prismaService.llmApiLog.create.mock.calls[0][0];
-      expect(firstCall.data.status).toBe(ExtractionStatus.SUCCESS);
-      expect(firstCall.data.provider).toBe("openai");
-
-      const secondCall = prismaService.llmApiLog.create.mock.calls[1][0];
-      expect(secondCall.data.status).toBe(ExtractionStatus.FAILED);
-      expect(secondCall.data.provider).toBe("gemini");
-      expect(secondCall.data.error).toBeDefined();
-    });
 
     it("should handle conference lead source from transcript", async () => {
       const conferenceTranscript = "No fue hasta que un colega menciono Vambe en una conferencia de tecnologia que consideramos automatizar.";

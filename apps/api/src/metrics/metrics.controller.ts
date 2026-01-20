@@ -81,5 +81,17 @@ export class MetricsController {
   async getSellerDetails(@Param() params: GetSellerDetailsParamDto, @Query() query: MetricsFilterDto) {
     return this.metricsService.getSellerDetails(params.seller, { dateFrom: query.dateFrom, dateTo: query.dateTo });
   }
+
+  @Get("sales-funnel-enhanced")
+  @ApiOperation({ summary: "Get enhanced sales funnel with multi-dimensional analysis" })
+  async getSalesFunnelEnhanced(@Query() query: MetricsFilterDto) {
+    return this.metricsService.getSalesFunnelEnhanced(query);
+  }
+
+  @Get("sales-funnel-enhanced/insights")
+  @ApiOperation({ summary: "Get AI-generated insights for the sales funnel" })
+  async getSalesFunnelInsights(@Query() query: MetricsFilterDto) {
+    return this.metricsService.getSalesFunnelInsights(query);
+  }
 }
 

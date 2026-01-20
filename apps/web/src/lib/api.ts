@@ -316,6 +316,47 @@ export const api = {
         }>;
       }>(`/metrics/win-probability${query ? `?${query}` : ""}`);
     },
+    salesFunnelEnhanced: (filters?: { seller?: string; dateFrom?: string; dateTo?: string }) => {
+      const params = new URLSearchParams();
+      if (filters?.seller) params.set("seller", filters.seller);
+      if (filters?.dateFrom) params.set("dateFrom", filters.dateFrom);
+      if (filters?.dateTo) params.set("dateTo", filters.dateTo);
+
+      const query = params.toString();
+      return fetchApi<{
+        stages: Array<{
+          name: string;
+          total: number;
+          closed: number;
+          conversionRate: number;
+          progressionRate?: number;
+          breakdown: {
+            byLeadSource: Record<string, { total: number; closed: number; conversionRate: number }>;
+            byJTBD: Record<string, { total: number; closed: number; conversionRate: number }>;
+            byIndustry: Record<string, { total: number; closed: number; conversionRate: number }>;
+          };
+          topPerformers: string[];
+          dropOffRate: number;
+        }>;
+        trends: {
+          conversionTrend: Array<{ period: string; conversionRate: number }>;
+          leadSourceEvolution: Record<string, Array<{ period: string; count: number }>>;
+        };
+      }>(`/metrics/sales-funnel-enhanced${query ? `?${query}` : ""}`);
+    },
+    salesFunnelInsights: (filters?: { seller?: string; dateFrom?: string; dateTo?: string }) => {
+      const params = new URLSearchParams();
+      if (filters?.seller) params.set("seller", filters.seller);
+      if (filters?.dateFrom) params.set("dateFrom", filters.dateFrom);
+      if (filters?.dateTo) params.set("dateTo", filters.dateTo);
+
+      const query = params.toString();
+      return fetchApi<{
+        bottlenecks: string[];
+        opportunities: string[];
+        recommendations: string[];
+      }>(`/metrics/sales-funnel-enhanced/insights${query ? `?${query}` : ""}`);
+    },
   },
   ingest: {
     uploadCsv: async (file: File) => {
