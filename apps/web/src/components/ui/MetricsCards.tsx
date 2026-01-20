@@ -38,7 +38,7 @@ export function MetricsCards({ metrics }: MetricsCardsProps) {
       {cards.map((card, index) => (
         <div key={index} className="metric-card">
           <div className="metric-value">
-            {formatValue(card.value, card.format, card.suffix)}
+            {formatValue(card.value, card.format)}
           </div>
           <div className="metric-label">{card.label}</div>
         </div>

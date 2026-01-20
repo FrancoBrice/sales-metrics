@@ -1,5 +1,7 @@
 @import './common.css';
 @import './bar-chart.css';
+@import './bubble-chart.css';
 @import './funnel.css';
+@import './heatmap.css';
 @import './sankey-chart.css';
 @import './closure-analysis.css';

@@ -106,39 +106,17 @@ export function JobsToBeDoneBubbleChart() {
   const availableJtbds = Array.from(new Set(allData.map(d => d.jtbd)));
 
   return (
-    <div className="card" style={{
-      height: "650px",
-      display: "flex",
-      flexDirection: "column",
-      background: "var(--color-surface)",
-      borderRadius: "12px",
-      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
-    }}>
-      <div style={{ padding: "1.5rem 1.5rem 1rem" }}>
-        <h3 className="section-title" style={{ marginBottom: "0.75rem" }}>Mapa de Impacto: Jobs to be Done</h3>
-        <p style={{
-          fontSize: "0.85rem",
-          color: "var(--color-text-muted)",
-          marginBottom: "1rem",
-          lineHeight: "1.5"
-        }}>
+    <div className="card jtbd-chart-container">
+      <div className="jtbd-chart-header">
+        <h3 className="section-title">Mapa de Impacto: Jobs to be Done</h3>
+        <p className="jtbd-chart-description">
           Volumen de Leads vs. Tasa de Conversión.
         </p>
-        <div style={{ marginBottom: "1rem" }}>
-          <label style={{
-            fontSize: "0.875rem",
-            color: "var(--color-text-muted)",
-            fontWeight: 500,
-            display: "block",
-            marginBottom: "0.5rem"
-          }}>
+        <div className="jtbd-filter-section">
+          <label className="jtbd-filter-label">
             Filtrar Jobs to be Done:
           </label>
-          <div style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "0.5rem"
-          }}>
+          <div className="jtbd-filter-buttons">
             {availableJtbds.map((jtbd) => {
               const label = JtbdPrimaryLabels[jtbd as JtbdPrimary] || jtbd;
               const isSelected = selectedJtbds.has(jtbd);
@@ -146,34 +124,7 @@ export function JobsToBeDoneBubbleChart() {
                 <button
                   key={jtbd}
                   onClick={() => toggleJtbd(jtbd)}
-                  style={{
-                    padding: "0.5rem 1rem",
-                    borderRadius: "6px",
-                    border: `2px solid ${isSelected ? "var(--color-primary)" : "var(--color-border)"}`,
-                    background: isSelected
-                      ? "var(--color-primary)"
-                      : "var(--color-surface-elevated)",
-                    color: isSelected
-                      ? "white"
-                      : "var(--color-text)",
-                    fontSize: "0.875rem",
-                    fontWeight: isSelected ? 600 : 500,
-                    cursor: "pointer",
-                    transition: "all 0.2s ease",
-                    whiteSpace: "nowrap"
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSelected) {
-                      e.currentTarget.style.borderColor = "var(--color-primary)";
-                      e.currentTarget.style.background = "rgba(var(--color-primary-rgb), 0.1)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSelected) {
-                      e.currentTarget.style.borderColor = "var(--color-border)";
-                      e.currentTarget.style.background = "var(--color-surface-elevated)";
-                    }
-                  }}
+                  className={`jtbd-filter-button ${isSelected ? 'selected' : ''}`}
                 >
                   {label}
                 </button>
@@ -181,20 +132,14 @@ export function JobsToBeDoneBubbleChart() {
             })}
           </div>
         </div>
-        <div style={{
-          fontSize: "0.75rem",
-          color: "var(--color-text-muted)",
-          display: "flex",
-          gap: "1.5rem",
-          flexWrap: "wrap"
-        }}>
+        <div className="jtbd-legend-section">
           <span>• <strong>Eje X:</strong> Cantidad de leads (Volumen)</span>
           <span>• <strong>Eje Y:</strong> Efectividad de venta (Conversión %)</span>
           <span>• <strong>Tamaño:</strong> Número de casos (Count)</span>
         </div>
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, padding: "0 1.5rem 1.5rem" }}>
+      <div className="jtbd-chart-body">
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ top: 30, right: 30, bottom: 50, left: 50 }}>
             <CartesianGrid
@@ -246,48 +191,28 @@ export function JobsToBeDoneBubbleChart() {
                 if (active && payload && payload.length) {
                   const data = payload[0].payload;
                   return (
-                    <div style={{
-                      background: "var(--color-surface-elevated)",
-                      border: "1px solid var(--color-border)",
-                      padding: "1rem",
-                      borderRadius: "10px",
-                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-                      minWidth: "200px"
-                    }}>
-                      <p style={{
-                        fontWeight: 700,
-                        marginBottom: "0.5rem",
-                        fontSize: "0.95rem",
-                        color: "var(--color-text)"
-                      }}>
+                    <div className="jtbd-tooltip">
+                      <p className="jtbd-tooltip-title">
                         {data.name}
                       </p>
-                      <div style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "0.375rem",
-                        fontSize: "0.875rem"
-                      }}>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ color: "var(--color-text-muted)" }}>Volumen:</span>
-                          <span style={{ fontWeight: 600, color: "var(--color-text)" }}>{data.x} leads</span>
+                      <div className="jtbd-tooltip-content">
+                        <div className="jtbd-tooltip-row">
+                          <span className="jtbd-tooltip-label">Volumen:</span>
+                          <span className="jtbd-tooltip-value">{data.x} leads</span>
                         </div>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ color: "var(--color-text-muted)" }}>Conversión:</span>
-                          <span style={{
-                            fontWeight: 600,
-                            color: getColor(data.y)
-                          }}>
+                        <div className="jtbd-tooltip-row">
+                          <span className="jtbd-tooltip-label">Conversión:</span>
+                          <span className="jtbd-tooltip-value conversion" style={{ color: getColor(data.y) }}>
                             {data.y}%
                           </span>
                         </div>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ color: "var(--color-text-muted)" }}>Casos (Count):</span>
-                          <span style={{ fontWeight: 600, color: "var(--color-text)" }}>{data.z}</span>
+                        <div className="jtbd-tooltip-row">
+                          <span className="jtbd-tooltip-label">Casos (Count):</span>
+                          <span className="jtbd-tooltip-value">{data.z}</span>
                         </div>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ color: "var(--color-text-muted)" }}>Cerrados:</span>
-                          <span style={{ fontWeight: 600, color: "#22c55e" }}>{data.closed}</span>
+                        <div className="jtbd-tooltip-row">
+                          <span className="jtbd-tooltip-label">Cerrados:</span>
+                          <span className="jtbd-tooltip-value" style={{ color: "#22c55e" }}>{data.closed}</span>
                         </div>
                       </div>
                     </div>
@@ -322,18 +247,14 @@ export function JobsToBeDoneBubbleChart() {
                       fill={colorWithOpacity}
                       stroke={color}
                       strokeWidth={2.5}
-                      style={{
-                        filter: "drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15))",
-                        transition: "all 0.3s ease",
-                        cursor: "pointer"
-                      }}
+                      className="jtbd-bubble"
                     />
                     <circle
                       cx={validCx}
                       cy={validCy}
                       r={Math.max(4, validR * 0.35)}
                       fill={color}
-                      opacity={0.9}
+                      className="jtbd-bubble-core"
                     />
                   </g>
                 );

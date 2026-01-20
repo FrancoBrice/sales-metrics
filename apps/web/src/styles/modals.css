@@ -187,3 +187,89 @@
   text-align: center;
   color: var(--color-text-muted);
 }
+
+/* Seller Profile Modal Styles */
+.seller-profile-header {
+  padding-right: 3rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.75rem;
+}
+
+.seller-profile-badges {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.seller-profile-body {
+  padding-right: 3rem;
+}
+
+.seller-profile-metrics-grid {
+  margin-bottom: 2.5rem;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.seller-profile-metric-card {
+  padding: 1.5rem;
+}
+
+.seller-profile-metric-value {
+  font-size: 2.5rem;
+}
+
+.seller-profile-sentiment-section {
+  padding: 1.5rem;
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+}
+
+.seller-profile-sentiment-title {
+  margin-bottom: 1.25rem;
+}
+
+.seller-profile-sentiment-distribution {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.seller-profile-sentiment-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.seller-profile-sentiment-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.seller-profile-sentiment-label {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.seller-profile-sentiment-value {
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.seller-profile-sentiment-percentage {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.seller-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.seller-profile-card {
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+}

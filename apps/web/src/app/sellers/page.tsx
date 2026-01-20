@@ -101,22 +101,14 @@ export default function SellersMetricsPage() {
         hideSellerFilter={true}
       />
 
-      <div style={{ marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "1rem" }}>
-        <label style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", fontWeight: 500 }}>
+      <div className="sellers-sort-section">
+        <label className="sellers-sort-label">
           Ordenar por:
         </label>
         <select
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value as SellerSortOrder)}
-          style={{
-            padding: "0.5rem 1rem",
-            borderRadius: "var(--radius-md)",
-            border: "1px solid var(--color-border)",
-            background: "var(--color-surface)",
-            color: "var(--color-text)",
-            fontSize: "0.875rem",
-            cursor: "pointer",
-          }}
+          className="sellers-sort-select"
         >
           {Object.values(SellerSortOrder).map((order) => (
             <option key={order} value={order}>
@@ -129,7 +121,7 @@ export default function SellersMetricsPage() {
       {sellerMetrics.length === 0 ? (
         <EmptyStateWithType type="sellers" />
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <div className="sellers-list">
           {sortedSellerMetrics.map((seller) => {
             const conversionWidth = Math.min(100, Math.max(0, (seller.conversionRate / maxConversion) * 100));
             const totalSentiment = seller.sentimentDistribution.reduce((sum, s) => sum + s.total, 0);
@@ -137,21 +129,13 @@ export default function SellersMetricsPage() {
             return (
               <div
                 key={seller.seller}
-                className="card seller-card"
+                className="seller-card"
                 onClick={() => setSelectedSeller(seller.seller)}
-                style={{
-                  width: "100%",
-                  padding: "1.5rem",
-                  display: "grid",
-                  gridTemplateColumns: "250px 1fr 200px",
-                  gap: "2rem",
-                  alignItems: "center"
-                }}
               >
                 {/* Column 1: Seller Info & Stats */}
                 <div>
-                  <div className="seller-card-header" style={{ marginBottom: "1rem", justifyContent: "flex-start", gap: "1rem" }}>
-                    <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 700 }}>{seller.seller}</h3>
+                  <div className="seller-card-header">
+                    <h3 className="seller-card-title">{seller.seller}</h3>
                     <div className="seller-card-badges">
                       <span className={`badge ${seller.conversionRate >= 50 ? "badge-success" : seller.conversionRate >= 30 ? "badge-warning" : "badge-danger"}`}>
                         {seller.conversionRate.toFixed(1)}%
@@ -159,68 +143,46 @@ export default function SellersMetricsPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", gap: "1.5rem" }}>
-                    <div>
-                      <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--color-text)" }}>{seller.total}</div>
-                      <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", textTransform: "uppercase", fontWeight: 600 }}>Oportunidades</div>
+                  <div className="seller-metrics-grid">
+                    <div className="seller-metric-item">
+                      <span className="seller-metric-value">{seller.total}</span>
+                      <span className="seller-metric-label">Oportunidades</span>
                     </div>
-                    <div>
-                      <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--color-text)" }}>{seller.closed}</div>
-                      <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", textTransform: "uppercase", fontWeight: 600 }}>Cerradas</div>
+                    <div className="seller-metric-item">
+                      <span className="seller-metric-value">{seller.closed}</span>
+                      <span className="seller-metric-label">Cerradas</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Column 2: Conversion Bar & Sentiment */}
-                <div style={{ borderLeft: "1px solid var(--color-border)", borderRight: "1px solid var(--color-border)", padding: "0 2rem" }}>
-                  <div style={{ marginBottom: "1rem" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem", alignItems: "center" }}>
-                      <span style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", fontWeight: 500 }}>Tasa de Conversión</span>
-                      <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--color-text)" }}>{seller.conversionRate.toFixed(1)}%</span>
+                <div className="seller-conversion-section">
+                  <div>
+                    <div className="seller-conversion-header">
+                      <span className="seller-conversion-label">Tasa de Conversión</span>
+                      <span className="seller-conversion-value">{seller.conversionRate.toFixed(1)}%</span>
                     </div>
-                    <div
-                      style={{
-                        width: "100%",
-                        height: "8px",
-                        background: "var(--color-surface-elevated)",
-                        borderRadius: "var(--radius-sm)",
-                        overflow: "hidden",
-                        boxShadow: "inset 0 1px 2px rgba(0,0,0,0.1)"
-                      }}
-                    >
+                    <div className="seller-conversion-bar-container">
                       <div
+                        className={`seller-conversion-bar-fill ${seller.conversionRate >= 50 ? "success" : seller.conversionRate >= 30 ? "warning" : "danger"}`}
                         style={{
                           width: `${conversionWidth}%`,
-                          height: "100%",
-                          background: seller.conversionRate >= 50
-                            ? "linear-gradient(90deg, var(--color-success) 0%, var(--color-secondary) 100%)"
-                            : seller.conversionRate >= 30
-                            ? "linear-gradient(90deg, var(--color-warning) 0%, var(--color-secondary) 100%)"
-                            : "linear-gradient(90deg, var(--color-danger) 0%, var(--color-secondary) 100%)",
-                          borderRadius: "var(--radius-sm)",
-                          transition: "width 0.5s ease"
                         }}
                       />
                     </div>
                   </div>
 
                   {totalSentiment > 0 && (
-                     <div style={{ display: "flex", gap: "1rem", fontSize: "0.75rem" }}>
+                     <div className="seller-sentiment-indicators">
                        {seller.sentimentDistribution.map((sentiment) => {
                          if (sentiment.total === 0) return null;
                          return (
-                           <div key={sentiment.sentiment} style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                             <span style={{
-                               width: "8px",
-                               height: "8px",
-                               borderRadius: "50%",
-                               background: sentiment.sentiment === "POSITIVO" ? "var(--color-success)" :
-                                           sentiment.sentiment === "ESCEPTICO" ? "var(--color-danger)" : "var(--color-warning)"
-                             }}></span>
-                             <span style={{ color: "var(--color-text-muted)" }}>
+                           <div key={sentiment.sentiment} className="seller-sentiment-item">
+                             <span className={`seller-sentiment-dot ${sentiment.sentiment === "POSITIVO" ? "positive" : sentiment.sentiment === "ESCEPTICO" ? "negative" : "neutral"}`}></span>
+                             <span className="seller-sentiment-label">
                                {SentimentLabels[sentiment.sentiment as Sentiment]}
                              </span>
-                             <span style={{ fontWeight: 600, color: "var(--color-text)" }}>
+                             <span className="seller-sentiment-count">
                                {sentiment.total}
                              </span>
                            </div>
@@ -231,24 +193,8 @@ export default function SellersMetricsPage() {
                 </div>
 
                 {/* Column 3: Action */}
-                <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
-                  <button
-                    style={{
-                        background: "none",
-                        border: "none",
-                        color: "var(--color-primary)",
-                        fontSize: "0.875rem",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "0.25rem",
-                        padding: "0.5rem 1rem",
-                        borderRadius: "var(--radius-md)",
-                        transition: "var(--transition-base)"
-                    }}
-                    className="btn-details"
-                  >
+                <div className="seller-action-section">
+                  <button className="btn-details">
                     Ver detalles
                     <span>→</span>
                   </button>

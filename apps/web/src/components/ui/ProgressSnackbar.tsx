@@ -24,7 +24,10 @@ export function ProgressSnackbar({ message, progress, total, onClose }: Progress
         </div>
       )}
       <div className="progress-bar-container">
-        <div className="progress-bar-fill" style={{ width: `${percentage}%` }} />
+        <div
+          className="progress-bar-fill"
+          style={{ '--progress-width': `${percentage}%` } as React.CSSProperties}
+        />
       </div>
     </div>
   );

@@ -91,95 +91,48 @@ export function HeatmapIndustryPainPoint({ filters }: HeatmapIndustryPainPointPr
   };
 
   return (
-    <div className="card" style={{ padding: "1.5rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+    <div className="card heatmap-container">
+      <div className="heatmap-header">
         <div>
-          <h3 className="section-title" style={{ marginBottom: "0.5rem" }}>
+          <h3 className="heatmap-title">
             Matriz Industria × Pain Point
           </h3>
-          <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
+          <p className="heatmap-description">
             Visualiza la relación entre industrias y pain points. El tamaño indica volumen, el color indica{" "}
             {colorMode === "conversion" ? "tasa de conversión" : "volumen promedio"}.
           </p>
         </div>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
+        <div className="heatmap-controls">
           <button
             onClick={() => setColorMode("conversion")}
-            style={{
-              padding: "0.5rem 1rem",
-              borderRadius: "6px",
-              border: `2px solid ${colorMode === "conversion" ? "var(--color-primary)" : "var(--color-border)"}`,
-              background: colorMode === "conversion" ? "var(--color-primary)" : "var(--color-surface-elevated)",
-              color: colorMode === "conversion" ? "white" : "var(--color-text)",
-              fontSize: "0.875rem",
-              fontWeight: colorMode === "conversion" ? 600 : 500,
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
+            className={`heatmap-toggle-button ${colorMode === "conversion" ? "active" : ""}`}
           >
             Conversión
           </button>
           <button
             onClick={() => setColorMode("volume")}
-            style={{
-              padding: "0.5rem 1rem",
-              borderRadius: "6px",
-              border: `2px solid ${colorMode === "volume" ? "var(--color-primary)" : "var(--color-border)"}`,
-              background: colorMode === "volume" ? "var(--color-primary)" : "var(--color-surface-elevated)",
-              color: colorMode === "volume" ? "white" : "var(--color-text)",
-              fontSize: "0.875rem",
-              fontWeight: colorMode === "volume" ? 600 : 500,
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
+            className={`heatmap-toggle-button ${colorMode === "volume" ? "active" : ""}`}
           >
             Volumen
           </button>
         </div>
       </div>
 
-      <div style={{ overflowX: "auto", overflowY: "auto", maxHeight: "600px" }}>
+      <div className="heatmap-scroll-container">
         <div
+          className="heatmap-grid"
           style={{
-            display: "grid",
             gridTemplateColumns: `150px repeat(${data.painPoints.length}, minmax(120px, 1fr))`,
-            gap: "0.5rem",
-            minWidth: "fit-content",
           }}
         >
-          <div
-            style={{
-              position: "sticky",
-              left: 0,
-              zIndex: 10,
-              background: "var(--color-surface)",
-              padding: "0.75rem",
-              fontSize: "0.75rem",
-              fontWeight: 600,
-              color: "var(--color-text-muted)",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              borderRight: "2px solid var(--color-border)",
-            }}
-          >
+          <div className="heatmap-header-cell">
             Industria / Pain Point
           </div>
 
           {data.painPoints.map((pp) => (
             <div
               key={pp}
-              style={{
-                padding: "0.75rem",
-                fontSize: "0.75rem",
-                fontWeight: 600,
-                color: "var(--color-text-muted)",
-                textAlign: "center",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                writingMode: "vertical-rl",
-                textOrientation: "mixed",
-                borderBottom: "2px solid var(--color-border)",
-              }}
+              className="heatmap-column-header"
               title={PainPointsLabels[pp as PainPoints] || pp}
             >
               {PainPointsLabels[pp as PainPoints] || pp}
@@ -189,19 +142,7 @@ export function HeatmapIndustryPainPoint({ filters }: HeatmapIndustryPainPointPr
           {data.industries.map((industry) => (
             <React.Fragment key={industry}>
               <div
-                style={{
-                  position: "sticky",
-                  left: 0,
-                  zIndex: 5,
-                  background: "var(--color-surface)",
-                  padding: "0.75rem",
-                  fontSize: "0.875rem",
-                  fontWeight: 600,
-                  color: "var(--color-text)",
-                  borderRight: "2px solid var(--color-border)",
-                  display: "flex",
-                  alignItems: "center",
-                }}
+                className="heatmap-row-header"
                 title={IndustryLabels[industry as Industry] || industry}
               >
                 {IndustryLabels[industry as Industry] || industry}
@@ -212,34 +153,9 @@ export function HeatmapIndustryPainPoint({ filters }: HeatmapIndustryPainPointPr
                 return (
                   <div
                     key={`${industry}-${pp}`}
+                    className={`heatmap-cell ${cell ? 'filled' : ''}`}
                     style={{
                       background: getColor(cell),
-                      borderRadius: "6px",
-                      padding: "0.75rem",
-                      minHeight: "60px",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      gap: "0.25rem",
-                      cursor: cell ? "pointer" : "default",
-                      transition: "all 0.2s ease",
-                      border: cell ? "1px solid var(--color-border)" : "1px dashed var(--color-border)",
-                      position: "relative",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (cell) {
-                        e.currentTarget.style.transform = "scale(1.05)";
-                        e.currentTarget.style.zIndex = "20";
-                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.3)";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (cell) {
-                        e.currentTarget.style.transform = "scale(1)";
-                        e.currentTarget.style.zIndex = "1";
-                        e.currentTarget.style.boxShadow = "none";
-                      }
                     }}
                     title={
                       cell
@@ -248,37 +164,22 @@ export function HeatmapIndustryPainPoint({ filters }: HeatmapIndustryPainPointPr
                     }
                   >
                     {cell && (
-                      <>
+                      <div className="heatmap-cell-content">
                         <div
+                          className="heatmap-cell-dot"
                           style={{
                             width: getCellSize(cell),
                             height: getCellSize(cell),
-                            borderRadius: "50%",
-                            background: "rgba(255, 255, 255, 0.9)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "0.75rem",
-                            fontWeight: 700,
-                            color: "var(--color-text)",
-                            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
                           }}
                         >
                           {cell.total}
                         </div>
-                        <div
-                          style={{
-                            fontSize: "0.7rem",
-                            fontWeight: 600,
-                            color: "rgba(255, 255, 255, 0.95)",
-                            textShadow: "0 1px 2px rgba(0, 0, 0, 0.3)",
-                          }}
-                        >
+                        <div className="heatmap-cell-rate">
                           {colorMode === "conversion"
                             ? `${cell.conversionRate.toFixed(0)}%`
                             : `${cell.avgVolume}`}
                         </div>
-                      </>
+                      </div>
                     )}
                   </div>
                 );
@@ -288,30 +189,21 @@ export function HeatmapIndustryPainPoint({ filters }: HeatmapIndustryPainPointPr
         </div>
       </div>
 
-      <div
-        style={{
-          marginTop: "1.5rem",
-          padding: "1rem",
-          background: "var(--color-surface-elevated)",
-          borderRadius: "var(--radius-md)",
-          fontSize: "0.75rem",
-          color: "var(--color-text-muted)",
-        }}
-      >
-        <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>
-          <div>
-            <strong style={{ color: "var(--color-text)" }}>Leyenda:</strong>
+      <div className="heatmap-legend">
+        <div className="heatmap-legend-content">
+          <div className="heatmap-legend-item">
+            <strong>Leyenda:</strong>
           </div>
-          <div>
-            <span style={{ display: "inline-block", width: "12px", height: "12px", background: "rgba(239, 68, 68, 0.5)", borderRadius: "3px", marginRight: "0.5rem" }} />
+          <div className="heatmap-legend-item">
+            <span className="heatmap-legend-color heatmap-legend-color-low" />
             Baja {colorMode === "conversion" ? "conversión" : "volumen"}
           </div>
-          <div>
-            <span style={{ display: "inline-block", width: "12px", height: "12px", background: "rgba(34, 197, 94, 0.8)", borderRadius: "3px", marginRight: "0.5rem" }} />
+          <div className="heatmap-legend-item">
+            <span className="heatmap-legend-color heatmap-legend-color-high" />
             Alta {colorMode === "conversion" ? "conversión" : "volumen"}
           </div>
-          <div>
-            <span style={{ display: "inline-block", width: "8px", height: "8px", background: "white", borderRadius: "50%", marginRight: "0.5rem", boxShadow: "0 0 0 2px var(--color-border)" }} />
+          <div className="heatmap-legend-item">
+            <span className="heatmap-legend-dot" />
             Tamaño = Cantidad de leads
           </div>
         </div>
