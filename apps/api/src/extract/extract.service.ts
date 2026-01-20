@@ -1,9 +1,11 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-import { LlmExtractionResult, DeterministicHints } from "./llm";
+import { LlmExtractionResult } from "./llm";
 import { ExtractionStatus, LeadSource, Integrations, Volume, Extraction } from "@vambe/shared";
-import { ExtractionParser, mapExtractionDataToExtraction, GeminiClient, OpenAiClient } from "./llm";
+import { ExtractionParser, GeminiClient, OpenAiClient, mapExtractionDataToExtraction } from "./llm";
 import { detectLeadSource, detectVolume, detectIntegrations } from "./deterministic";
+import { processInBatches } from "../common/helpers/batching.helper";
+import { CONCURRENCY_LIMIT } from "../common/constants";
 
 const MIN_CONFIDENCE_THRESHOLD = 0.7;
 
@@ -32,7 +34,7 @@ export class ExtractService {
       const deterministicResults = this.runDeterministicExtraction(meeting.transcript);
 
       let llmResult: LlmExtractionResult;
-      let firstError: any = null;
+      let firstError: unknown = null;
 
       try {
         llmResult = await this.geminiClient.extractFromTranscript(
@@ -86,19 +88,20 @@ export class ExtractService {
       });
 
       if (firstError) {
+        const firstErrorWithMetadata = firstError as { metadata?: { model?: string; provider?: string; durationMs?: number }; rawResponse?: string };
         await this.prisma.llmApiLog.create({
           data: {
             extractionId: saved.id,
-            provider: firstError?.metadata?.provider || "gemini",
-            model: firstError?.metadata?.model || "unknown",
+            provider: firstErrorWithMetadata?.metadata?.provider || "gemini",
+            model: firstErrorWithMetadata?.metadata?.model || "unknown",
             status: ExtractionStatus.FAILED,
-            response: firstError?.rawResponse || JSON.stringify({
+            response: firstErrorWithMetadata?.rawResponse || JSON.stringify({
               error: String(firstError),
-              model: firstError?.metadata?.model || "unknown",
+              model: firstErrorWithMetadata?.metadata?.model || "unknown",
               timestamp: new Date().toISOString(),
             }),
             error: String(firstError),
-            durationMs: firstError?.metadata?.durationMs,
+            durationMs: firstErrorWithMetadata?.metadata?.durationMs,
           },
         });
       }
@@ -111,12 +114,13 @@ export class ExtractService {
         extraction,
         status: saved.status,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       this.logger.error(`Extraction failed for meeting ${meetingId}: ${errorMessage}`, error instanceof Error ? error.stack : undefined);
 
-      const modelName = error?.metadata?.model || "unknown";
-      const rawResponse = error?.rawResponse || JSON.stringify({
+      const errorWithMetadata = error as { metadata?: { model?: string; provider?: string; durationMs?: number }; rawResponse?: string };
+      const modelName = errorWithMetadata?.metadata?.model || "unknown";
+      const rawResponse = errorWithMetadata?.rawResponse || JSON.stringify({
         error: String(error),
         model: modelName,
         timestamp: new Date().toISOString(),
@@ -138,12 +142,12 @@ export class ExtractService {
       await this.prisma.llmApiLog.create({
         data: {
           extractionId: saved.id,
-          provider: error?.metadata?.provider || "unknown",
+          provider: errorWithMetadata?.metadata?.provider || "unknown",
           model: modelName,
           status: ExtractionStatus.FAILED,
           response: rawResponse,
           error: String(error),
-          durationMs: error?.metadata?.durationMs,
+          durationMs: errorWithMetadata?.metadata?.durationMs,
         },
       });
 
@@ -199,23 +203,17 @@ export class ExtractService {
       failed: 0,
     };
 
-    const concurrencyLimit = 10;
-    const batches = [];
-    for (let i = 0; i < meetingsWithoutExtraction.length; i += concurrencyLimit) {
-      batches.push(meetingsWithoutExtraction.slice(i, i + concurrencyLimit));
-    }
+    const batchResults = await processInBatches(
+      meetingsWithoutExtraction,
+      CONCURRENCY_LIMIT,
+      (meeting) => this.extractFromMeeting(meeting.id)
+    );
 
-    for (const batch of batches) {
-      const batchResults = await Promise.allSettled(
-        batch.map((meeting) => this.extractFromMeeting(meeting.id))
-      );
-
-      for (const result of batchResults) {
-        if (result.status === "fulfilled" && result.value?.status === ExtractionStatus.SUCCESS) {
-          results.success++;
-        } else {
-          results.failed++;
-        }
+    for (const result of batchResults) {
+      if (result.status === "fulfilled" && result.value?.status === ExtractionStatus.SUCCESS) {
+        results.success++;
+      } else {
+        results.failed++;
       }
     }
 
@@ -276,23 +274,17 @@ export class ExtractService {
       return results;
     }
 
-    const concurrencyLimit = 10;
-    const batches = [];
-    for (let i = 0; i < allMeetingIds.length; i += concurrencyLimit) {
-      batches.push(allMeetingIds.slice(i, i + concurrencyLimit));
-    }
+    const batchResults = await processInBatches(
+      allMeetingIds,
+      CONCURRENCY_LIMIT,
+      (meetingId) => this.extractFromMeeting(meetingId)
+    );
 
-    for (const batch of batches) {
-      const batchResults = await Promise.allSettled(
-        batch.map((meetingId) => this.extractFromMeeting(meetingId))
-      );
-
-      for (const result of batchResults) {
-        if (result.status === "fulfilled" && result.value?.status === ExtractionStatus.SUCCESS) {
-          results.success++;
-        } else {
-          results.failed++;
-        }
+    for (const result of batchResults) {
+      if (result.status === "fulfilled" && result.value?.status === ExtractionStatus.SUCCESS) {
+        results.success++;
+      } else {
+        results.failed++;
       }
     }
 
@@ -335,23 +327,17 @@ export class ExtractService {
       skipped: failedExtractions.length - meetingIdsToRetry.length,
     };
 
-    const concurrencyLimit = 10;
-    const batches = [];
-    for (let i = 0; i < meetingIdsToRetry.length; i += concurrencyLimit) {
-      batches.push(meetingIdsToRetry.slice(i, i + concurrencyLimit));
-    }
+    const batchResults = await processInBatches(
+      meetingIdsToRetry,
+      CONCURRENCY_LIMIT,
+      (meetingId) => this.extractFromMeeting(meetingId)
+    );
 
-    for (const batch of batches) {
-      const batchResults = await Promise.allSettled(
-        batch.map((meetingId) => this.extractFromMeeting(meetingId))
-      );
-
-      for (const result of batchResults) {
-        if (result.status === "fulfilled" && result.value?.status === ExtractionStatus.SUCCESS) {
-          results.success++;
-        } else {
-          results.failed++;
-        }
+    for (const result of batchResults) {
+      if (result.status === "fulfilled" && result.value?.status === ExtractionStatus.SUCCESS) {
+        results.success++;
+      } else {
+        results.failed++;
       }
     }
 

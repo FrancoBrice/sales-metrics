@@ -8,6 +8,7 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiTags, ApiOperation, ApiConsumes, ApiBody } from "@nestjs/swagger";
 import { IngestService } from "./ingest.service";
+import { CSV_MAX_SIZE } from "../common/constants";
 
 @ApiTags("Ingest")
 @Controller("ingest")
@@ -28,7 +29,13 @@ export class IngestController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor("file"))
+  @UseInterceptors(
+    FileInterceptor("file", {
+      limits: {
+        fileSize: CSV_MAX_SIZE,
+      },
+    })
+  )
   async uploadCsv(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException("No file uploaded");
@@ -36,6 +43,10 @@ export class IngestController {
 
     if (!file.originalname.endsWith(".csv")) {
       throw new BadRequestException("File must be a CSV");
+    }
+
+    if (file.size > CSV_MAX_SIZE) {
+      throw new BadRequestException(`File size exceeds maximum allowed size of ${CSV_MAX_SIZE / 1024 / 1024}MB`);
     }
 
     return this.ingestService.processCsv(file.buffer);

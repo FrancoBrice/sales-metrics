@@ -28,10 +28,15 @@ export function useSankeyData({ data, hiddenNodes, firstCategory }: UseSankeyDat
 
     let currentlyHidden = new Set(hiddenNodes);
     let changed = true;
+    let iterations = 0;
+    const maxIterations = data.nodes.length;
 
-    while (changed) {
+    while (changed && iterations < maxIterations) {
+      iterations++;
       changed = false;
       const activeLinks = data.links.filter((link) => {
+        if (link.source < 0 || link.source >= data.nodes.length) return false;
+        if (link.target < 0 || link.target >= data.nodes.length) return false;
         const sourceHidden = currentlyHidden.has(data.nodes[link.source].name);
         const targetHidden = currentlyHidden.has(data.nodes[link.target].name);
         return !sourceHidden && !targetHidden;
@@ -72,6 +77,9 @@ export function useSankeyData({ data, hiddenNodes, firstCategory }: UseSankeyDat
 
     const activeLinks = data.links
       .filter((link) => {
+        if (link.source < 0 || link.source >= data.nodes.length) return false;
+        if (link.target < 0 || link.target >= data.nodes.length) return false;
+        if (link.source === link.target) return false;
         const sourceVisible = !currentlyHidden.has(data.nodes[link.source].name);
         const targetVisible = !currentlyHidden.has(data.nodes[link.target].name);
         return sourceVisible && targetVisible;
@@ -80,7 +88,10 @@ export function useSankeyData({ data, hiddenNodes, firstCategory }: UseSankeyDat
         ...link,
         source: indexMap[link.source],
         target: indexMap[link.target],
-      }));
+      }))
+      .filter((link) => {
+        return link.source >= 0 && link.target >= 0 && link.source < activeNodes.length && link.target < activeNodes.length && link.source !== link.target;
+      });
 
     return { nodes: activeNodes, links: activeLinks, autoHiddenNodes: currentlyHidden };
   }, [data, hiddenNodes, firstCategory]);

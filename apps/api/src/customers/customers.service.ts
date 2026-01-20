@@ -1,28 +1,19 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { Prisma } from "@prisma/client";
-import { Extraction } from "@vambe/shared";
-import { mapExtractionDataToExtraction } from "../extract/llm";
-
-interface CustomerFilter {
-  seller?: string;
-  closed?: boolean;
-  leadSource?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  industry?: string;
-  search?: string;
-  page?: number;
-  limit?: number;
-}
+import { ListCustomersDto } from "./dto/list-customers.dto";
+import { CustomerWithRelations, CustomerMapped, CustomerDetailMapped } from "../common/types";
+import { buildDateFilter } from "../common/helpers/filter.helper";
+import { getExtractionFromCustomer } from "../common/helpers/extraction.helper";
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "../common/constants";
 
 @Injectable()
 export class CustomersService {
   constructor(private readonly prisma: PrismaService) { }
 
-  async findAll(filter: CustomerFilter) {
-    const page = filter.page || 1;
-    const limit = filter.limit || 10;
+  async findAll(filter: ListCustomersDto) {
+    const page = filter.page ?? DEFAULT_PAGE;
+    const limit = filter.limit ?? DEFAULT_PAGE_SIZE;
     const skip = (page - 1) * limit;
 
     const where: Prisma.CustomerWhereInput = {};
@@ -42,27 +33,14 @@ export class CustomersService {
       };
     }
 
-    if (filter.dateFrom || filter.dateTo) {
-      where.meetingDate = {};
-      if (filter.dateFrom) {
-        where.meetingDate.gte = new Date(filter.dateFrom);
-      }
-      if (filter.dateTo) {
-        where.meetingDate.lte = new Date(filter.dateTo);
-      }
+    const dateFilter = buildDateFilter({ dateFrom: filter.dateFrom, dateTo: filter.dateTo });
+    if (dateFilter) {
+      where.meetingDate = dateFilter;
     }
-
-    // Pre-filter by extraction fields if possible
-    // Note: This is an optimization. Since extraction is JSON, we fetch all for now if filtering by json fields
-    // Ideally we would move critical fields to columns, but for this scale in-memory filter is fine,
-    // EXCEPT pagination breaks.
-    // To support proper pagination with JSON filters, we'll fetch ALL IDs first that match SQL filters,
-    // then filter in memory, then paginate the result slice.
 
     const requiresInMemoryFilter = !!filter.leadSource || !!filter.industry;
 
     if (requiresInMemoryFilter) {
-      // Get all matching database filters first
       const allCandidates = await this.prisma.customer.findMany({
         where,
         include: {
@@ -79,7 +57,6 @@ export class CustomersService {
         orderBy: { meetingDate: "desc" },
       });
 
-      // Filter in memory
       const filtered = allCandidates.map(this.mapCustomer).filter((c) => {
         if (filter.leadSource && c.extraction?.leadSource !== filter.leadSource) return false;
         if (filter.industry && c.extraction?.industry !== filter.industry) return false;
@@ -100,7 +77,6 @@ export class CustomersService {
       };
 
     } else {
-      // Database level pagination
       const [total, customers] = await Promise.all([
         this.prisma.customer.count({ where }),
         this.prisma.customer.findMany({
@@ -144,7 +120,7 @@ export class CustomersService {
     return customers.map((c) => c.seller);
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<CustomerDetailMapped | null> {
     const customer = await this.prisma.customer.findUnique({
       where: { id },
       include: {
@@ -165,10 +141,7 @@ export class CustomersService {
     }
 
     const meeting = customer.meetings[0];
-    const extractionRecord = meeting?.extractions[0];
-    const extraction = extractionRecord
-      ? mapExtractionDataToExtraction(extractionRecord.data)
-      : null;
+    const extraction = getExtractionFromCustomer(customer);
 
     return {
       id: customer.id,
@@ -185,13 +158,9 @@ export class CustomersService {
     };
   }
 
-  private mapCustomer(customer: any) {
+  private mapCustomer(customer: CustomerWithRelations): CustomerMapped {
     const meeting = customer.meetings[0];
-    const extractionRecord = meeting?.extractions[0];
-
-    const extraction = extractionRecord
-      ? mapExtractionDataToExtraction(extractionRecord.data)
-      : null;
+    const extraction = getExtractionFromCustomer(customer);
 
     return {
       id: customer.id,

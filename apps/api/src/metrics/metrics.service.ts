@@ -2,33 +2,26 @@ import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { Prisma } from "@prisma/client";
 import { Extraction, LeadSource, Industry, PainPoints, BusinessModel, VolumeUnit, Sentiment, Urgency, RiskLevel } from "@vambe/shared";
-import { mapExtractionDataToExtraction } from "../extract/llm";
-
-interface MetricsFilter {
-  seller?: string;
-  dateFrom?: string;
-  dateTo?: string;
-}
+import { MetricsFilterDto } from "./dto/metrics-filter.dto";
+import { CustomerWithRelations } from "../common/types";
+import { buildDateFilter } from "../common/helpers/filter.helper";
+import { getExtractionFromCustomer } from "../common/helpers/extraction.helper";
+import { UNKNOWN_VALUE, NO_PAIN_POINTS } from "../common/constants";
 
 @Injectable()
 export class MetricsService {
   constructor(private readonly prisma: PrismaService) { }
 
-  async getOverview(filter: MetricsFilter) {
+  async getOverview(filter: MetricsFilterDto) {
     const where: Prisma.CustomerWhereInput = {};
 
     if (filter.seller) {
       where.seller = filter.seller;
     }
 
-    if (filter.dateFrom || filter.dateTo) {
-      where.meetingDate = {};
-      if (filter.dateFrom) {
-        where.meetingDate.gte = new Date(filter.dateFrom);
-      }
-      if (filter.dateTo) {
-        where.meetingDate.lte = new Date(filter.dateTo);
-      }
+    const dateFilter = buildDateFilter({ dateFrom: filter.dateFrom, dateTo: filter.dateTo });
+    if (dateFilter) {
+      where.meetingDate = dateFilter;
     }
 
     const customers = await this.prisma.customer.findMany({
@@ -258,21 +251,16 @@ export class MetricsService {
     return { distribution };
   }
 
-  async getLeadsOverTime(filter: MetricsFilter) {
+  async getLeadsOverTime(filter: MetricsFilterDto) {
     const where: Prisma.CustomerWhereInput = {};
 
     if (filter.seller) {
       where.seller = filter.seller;
     }
 
-    if (filter.dateFrom || filter.dateTo) {
-      where.meetingDate = {};
-      if (filter.dateFrom) {
-        where.meetingDate.gte = new Date(filter.dateFrom);
-      }
-      if (filter.dateTo) {
-        where.meetingDate.lte = new Date(filter.dateTo);
-      }
+    const dateFilter = buildDateFilter({ dateFrom: filter.dateFrom, dateTo: filter.dateTo });
+    if (dateFilter) {
+      where.meetingDate = dateFilter;
     }
 
     const customers = await this.prisma.customer.findMany({
@@ -305,7 +293,7 @@ export class MetricsService {
       entry.total++;
 
       const extraction = this.getExtraction(customer);
-      const source = extraction?.leadSource || "Desconocido";
+      const source = extraction?.leadSource || UNKNOWN_VALUE;
 
       entry.bySource[source] = (entry.bySource[source] || 0) + 1;
     }
@@ -359,8 +347,8 @@ export class MetricsService {
       const extraction = this.getExtraction(customer);
       if (!extraction) continue;
 
-      const source = extraction.leadSource || "Desconocido";
-      const painPoints = extraction.painPoints?.length ? extraction.painPoints : ["Ninguno"];
+      const source = extraction.leadSource || UNKNOWN_VALUE;
+      const painPoints = extraction.painPoints?.length ? extraction.painPoints : [NO_PAIN_POINTS];
       const sentiment = extraction.sentiment || "NEUTRAL";
       const status = customer.closed ? "Cerrada" : "Perdida";
 
@@ -394,21 +382,16 @@ export class MetricsService {
     return { nodes, links };
   }
 
-  async getIndustryPainPointHeatmap(filter: MetricsFilter) {
+  async getIndustryPainPointHeatmap(filter: MetricsFilterDto) {
     const where: Prisma.CustomerWhereInput = {};
 
     if (filter.seller) {
       where.seller = filter.seller;
     }
 
-    if (filter.dateFrom || filter.dateTo) {
-      where.meetingDate = {};
-      if (filter.dateFrom) {
-        where.meetingDate.gte = new Date(filter.dateFrom);
-      }
-      if (filter.dateTo) {
-        where.meetingDate.lte = new Date(filter.dateTo);
-      }
+    const dateFilter = buildDateFilter({ dateFrom: filter.dateFrom, dateTo: filter.dateTo });
+    if (dateFilter) {
+      where.meetingDate = dateFilter;
     }
 
     const customers = await this.prisma.customer.findMany({
@@ -441,7 +424,7 @@ export class MetricsService {
       }
 
       if (painPoints.length === 0) {
-        const key = "SIN_PAIN_POINTS";
+        const key = NO_PAIN_POINTS;
         if (!heatmapData[industry][key]) {
           heatmapData[industry][key] = { total: 0, closed: 0, volume: 0 };
         }
@@ -495,21 +478,16 @@ export class MetricsService {
     };
   }
 
-  async getOpportunityMatrix(filter: MetricsFilter) {
+  async getOpportunityMatrix(filter: MetricsFilterDto) {
     const where: Prisma.CustomerWhereInput = {};
 
     if (filter.seller) {
       where.seller = filter.seller;
     }
 
-    if (filter.dateFrom || filter.dateTo) {
-      where.meetingDate = {};
-      if (filter.dateFrom) {
-        where.meetingDate.gte = new Date(filter.dateFrom);
-      }
-      if (filter.dateTo) {
-        where.meetingDate.lte = new Date(filter.dateTo);
-      }
+    const dateFilter = buildDateFilter({ dateFrom: filter.dateFrom, dateTo: filter.dateTo });
+    if (dateFilter) {
+      where.meetingDate = dateFilter;
     }
 
     const customers = await this.prisma.customer.findMany({
@@ -553,7 +531,7 @@ export class MetricsService {
 
       const painPoints = extraction.painPoints || [];
       if (painPoints.length === 0) {
-        const key = "SIN_PAIN_POINTS";
+        const key = NO_PAIN_POINTS;
         if (!painPointStats[key]) {
           painPointStats[key] = { total: 0, closed: 0, volumes: [], labels: [] };
         }
@@ -644,21 +622,16 @@ export class MetricsService {
     };
   }
 
-  async getWinProbabilityMatrix(filter: MetricsFilter) {
+  async getWinProbabilityMatrix(filter: MetricsFilterDto) {
     const where: Prisma.CustomerWhereInput = {};
 
     if (filter.seller) {
       where.seller = filter.seller;
     }
 
-    if (filter.dateFrom || filter.dateTo) {
-      where.meetingDate = {};
-      if (filter.dateFrom) {
-        where.meetingDate.gte = new Date(filter.dateFrom);
-      }
-      if (filter.dateTo) {
-        where.meetingDate.lte = new Date(filter.dateTo);
-      }
+    const dateFilter = buildDateFilter({ dateFrom: filter.dateFrom, dateTo: filter.dateTo });
+    if (dateFilter) {
+      where.meetingDate = dateFilter;
     }
 
     const customers = await this.prisma.customer.findMany({
@@ -836,8 +809,8 @@ export class MetricsService {
       const extraction = this.getExtraction(customer);
       if (!extraction) continue;
 
-      const businessModel = extraction.businessModel || "Desconocido";
-      const volumeUnit = extraction.volume?.unit || "Sin Volumen";
+      const businessModel = extraction.businessModel || UNKNOWN_VALUE;
+      const volumeUnit = extraction.volume?.unit || UNKNOWN_VALUE;
       const volumeIsPeak = extraction.volume?.isPeak ? "Con Peaks" : "Sin Peaks";
       const status = customer.closed ? "Cerrada" : "Perdida";
 
@@ -859,19 +832,14 @@ export class MetricsService {
     return { nodes, links };
   }
 
-  async getSellerDetails(seller: string, filter: MetricsFilter) {
+  async getSellerDetails(seller: string, filter: MetricsFilterDto) {
     const where: Prisma.CustomerWhereInput = {
       seller,
     };
 
-    if (filter.dateFrom || filter.dateTo) {
-      where.meetingDate = {};
-      if (filter.dateFrom) {
-        where.meetingDate.gte = new Date(filter.dateFrom);
-      }
-      if (filter.dateTo) {
-        where.meetingDate.lte = new Date(filter.dateTo);
-      }
+    const dateFilter = buildDateFilter({ dateFrom: filter.dateFrom, dateTo: filter.dateTo });
+    if (dateFilter) {
+      where.meetingDate = dateFilter;
     }
 
     const customers = await this.prisma.customer.findMany({
@@ -1039,17 +1007,12 @@ export class MetricsService {
     };
   }
 
-  async getSellersMetrics(filter: MetricsFilter) {
+  async getSellersMetrics(filter: MetricsFilterDto) {
     const where: Prisma.CustomerWhereInput = {};
 
-    if (filter.dateFrom || filter.dateTo) {
-      where.meetingDate = {};
-      if (filter.dateFrom) {
-        where.meetingDate.gte = new Date(filter.dateFrom);
-      }
-      if (filter.dateTo) {
-        where.meetingDate.lte = new Date(filter.dateTo);
-      }
+    const dateFilter = buildDateFilter({ dateFrom: filter.dateFrom, dateTo: filter.dateTo });
+    if (dateFilter) {
+      where.meetingDate = dateFilter;
     }
 
     const customers = await this.prisma.customer.findMany({
@@ -1124,11 +1087,7 @@ export class MetricsService {
     return sellers.sort((a, b) => b.conversionRate - a.conversionRate);
   }
 
-  private getExtraction(customer: any): Extraction | null {
-    const meeting = customer.meetings[0];
-    const extractionRecord = meeting?.extractions[0];
-    if (!extractionRecord) return null;
-
-    return mapExtractionDataToExtraction(extractionRecord.data);
+  private getExtraction(customer: CustomerWithRelations): Extraction | null {
+    return getExtractionFromCustomer(customer);
   }
 }

@@ -1,6 +1,9 @@
 import { Controller, Get, Query, Param } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiQuery, ApiParam } from "@nestjs/swagger";
+import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { MetricsService } from "./metrics.service";
+import { MetricsFilterDto } from "./dto/metrics-filter.dto";
+import { GetByDimensionDto } from "./dto/get-by-dimension.dto";
+import { GetSellerDetailsParamDto } from "./dto/get-seller-details.dto";
 
 @ApiTags("Metrics")
 @Controller("metrics")
@@ -9,22 +12,14 @@ export class MetricsController {
 
   @Get("overview")
   @ApiOperation({ summary: "Get aggregated metrics overview" })
-  @ApiQuery({ name: "seller", required: false })
-  @ApiQuery({ name: "dateFrom", required: false })
-  @ApiQuery({ name: "dateTo", required: false })
-  async getOverview(
-    @Query("seller") seller?: string,
-    @Query("dateFrom") dateFrom?: string,
-    @Query("dateTo") dateTo?: string
-  ) {
-    return this.metricsService.getOverview({ seller, dateFrom, dateTo });
+  async getOverview(@Query() query: MetricsFilterDto) {
+    return this.metricsService.getOverview(query);
   }
 
   @Get("by-dim")
   @ApiOperation({ summary: "Get metrics by dimension" })
-  @ApiQuery({ name: "dimension", required: true, enum: ["leadSource", "industry", "seller", "painPoints"] })
-  async getByDimension(@Query("dimension") dimension: string) {
-    return this.metricsService.getByDimension(dimension);
+  async getByDimension(@Query() query: GetByDimensionDto) {
+    return this.metricsService.getByDimension(query.dimension);
   }
 
   @Get("conversion-funnel")
@@ -38,22 +33,13 @@ export class MetricsController {
   async getVolumeDistribution() {
     return this.metricsService.getVolumeDistribution();
   }
+
   @Get("leads-over-time")
   @ApiOperation({ summary: "Get leads evolution over time" })
-  @ApiQuery({ name: "seller", required: false })
-  @ApiQuery({ name: "dateFrom", required: false })
-  @ApiQuery({ name: "dateTo", required: false })
-  async getLeadsOverTime(
-    @Query("seller") seller?: string,
-    @Query("dateFrom") dateFrom?: string,
-    @Query("dateTo") dateTo?: string
-  ) {
-    return this.metricsService.getLeadsOverTime({
-      seller,
-      dateFrom,
-      dateTo,
-    });
+  async getLeadsOverTime(@Query() query: MetricsFilterDto) {
+    return this.metricsService.getLeadsOverTime(query);
   }
+
   @Get("sankey")
   @ApiOperation({ summary: "Get sankey diagram data" })
   async getSankeyData() {
@@ -62,53 +48,20 @@ export class MetricsController {
 
   @Get("industry-painpoint-heatmap")
   @ApiOperation({ summary: "Get industry x pain point heatmap data" })
-  @ApiQuery({ name: "seller", required: false })
-  @ApiQuery({ name: "dateFrom", required: false })
-  @ApiQuery({ name: "dateTo", required: false })
-  async getIndustryPainPointHeatmap(
-    @Query("seller") seller?: string,
-    @Query("dateFrom") dateFrom?: string,
-    @Query("dateTo") dateTo?: string
-  ) {
-    return this.metricsService.getIndustryPainPointHeatmap({
-      seller,
-      dateFrom,
-      dateTo,
-    });
+  async getIndustryPainPointHeatmap(@Query() query: MetricsFilterDto) {
+    return this.metricsService.getIndustryPainPointHeatmap(query);
   }
 
   @Get("opportunity-matrix")
   @ApiOperation({ summary: "Get opportunity matrix: Volume vs Conversion Rate" })
-  @ApiQuery({ name: "seller", required: false })
-  @ApiQuery({ name: "dateFrom", required: false })
-  @ApiQuery({ name: "dateTo", required: false })
-  async getOpportunityMatrix(
-    @Query("seller") seller?: string,
-    @Query("dateFrom") dateFrom?: string,
-    @Query("dateTo") dateTo?: string
-  ) {
-    return this.metricsService.getOpportunityMatrix({
-      seller,
-      dateFrom,
-      dateTo,
-    });
+  async getOpportunityMatrix(@Query() query: MetricsFilterDto) {
+    return this.metricsService.getOpportunityMatrix(query);
   }
 
   @Get("win-probability")
   @ApiOperation({ summary: "Get win probability matrix: Urgency vs Sentiment analysis" })
-  @ApiQuery({ name: "seller", required: false })
-  @ApiQuery({ name: "dateFrom", required: false })
-  @ApiQuery({ name: "dateTo", required: false })
-  async getWinProbabilityMatrix(
-    @Query("seller") seller?: string,
-    @Query("dateFrom") dateFrom?: string,
-    @Query("dateTo") dateTo?: string
-  ) {
-    return this.metricsService.getWinProbabilityMatrix({
-      seller,
-      dateFrom,
-      dateTo,
-    });
+  async getWinProbabilityMatrix(@Query() query: MetricsFilterDto) {
+    return this.metricsService.getWinProbabilityMatrix(query);
   }
 
   @Get("volume-flow")
@@ -119,26 +72,14 @@ export class MetricsController {
 
   @Get("sellers")
   @ApiOperation({ summary: "Get sellers metrics with sentiment distribution" })
-  @ApiQuery({ name: "dateFrom", required: false })
-  @ApiQuery({ name: "dateTo", required: false })
-  async getSellersMetrics(
-    @Query("dateFrom") dateFrom?: string,
-    @Query("dateTo") dateTo?: string
-  ) {
-    return this.metricsService.getSellersMetrics({ dateFrom, dateTo });
+  async getSellersMetrics(@Query() query: MetricsFilterDto) {
+    return this.metricsService.getSellersMetrics(query);
   }
 
   @Get("sellers/:seller")
   @ApiOperation({ summary: "Get detailed metrics for a specific seller" })
-  @ApiParam({ name: "seller", required: true })
-  @ApiQuery({ name: "dateFrom", required: false })
-  @ApiQuery({ name: "dateTo", required: false })
-  async getSellerDetails(
-    @Param("seller") seller: string,
-    @Query("dateFrom") dateFrom?: string,
-    @Query("dateTo") dateTo?: string
-  ) {
-    return this.metricsService.getSellerDetails(seller, { dateFrom, dateTo });
+  async getSellerDetails(@Param() params: GetSellerDetailsParamDto, @Query() query: MetricsFilterDto) {
+    return this.metricsService.getSellerDetails(params.seller, { dateFrom: query.dateFrom, dateTo: query.dateTo });
   }
 }
 

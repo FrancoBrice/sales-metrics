@@ -1,6 +1,8 @@
-import { Controller, Get, Query, Param } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiQuery, ApiParam } from "@nestjs/swagger";
+import { Controller, Get, Query, Param, NotFoundException } from "@nestjs/common";
+import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { CustomersService } from "./customers.service";
+import { ListCustomersDto } from "./dto/list-customers.dto";
+import { GetCustomerDto } from "./dto/get-customer.dto";
 
 @ApiTags("Customers")
 @Controller("customers")
@@ -9,37 +11,8 @@ export class CustomersController {
 
   @Get()
   @ApiOperation({ summary: "List customers with optional filters" })
-  @ApiQuery({ name: "seller", required: false })
-  @ApiQuery({ name: "closed", required: false, type: Boolean })
-  @ApiQuery({ name: "leadSource", required: false })
-  @ApiQuery({ name: "dateFrom", required: false })
-  @ApiQuery({ name: "dateTo", required: false })
-  @ApiQuery({ name: "industry", required: false })
-  @ApiQuery({ name: "search", required: false })
-  @ApiQuery({ name: "page", required: false, type: Number })
-  @ApiQuery({ name: "limit", required: false, type: Number })
-  async listCustomers(
-    @Query("seller") seller?: string,
-    @Query("closed") closed?: string,
-    @Query("leadSource") leadSource?: string,
-    @Query("dateFrom") dateFrom?: string,
-    @Query("dateTo") dateTo?: string,
-    @Query("industry") industry?: string,
-    @Query("search") search?: string,
-    @Query("page") page: number = 1,
-    @Query("limit") limit: number = 10
-  ) {
-    return this.customersService.findAll({
-      seller,
-      closed: closed !== undefined ? closed === "true" : undefined,
-      leadSource,
-      dateFrom,
-      dateTo,
-      industry,
-      search,
-      page: Number(page),
-      limit: Number(limit),
-    });
+  async listCustomers(@Query() query: ListCustomersDto) {
+    return this.customersService.findAll(query);
   }
 
   @Get("sellers")
@@ -50,8 +23,11 @@ export class CustomersController {
 
   @Get(":id")
   @ApiOperation({ summary: "Get customer details by ID including transcript" })
-  @ApiParam({ name: "id", description: "Customer ID" })
-  async getCustomer(@Param("id") id: string) {
-    return this.customersService.findOne(id);
+  async getCustomer(@Param() params: GetCustomerDto) {
+    const customer = await this.customersService.findOne(params.id);
+    if (!customer) {
+      throw new NotFoundException(`Customer with ID ${params.id} not found`);
+    }
+    return customer;
   }
 }
