@@ -8,5 +8,5 @@
 @import '../styles/badges.css';
 @import '../styles/modals.css';
 @import '../styles/toast.css';
-@import '../styles/charts.css';
+@import '../styles/charts/index.css';
 @import '../styles/utilities.css';

@@ -1,0 +1,40 @@
+.funnel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.funnel-stage {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-md);
+}
+
+.funnel-bar {
+  flex: 1;
+  height: 32px;
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: width 0.5s ease;
+}
+
+.funnel-label {
+  flex: 0 0 120px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.funnel-count {
+  flex: 0 0 60px;
+  text-align: right;
+  font-weight: 600;
+}
