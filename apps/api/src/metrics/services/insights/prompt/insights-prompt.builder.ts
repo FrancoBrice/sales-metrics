@@ -5,6 +5,7 @@ export function buildInsightsPrompt(data: InsightsData): string {
   const breakdownSection = buildBreakdownSection(data.breakdown);
   const trendsSection = data.trends ? buildTrendsSection(data.trends.conversionTrend) : "";
   const statisticalSection = data.statisticalAnalysis ? buildStatisticalSection(data.statisticalAnalysis, data.overallMetrics) : "";
+  const urgencySentimentSection = data.urgencySentiment ? buildUrgencySentimentSection(data.urgencySentiment) : "";
   const filtersSection = data.filters ? buildFiltersSection(data.filters) : "";
 
   return `Eres un analista de ventas experto. Analiza los datos de conversión y genera insights accionables en español.
@@ -16,6 +17,8 @@ Datos de conversión y cierres:
 ${stagesSection}
 
 ${breakdownSection}
+
+${urgencySentimentSection}
 
 ${trendsSection}
 
@@ -32,8 +35,9 @@ Genera insights en formato JSON con tres categorías:
 
 2. Oportunidades (máximo 3):
    - Patrones de alto rendimiento
-   - Dimensiones con mejor conversión (Fuentes, Industrias, JTBD, Pain Points, Vendedores)
+   - Dimensiones con mejor conversión (Fuentes, Industrias, JTBD, Pain Points, Vendedores, Urgencia, Sentimiento)
    - Oportunidades de alto volumen
+   - Combinaciones de urgencia/sentimiento con alta conversión
 
 3. Recomendaciones (máximo 4):
    - Acciones específicas priorizadas por impacto
@@ -155,6 +159,40 @@ function buildStatisticalSection(
       })
       .join("\n");
     sections.push(`Hallazgos significativos:\n${findings}`);
+  }
+
+  return sections.length > 0 ? sections.join("\n\n") : "";
+}
+
+function buildUrgencySentimentSection(urgencySentiment: NonNullable<InsightsData["urgencySentiment"]>): string {
+  const sections: string[] = [];
+
+  if (Object.keys(urgencySentiment.byUrgency).length > 0) {
+    const urgencyLines = Object.entries(urgencySentiment.byUrgency)
+      .sort((a, b) => b[1].conversionRate - a[1].conversionRate)
+      .map(([urgency, stats]) => `  ${urgency}: ${stats.total} leads, ${stats.conversionRate.toFixed(1)}% (${stats.closed}/${stats.total})`)
+      .join("\n");
+    sections.push(`Conversión por urgencia:\n${urgencyLines}`);
+  }
+
+  if (Object.keys(urgencySentiment.bySentiment).length > 0) {
+    const sentimentLines = Object.entries(urgencySentiment.bySentiment)
+      .sort((a, b) => b[1].conversionRate - a[1].conversionRate)
+      .map(([sentiment, stats]) => `  ${sentiment}: ${stats.total} leads, ${stats.conversionRate.toFixed(1)}% (${stats.closed}/${stats.total})`)
+      .join("\n");
+    sections.push(`Conversión por sentimiento:\n${sentimentLines}`);
+  }
+
+  if (urgencySentiment.matrix.length > 0) {
+    const topCombinations = urgencySentiment.matrix
+      .filter(m => m.total > 0)
+      .sort((a, b) => b.conversionRate - a.conversionRate)
+      .slice(0, 5)
+      .map(m => `  ${m.urgency}/${m.sentiment}: ${m.conversionRate.toFixed(1)}% (${m.closed}/${m.total})`)
+      .join("\n");
+    if (topCombinations) {
+      sections.push(`Top combinaciones urgencia/sentimiento:\n${topCombinations}`);
+    }
   }
 
   return sections.length > 0 ? sections.join("\n\n") : "";

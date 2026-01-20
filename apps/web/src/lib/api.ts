@@ -406,5 +406,6 @@ export const api = {
     extractAll: () => fetchApi<{ total: number; success: number; failed: number }>("/extract/bulk/all", { method: "POST" }),
     extractPendingAndFailed: () => fetchApi<{ total: number; success: number; failed: number; pending: number; retried: number }>("/extract/bulk/pending-and-failed", { method: "POST" }),
     retryFailed: () => fetchApi<{ total: number; success: number; failed: number; skipped: number }>("/extract/bulk/retry-failed", { method: "POST" }),
+    getProgress: () => fetchApi<{ total: number; completed: number; success: number; failed: number; pending: number; retried: number }>("/extract/progress", { method: "GET" }),
   },
 };

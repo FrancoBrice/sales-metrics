@@ -87,75 +87,96 @@ function buildInstructionsSection(): string {
 
 3. FIELD-SPECIFIC GUIDANCE (BE THOROUGH):
 
-   - industry: Look for mentions of business sector, type of company, or industry keywords. Examples: "e-commerce", "retail", "healthcare", "fintech", "SaaS", "logistics"
+   - industry: Look for mentions of business sector, type of company, or industry keywords. Examples: "e-commerce", "retail", "healthcare" ("clínica", "hospital", "salud"), "fintech" ("servicios financieros", "financiera"), "SaaS", "logistics" ("logística", "transporte"), "educación" ("educativo", "centro educativo"), "hospitalidad" ("restaurante", "hotel"), "tecnología" ("startup tecnológica", "software"), "bienes raíces" ("inmobiliaria", "propiedades")
 
    - businessModel: Identify how the company makes money. Look for: "B2B", "B2C", "marketplace", "subscription", "transaction-based", "freemium"
 
-   - jtbdPrimary: Identify ALL primary jobs-to-be-done mentioned. Look for:
-     * MULTIIDIOMA: mentions of "múltiples idiomas", "zonas horarias", "global", "internacional", "diferentes países"
-     * ESCALABILIDAD: "crecer", "escalar", "aumentar volumen", "expansión"
-     * AUTOMATIZACION: "automatizar", "reducir trabajo manual", "eficiencia", "procesos automáticos"
-     * CALIDAD_ATENCION: "mejorar atención", "satisfacción cliente", "calidad servicio"
-     * COSTOS: "reducir costos", "optimizar gastos", "ahorrar dinero"
-     * TIEMPO_RESPUESTA: "respuesta rápida", "tiempo real", "inmediato", "urgente"
+   - jtbdPrimary: Identify ALL primary jobs-to-be-done mentioned. Valid enum values: ${getEnumValues(JtbdPrimary)}
+     Extract the core goals they want to achieve. Examples:
+     * AUTOMATIZAR_ATENCION: reducing manual work, automating customer service
+     * REDUCIR_TIEMPOS: faster response times, real-time support
+     * ESCALAR_OPERACIONES: handling growth, increasing capacity
+     * MEJORAR_EXPERIENCIA: enhancing customer satisfaction, better service quality
+     * LIBERAR_EQUIPO: freeing up team capacity, reducing workload
+     * MULTIIDIOMA: multi-language support, international operations
+     * DISPONIBILIDAD_24_7: around-the-clock availability, extended hours
 
-   - painPoints: Extract ALL pain points mentioned. Look for:
-     * VOLUMEN_ALTO: "muchas consultas", "alto volumen", "demasiadas preguntas"
-     * CONSULTAS_REPETITIVAS: "mismas preguntas", "repetitivo", "preguntas frecuentes"
-     * SOBRECARGA_EQUIPO: "equipo sobrecargado", "mucho trabajo", "no damos abasto"
-     * HORARIOS_LIMITADOS: "horarios", "disponibilidad", "24/7", "fuera de horario"
-     * COSTOS_OPERATIVOS: "costos altos", "gasto en personal", "presupuesto"
-     * CALIDAD_INCONSISTENTE: "inconsistencia", "calidad variable", "errores"
-     * ESCALABILIDAD: "no podemos escalar", "crecimiento limitado", "capacidad"
-     * INTEGRACIONES: "integración", "conectar sistemas", "compatibilidad"
+   - painPoints: Extract ALL pain points mentioned. Valid enum values: ${getEnumValues(PainPoints)}
+     Identify problems they're experiencing. Examples:
+     * VOLUMEN_ALTO: too many inquiries, high volume
+     * RESPUESTAS_LENTAS: slow response times, delays
+     * FALTA_PERSONALIZACION: lack of personalization, generic responses
+     * SOBRECARGA_EQUIPO: team overload, insufficient capacity
+     * CONSULTAS_REPETITIVAS: repetitive questions, same queries
+     * GESTION_MANUAL: manual processes, lack of automation
+     * PICOS_DEMANDA: demand spikes, seasonal peaks
+     * MULTICANAL: multiple channels to manage
 
-   - leadSource: How did they find us? Look for: "referral", "web", "linkedin", "evento", "email", "cold call", "partner"
+   - leadSource: How did they find us? Valid enum values: ${getEnumValues(LeadSource)}
+     Identify the channel or method. Examples:
+     * LINKEDIN: LinkedIn posts or network
+     * GOOGLE: online search, Google
+     * CONFERENCIA: conferences, seminars, talks, workshops
+     * RECOMENDACION: recommendations from colleagues, friends, or contacts
+     * WEBINAR: webinars
+     * PODCAST: podcasts
+     * FERIA: trade shows, exhibitions
+     * ARTICULO: articles, blog posts, publications
+     * NETWORKING: networking events
+     * REDES_SOCIALES: social media platforms
+     * DESCONOCIDO: only when source cannot be determined
 
-   - processMaturity: Assess their current process sophistication. Look for:
-     * INICIAL: "empezando", "nuevo", "sin proceso", "manual"
-     * BASICO: "algo estructurado", "proceso simple", "básico"
-     * INTERMEDIO: "proceso definido", "estructurado", "documentado"
-     * AVANZADO: "proceso maduro", "optimizado", "sophisticated"
+   - processMaturity: Assess their current process sophistication. Valid enum values: ${getEnumValues(ProcessMaturity)}
+     * MANUAL: no structured processes, fully manual
+     * PARCIALMENTE_AUTOMATIZADO: some automation, basic structure
+     * AUTOMATIZADO: well-defined, documented, automated processes
 
-   - toolingMaturity: What tools do they use? Look for:
-     * MANUAL: "sin herramientas", "manual", "Excel", "papel"
-     * BASICO: "herramientas básicas", "email", "spreadsheet"
-     * INTERMEDIO: "CRM", "sistema básico", "herramientas estándar"
-     * AVANZADO: "suite completa", "integración avanzada", "automatización"
+   - toolingMaturity: What tools do they use? Valid enum values: ${getEnumValues(ToolingMaturity)}
+     * SIN_HERRAMIENTAS: no tools, basic spreadsheets or manual methods
+     * HERRAMIENTAS_BASICAS: email, simple tools, basic systems
+     * CRM_INTEGRADO: CRM systems, integrated platforms, comprehensive tooling
 
-   - knowledgeComplexity: How complex is their knowledge base? Look for:
-     * SIMPLE: "preguntas simples", "información básica", "FAQ"
-     * MODERADO: "algo complejo", "casos específicos", "reglas"
-     * COMPLEJO: "muy complejo", "múltiples fuentes", "conocimiento especializado"
+   - knowledgeComplexity: How complex is their knowledge base? Valid enum values: ${getEnumValues(KnowledgeComplexity)}
+     * SIMPLE: basic FAQs, straightforward information
+     * MODERADA: some complexity, specific cases, moderate rules
+     * COMPLEJA: highly complex, specialized knowledge, multiple sources
 
-   - riskLevel: Assess project risk. Consider:
-     * BAJO: "proyecto simple", "bajo riesgo", "pocos stakeholders"
-     * MEDIO: "riesgo moderado", "algunos stakeholders", "complejidad media"
-     * ALTO: "alto riesgo", "múltiples stakeholders", "crítico", "complejo"
+   - riskLevel: Assess project risk. Valid enum values: ${getEnumValues(RiskLevel)}
+     Consider complexity, stakeholders, and criticality:
+     * BAJO: simple project, few stakeholders, low risk
+     * MEDIO: moderate complexity, standard project
+     * ALTO: high complexity, multiple stakeholders, critical project
 
-   - integrations: Extract ALL integrations mentioned. Look for: "CRM", "WhatsApp", "API", "webhook", "Zapier", "Shopify", "WordPress", etc.
+   - integrations: Extract ALL integrations mentioned. Valid enum values: ${getEnumValues(Integrations)}
+     Identify systems they need to connect with (CRM, e-commerce platforms, booking systems, databases, etc.)
 
-   - urgency: Time sensitivity. Look for:
-     * BAJA: "no hay prisa", "eventualmente", "a futuro"
-     * MEDIA: "pronto", "en los próximos meses", "planificando"
-     * ALTA: "urgente", "necesitamos ya", "próximas semanas"
-     * INMEDIATA: "inmediato", "ya mismo", "esta semana", "crítico"
+   - urgency: Time sensitivity. Valid enum values: ${getEnumValues(Urgency)}
+     Assess time pressure from explicit mentions or contextual indicators:
+     * BAJA: no rush, future consideration
+     * MEDIA: planning phase, exploring options, general interest (default when unclear)
+     * ALTA: active need, growth problems with time constraints, upcoming deadlines
+     * INMEDIATA: critical urgency, immediate need, cannot wait
 
-   - successMetrics: What do they measure success by? Look for: "satisfacción", "tiempo respuesta", "volumen", "costos", "conversión", "retención"
+     When not explicit, infer from: growth issues + time constraints = ALTA; active search = MEDIA to ALTA; exploratory = MEDIA
 
-   - objections: Extract ALL concerns raised. Look for:
-     * CONFIDENCIALIDAD: "privacidad", "seguridad", "datos", "confidencial"
-     * COSTO: "precio", "costoso", "presupuesto", "caro"
-     * COMPLEJIDAD: "complejo", "difícil", "técnico", "implementación"
-     * TIEMPO: "tiempo", "largo", "demora", "implementación"
-     * COMPETENCIA: "competencia", "alternativa", "otra opción"
+   - successMetrics: What do they measure success by? Valid enum values: ${getEnumValues(SuccessMetric)}
+     Extract metrics they care about (response time, volume, satisfaction, workload reduction, cost savings)
 
-   - sentiment: Overall tone throughout conversation:
-     * POSITIVO: enthusiastic, interested, positive language, "me gusta", "excelente"
-     * NEUTRAL: balanced, neither positive nor negative, professional
-     * ESCEPTICO: doubts, concerns, hesitant, "no estoy seguro", "tengo dudas"
+   - objections: Extract ALL concerns raised. Valid enum values: ${getEnumValues(Objections)}
+     Identify concerns about: cost, integration challenges, confidentiality/security, personalization needs, complexity
 
-   - volume: Extract quantity, unit, and if it's peak volume. Look for numbers with units like "consultas", "mensajes", "tickets", "interacciones", "usuarios". If they mention "picos" or "temporadas altas", set isPeak to true.
+   - sentiment: Overall tone throughout conversation. Valid enum values: ${getEnumValues(Sentiment)}
+     Assess the FINAL sentiment, considering sentiment evolution:
+     * POSITIVO: enthusiastic, interested, positive engagement, active interest
+     * NEUTRAL: professional, balanced, exploratory but not enthusiastic
+     * ESCEPTICO: persistent doubts, hesitancy, concerns without resolution
+
+     IMPORTANT: Focus on final state. If doubts were resolved and interest shown = POSITIVO
+
+   - volume: Extract quantity, unit, and if it's peak volume. Valid unit enum values: ${getEnumValues(VolumeUnit)}
+     Look for numbers with units like "consultas", "mensajes", "tickets", "interacciones", "usuarios".
+     Units: DIARIO (daily), SEMANAL (weekly), MENSUAL (monthly).
+     If they mention "picos", "temporadas altas", "promociones", "épocas pico", set isPeak to true.
 
 4. OUTPUT FORMAT:
    - Return ONLY valid JSON matching the schema

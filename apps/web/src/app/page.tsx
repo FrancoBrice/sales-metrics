@@ -28,6 +28,10 @@ export default function Dashboard() {
     loadDashboardData();
   }, [filters]);
 
+  useEffect(() => {
+    checkExtractionProgress();
+  }, []);
+
   async function loadSellers() {
     try {
       const data = await api.customers.getSellers();
@@ -53,37 +57,104 @@ export default function Dashboard() {
     }
   }
 
+  function startProgressPolling(onComplete?: (progressData: { total: number; completed: number; success: number; failed: number; pending: number; retried: number }) => void) {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
+
+    const checkProgress = async () => {
+      try {
+        const progressData = await api.extract.getProgress();
+
+        console.log("Progress data:", progressData);
+
+        if (progressData.total === 0) {
+          if (progressIntervalRef.current) {
+            clearInterval(progressIntervalRef.current);
+          }
+          setExtracting(false);
+          setProgress(null);
+          return;
+        }
+
+        const newProgress = { current: progressData.completed, total: progressData.total };
+        console.log("Updating progress to:", newProgress);
+        setProgress((prev) => {
+          console.log("Previous progress:", prev);
+          return newProgress;
+        });
+
+        if (progressData.completed >= progressData.total) {
+          if (progressIntervalRef.current) {
+            clearInterval(progressIntervalRef.current);
+          }
+
+          setTimeout(() => {
+            setProgress(null);
+
+            if (onComplete) {
+              onComplete(progressData);
+            } else {
+              const messageParts = [];
+              if (progressData.pending > 0) {
+                messageParts.push(`${progressData.pending} pendientes`);
+              }
+              if (progressData.retried > 0) {
+                messageParts.push(`${progressData.retried} reintentos`);
+              }
+              const statusMessage = messageParts.length > 0 ? ` (${messageParts.join(", ")})` : "";
+
+              let toastMessage = `Análisis completado: ${progressData.success} exitosos`;
+              if (progressData.failed > 0) {
+                toastMessage += `, ${progressData.failed} fallidos`;
+                if (progressData.failed === progressData.total - progressData.success) {
+                  toastMessage += " (posible falta de cuota en la API)";
+                }
+              }
+              toastMessage += statusMessage;
+
+              setToast({
+                message: toastMessage,
+                type: progressData.failed === 0 ? ToastType.Success : ToastType.Info,
+              });
+            }
+          }, 500);
+
+          await loadDashboardData();
+          setExtracting(false);
+        }
+      } catch (error) {
+        console.error("Error checking progress:", error);
+      }
+    };
+
+    checkProgress();
+    progressIntervalRef.current = setInterval(checkProgress, 1000);
+  }
+
+  async function checkExtractionProgress() {
+    try {
+      const progressData = await api.extract.getProgress();
+
+      if (progressData.total > 0 && progressData.completed < progressData.total) {
+        setExtracting(true);
+        setProgress({ current: progressData.completed, total: progressData.total });
+        startProgressPolling();
+      }
+    } catch (error) {
+      console.error("Error checking extraction progress:", error);
+    }
+  }
+
   async function handleExtractFromDashboard() {
     setExtracting(true);
     setProgress({ current: 0, total: 1 });
-
-    const startProgressEstimate = (estimatedTotal: number) => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-
-      setProgress({ current: 0, total: estimatedTotal });
-
-      progressIntervalRef.current = setInterval(() => {
-        setProgress((prev) => {
-          if (!prev) return prev;
-          const increment = Math.max(1, Math.floor(prev.total / 20));
-          const newCurrent = Math.min(prev.current + increment, prev.total * 0.95);
-          return { ...prev, current: newCurrent };
-        });
-      }, 500);
-    };
-
-    startProgressEstimate(1);
 
     try {
       const result = await api.extract.extractPendingAndFailed();
       const total = result.total || 0;
 
       if (total === 0) {
-        if (progressIntervalRef.current) {
-          clearInterval(progressIntervalRef.current);
-        }
         setExtracting(false);
         setProgress(null);
         setToast({
@@ -93,40 +164,15 @@ export default function Dashboard() {
         return;
       }
 
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
+      try {
+        const initialProgress = await api.extract.getProgress();
+        setProgress({ current: initialProgress.completed, total: initialProgress.total || total });
+      } catch (error) {
+        console.error("Error getting initial progress:", error);
+        setProgress({ current: 0, total });
       }
 
-      const processed = result.success + result.failed;
-      setProgress({ current: processed, total: result.total });
-
-      setTimeout(() => {
-        setProgress(null);
-        const messageParts = [];
-        if (result.pending > 0) {
-          messageParts.push(`${result.pending} pendientes`);
-        }
-        if (result.retried > 0) {
-          messageParts.push(`${result.retried} reintentos`);
-        }
-        const statusMessage = messageParts.length > 0 ? ` (${messageParts.join(", ")})` : "";
-
-        let toastMessage = `Análisis completado: ${result.success} exitosos`;
-        if (result.failed > 0) {
-          toastMessage += `, ${result.failed} fallidos`;
-          if (result.failed === result.total - result.success) {
-            toastMessage += " (posible falta de cuota en la API)";
-          }
-        }
-        toastMessage += statusMessage;
-
-        setToast({
-          message: toastMessage,
-          type: result.failed === 0 ? ToastType.Success : ToastType.Info,
-        });
-      }, 500);
-
-      await loadDashboardData();
+      startProgressPolling();
     } catch (error) {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
@@ -136,7 +182,6 @@ export default function Dashboard() {
         message: "Error al iniciar el análisis",
         type: ToastType.Error,
       });
-    } finally {
       setExtracting(false);
     }
   }
@@ -226,50 +271,35 @@ export default function Dashboard() {
               setExtracting(true);
               setProgress({ current: 0, total: estimatedTotal });
 
-              const startProgressEstimate = (total: number) => {
-                if (progressIntervalRef.current) {
-                  clearInterval(progressIntervalRef.current);
-                }
-
-                progressIntervalRef.current = setInterval(() => {
-                  setProgress((prev) => {
-                    if (!prev) return prev;
-                    const increment = Math.max(1, Math.floor(prev.total / 20));
-                    const newCurrent = Math.min(prev.current + increment, prev.total * 0.95);
-                    return { ...prev, current: newCurrent };
-                  });
-                }, 500);
-              };
-
-              startProgressEstimate(estimatedTotal);
-
               api.extract.extractPendingAndFailed()
-                .then((result) => {
-                  if (progressIntervalRef.current) {
-                    clearInterval(progressIntervalRef.current);
+                .then(async (result) => {
+                  const actualTotal = result.total || estimatedTotal;
+
+                  try {
+                    const initialProgress = await api.extract.getProgress();
+                    setProgress({ current: initialProgress.completed, total: initialProgress.total || actualTotal });
+                  } catch (error) {
+                    console.error("Error getting initial progress:", error);
+                    setProgress({ current: 0, total: actualTotal });
                   }
 
-                  const actualTotal = result.total || estimatedTotal;
-                  setProgress({ current: actualTotal, total: actualTotal });
-
-                  setTimeout(() => {
-                    setProgress(null);
+                  startProgressPolling((progressData) => {
                     const messageParts = [];
-                    if (result.pending > 0) {
-                      messageParts.push(`${result.pending} pendientes`);
+                    if (progressData.pending > 0) {
+                      messageParts.push(`${progressData.pending} pendientes`);
                     }
-                    if (result.retried > 0) {
-                      messageParts.push(`${result.retried} reintentos`);
+                    if (progressData.retried > 0) {
+                      messageParts.push(`${progressData.retried} reintentos`);
                     }
                     const statusMessage = messageParts.length > 0 ? ` (${messageParts.join(", ")})` : "";
                     const duplicatesMessage = uploadResult.duplicates > 0 ? `, ${uploadResult.duplicates} duplicados` : "";
                     setToast({
-                      message: `Análisis completado: ${result.success} exitosos, ${result.failed} fallidos${duplicatesMessage}${statusMessage}`,
-                      type: result.failed === 0 ? ToastType.Success : ToastType.Info,
+                      message: `Análisis completado: ${progressData.success} exitosos, ${progressData.failed} fallidos${duplicatesMessage}${statusMessage}`,
+                      type: progressData.failed === 0 ? ToastType.Success : ToastType.Info,
                     });
                     loadDashboardData();
                     loadSellers();
-                  }, 500);
+                  });
                 })
                 .catch((error) => {
                   if (progressIntervalRef.current) {
@@ -280,8 +310,6 @@ export default function Dashboard() {
                     message: "Error al iniciar el análisis",
                     type: ToastType.Error,
                   });
-                })
-                .finally(() => {
                   setExtracting(false);
                 });
             } else if (uploadResult.duplicates > 0) {

@@ -11,6 +11,11 @@ export interface InsightsData {
     byJTBD: Record<string, { total: number; closed: number; conversionRate: number }>;
     byIndustry: Record<string, { total: number; closed: number; conversionRate: number }>;
   };
+  urgencySentiment?: {
+    byUrgency: Record<string, { total: number; closed: number; conversionRate: number }>;
+    bySentiment: Record<string, { total: number; closed: number; conversionRate: number }>;
+    matrix: Array<{ urgency: string; sentiment: string; total: number; closed: number; conversionRate: number }>;
+  };
   topPerformers: string[];
   trends?: {
     conversionTrend: Array<{ period: string; conversionRate: number }>;

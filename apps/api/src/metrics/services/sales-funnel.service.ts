@@ -428,6 +428,71 @@ export class SalesFunnelService extends BaseMetricsService {
       byIndustry,
     };
 
+    const urgencyStats: Record<string, { total: number; closed: number }> = {};
+    const sentimentStats: Record<string, { total: number; closed: number }> = {};
+    const urgencySentimentMatrix: Record<string, Record<string, { total: number; closed: number }>> = {};
+
+    for (const customer of customers) {
+      const extraction = this.getExtraction(customer);
+      if (!extraction) continue;
+
+      const urgency = extraction.urgency || "MEDIA";
+      const sentiment = extraction.sentiment || "NEUTRAL";
+
+      if (!urgencyStats[urgency]) {
+        urgencyStats[urgency] = { total: 0, closed: 0 };
+      }
+      urgencyStats[urgency].total++;
+      if (customer.closed) {
+        urgencyStats[urgency].closed++;
+      }
+
+      if (!sentimentStats[sentiment]) {
+        sentimentStats[sentiment] = { total: 0, closed: 0 };
+      }
+      sentimentStats[sentiment].total++;
+      if (customer.closed) {
+        sentimentStats[sentiment].closed++;
+      }
+
+      if (!urgencySentimentMatrix[urgency]) {
+        urgencySentimentMatrix[urgency] = {};
+      }
+      if (!urgencySentimentMatrix[urgency][sentiment]) {
+        urgencySentimentMatrix[urgency][sentiment] = { total: 0, closed: 0 };
+      }
+      urgencySentimentMatrix[urgency][sentiment].total++;
+      if (customer.closed) {
+        urgencySentimentMatrix[urgency][sentiment].closed++;
+      }
+    }
+
+    const byUrgency: Record<string, { total: number; closed: number; conversionRate: number }> = {};
+    for (const [urgency, stats] of Object.entries(urgencyStats)) {
+      byUrgency[urgency] = {
+        ...stats,
+        conversionRate: stats.total > 0 ? Math.round((stats.closed / stats.total) * 100 * 10) / 10 : 0,
+      };
+    }
+
+    const bySentiment: Record<string, { total: number; closed: number; conversionRate: number }> = {};
+    for (const [sentiment, stats] of Object.entries(sentimentStats)) {
+      bySentiment[sentiment] = {
+        ...stats,
+        conversionRate: stats.total > 0 ? Math.round((stats.closed / stats.total) * 100 * 10) / 10 : 0,
+      };
+    }
+
+    const matrix = Object.entries(urgencySentimentMatrix).flatMap(([urgency, sentiments]) =>
+      Object.entries(sentiments).map(([sentiment, stats]) => ({
+        urgency,
+        sentiment,
+        total: stats.total,
+        closed: stats.closed,
+        conversionRate: stats.total > 0 ? Math.round((stats.closed / stats.total) * 100 * 10) / 10 : 0,
+      }))
+    );
+
     const insightsData = {
       stages: [
         {
@@ -470,6 +535,11 @@ export class SalesFunnelService extends BaseMetricsService {
       topPerformers,
       trends: {
         conversionTrend,
+      },
+      urgencySentiment: {
+        byUrgency,
+        bySentiment,
+        matrix,
       },
     };
 

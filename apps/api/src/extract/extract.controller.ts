@@ -18,6 +18,12 @@ export class ExtractController {
     return result;
   }
 
+  @Get("progress")
+  @ApiOperation({ summary: "Get current extraction progress" })
+  async getProgress() {
+    return this.extractService.getExtractionProgress();
+  }
+
   @Get(":meetingId")
   @ApiOperation({ summary: "Get extraction results for a meeting" })
   async getExtraction(@Param() params: ExtractMeetingDto) {

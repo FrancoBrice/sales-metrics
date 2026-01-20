@@ -194,6 +194,126 @@ export class ExtractService {
     return results;
   }
 
+  async getExtractionProgress() {
+    const meetingsWithoutExtraction = await this.prisma.meeting.findMany({
+      where: {
+        extractions: {
+          none: {},
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const failedExtractions = await this.prisma.extraction.findMany({
+      where: {
+        status: ExtractionStatus.FAILED,
+      },
+      select: {
+        meetingId: true,
+      },
+    });
+
+    const meetingIdsToRetry: string[] = [];
+
+    for (const failedExtraction of failedExtractions) {
+      const latestExtraction = await this.prisma.extraction.findFirst({
+        where: {
+          meetingId: failedExtraction.meetingId,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        select: {
+          status: true,
+        },
+      });
+
+      if (latestExtraction && latestExtraction.status === ExtractionStatus.SUCCESS) {
+        continue;
+      }
+
+      meetingIdsToRetry.push(failedExtraction.meetingId);
+    }
+
+    const allMeetingIds = [
+      ...meetingsWithoutExtraction.map((m) => m.id),
+      ...meetingIdsToRetry,
+    ];
+
+    const recentExtractions = await this.prisma.extraction.findMany({
+      where: {
+        createdAt: {
+          gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        },
+      },
+      select: {
+        meetingId: true,
+        status: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    const recentMeetingIds = new Set(recentExtractions.map((e) => e.meetingId));
+    const allRelevantMeetingIds = new Set([
+      ...allMeetingIds,
+      ...Array.from(recentMeetingIds),
+    ]);
+
+    const total = allRelevantMeetingIds.size;
+
+    if (total === 0) {
+      return {
+        total: 0,
+        completed: 0,
+        success: 0,
+        failed: 0,
+        pending: meetingsWithoutExtraction.length,
+        retried: meetingIdsToRetry.length,
+      };
+    }
+
+    const latestExtractions = await Promise.all(
+      Array.from(allRelevantMeetingIds).map(async (meetingId) => {
+        return await this.prisma.extraction.findFirst({
+          where: {
+            meetingId,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+          select: {
+            meetingId: true,
+            status: true,
+          },
+        });
+      })
+    );
+
+    const completedExtractions = latestExtractions.filter(
+      (e): e is { meetingId: string; status: string } =>
+        e !== null && (e.status === ExtractionStatus.SUCCESS || e.status === ExtractionStatus.FAILED)
+    );
+
+    const completed = completedExtractions.length;
+    const success = completedExtractions.filter((e) => e.status === ExtractionStatus.SUCCESS).length;
+    const failed = completedExtractions.filter((e) => e.status === ExtractionStatus.FAILED).length;
+
+    this.logger.debug(`Extraction progress: total=${total}, completed=${completed}, success=${success}, failed=${failed}, pending=${meetingsWithoutExtraction.length}, retried=${meetingIdsToRetry.length}`);
+
+    return {
+      total,
+      completed,
+      success,
+      failed,
+      pending: meetingsWithoutExtraction.length,
+      retried: meetingIdsToRetry.length,
+    };
+  }
+
   async extractAllPendingAndFailed() {
     const meetingsWithoutExtraction = await this.prisma.meeting.findMany({
       where: {
@@ -248,11 +368,24 @@ export class ExtractService {
       return results;
     }
 
+    this.processExtractionsInBackground(allMeetingIds).catch((error) => {
+      this.logger.error("Background extraction processing failed", error instanceof Error ? error.stack : undefined);
+    });
+
+    return results;
+  }
+
+  private async processExtractionsInBackground(meetingIds: string[]) {
     const batchResults = await processInBatches(
-      allMeetingIds,
+      meetingIds,
       CONCURRENCY_LIMIT,
       (meetingId) => this.extractFromMeeting(meetingId)
     );
+
+    const results = {
+      success: 0,
+      failed: 0,
+    };
 
     for (const result of batchResults) {
       if (result.status === "fulfilled" && result.value?.status === ExtractionStatus.SUCCESS) {
@@ -262,7 +395,7 @@ export class ExtractService {
       }
     }
 
-    return results;
+    this.logger.log(`Background extraction completed: ${results.success} success, ${results.failed} failed`);
   }
 
   async retryFailedExtractions() {

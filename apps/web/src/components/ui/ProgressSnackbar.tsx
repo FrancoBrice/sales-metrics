@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 interface ProgressSnackbarProps {
   message: string;
   progress: number;
@@ -7,6 +9,10 @@ interface ProgressSnackbarProps {
 
 export function ProgressSnackbar({ message, progress, total, onClose }: ProgressSnackbarProps) {
   const percentage = total ? Math.min((progress / total) * 100, 100) : progress;
+
+  useEffect(() => {
+    console.log("ProgressSnackbar updated:", { progress, total, percentage });
+  }, [progress, total, percentage]);
 
   return (
     <div className="progress-snackbar">
