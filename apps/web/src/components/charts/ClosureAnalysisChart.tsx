@@ -81,10 +81,9 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
     try {
       const analysisData = await api.metrics.closureAnalysis(filters);
       setData(analysisData as ClosureAnalysisData);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error loading closure analysis:", error);
+    } catch {
       setData(null);
+    } finally {
       setLoading(false);
     }
   }
@@ -94,8 +93,7 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
     try {
       const insightsData = await api.metrics.salesFunnelInsights(filters);
       setInsights(insightsData);
-    } catch (error) {
-      console.error("Error loading insights:", error);
+    } catch {
       setInsights(null);
     } finally {
       setLoadingInsights(false);
@@ -170,12 +168,9 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
 
   const dimensionData = getDimensionData(selectedDimension);
   const sortedData = [...dimensionData].sort((a, b) => {
-    const rateA = a.total > 0 ? (a.closed / a.total) * 100 : 0;
-    const rateB = b.total > 0 ? (b.closed / b.total) * 100 : 0;
-
     switch (sortBy) {
       case "conversionRate":
-        return rateB - rateA;
+        return b.conversionRate - a.conversionRate;
       case "total":
       default:
         return b.total - a.total;
@@ -183,8 +178,7 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
   });
 
   const maxTotal = Math.max(...sortedData.map((d) => d.total), 1);
-  const overallRate =
-    data.overall.total > 0 ? (data.overall.closed / data.overall.total) * 100 : 0;
+  const overallRate = data.overall.conversionRate;
 
   const getConversionColor = (rate: number): string => {
     const diff = rate - overallRate;
@@ -360,7 +354,7 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
             <EmptyState title="No hay datos disponibles" message={`No hay datos disponibles para ${getDimensionLabel(selectedDimension)}`} />
           ) : (
             sortedData.map((item) => {
-              const conversionRate = item.total > 0 ? (item.closed / item.total) * 100 : 0;
+              const conversionRate = item.conversionRate;
               const conversionColor = getConversionColor(conversionRate);
               const diff = conversionRate - overallRate;
 

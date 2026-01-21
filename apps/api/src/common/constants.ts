@@ -25,3 +25,6 @@ export const NO_PAIN_POINTS = "SIN_PAIN_POINTS";
 export const NO_JTBD = "SIN_JTBD";
 
 export const DEFAULT_PORT = 3001;
+
+export const TOP_PERFORMERS_LIMIT = 3;
+export const DEFAULT_TOP_PERFORMERS_LIMIT = 5;

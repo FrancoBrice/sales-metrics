@@ -10,7 +10,7 @@ import { OpportunityMatrixService } from "./services/opportunity-matrix.service"
 import { WinProbabilityService } from "./services/win-probability.service";
 import { VolumeFlowService } from "./services/volume-flow.service";
 import { SellersService } from "./services/sellers.service";
-import { SalesFunnelService } from "./services/sales-funnel.service";
+import { SalesFunnelInsightsService } from "./services/sales-funnel.service";
 import { ClosureAnalysisService } from "./services/closure-analysis.service";
 
 @ApiTags("Metrics")
@@ -25,7 +25,7 @@ export class MetricsController {
     private readonly winProbabilityService: WinProbabilityService,
     private readonly volumeFlowService: VolumeFlowService,
     private readonly sellersService: SellersService,
-    private readonly salesFunnelService: SalesFunnelService,
+    private readonly salesFunnelInsightsService: SalesFunnelInsightsService,
     private readonly closureAnalysisService: ClosureAnalysisService
   ) { }
 
@@ -86,7 +86,7 @@ export class MetricsController {
   @Get("sales-funnel-enhanced/insights")
   @ApiOperation({ summary: "Get AI-generated insights for the sales funnel" })
   async getSalesFunnelInsights(@Query() query: MetricsFilterDto) {
-    return this.salesFunnelService.getSalesFunnelInsights(query);
+    return this.salesFunnelInsightsService.getSalesFunnelInsights(query);
   }
 
   @Get("closure-analysis")
