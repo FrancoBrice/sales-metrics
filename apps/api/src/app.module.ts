@@ -7,6 +7,7 @@ import { IngestModule } from "./ingest/ingest.module";
 import { ExtractModule } from "./extract/extract.module";
 import { CustomersModule } from "./customers/customers.module";
 import { MetricsModule } from "./metrics/metrics.module";
+import { HealthController } from "./health/health.controller";
 import { THROTTLER_TTL_MS, THROTTLER_LIMIT } from "./common/constants";
 
 @Module({
@@ -24,6 +25,7 @@ import { THROTTLER_TTL_MS, THROTTLER_LIMIT } from "./common/constants";
     CustomersModule,
     MetricsModule,
   ],
+  controllers: [HealthController],
   providers: [
     {
       provide: APP_GUARD,
