@@ -25,8 +25,9 @@ COPY apps/api ./apps/api
 WORKDIR /app/packages/shared
 RUN pnpm run build
 
-WORKDIR /app
-RUN pnpm --filter api build
+WORKDIR /app/apps/api
+RUN pnpm exec prisma generate
+RUN pnpm exec nest build
 
 FROM base AS runner
 RUN apk add --no-cache openssl
