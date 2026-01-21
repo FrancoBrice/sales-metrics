@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { BaseMetricsService } from "./base-metrics.service";
+import { calculateConversionRate } from "../../common/helpers/metrics.helper";
 
 @Injectable()
 export class ConversionFunnelService extends BaseMetricsService {
@@ -30,7 +31,7 @@ export class ConversionFunnelService extends BaseMetricsService {
         { name: "Leads Totales", count: total, percentage: 100 },
         { name: "Con Reunión", count: withMeeting, percentage: Math.round((withMeeting / total) * 100) },
         { name: "Analizados", count: withExtraction, percentage: Math.round((withExtraction / total) * 100) },
-        { name: "Cerrados", count: closed, percentage: Math.round((closed / total) * 100) },
+        { name: "Cerrados", count: closed, percentage: Math.round(calculateConversionRate(total, closed)) },
       ],
     };
   }

@@ -1,5 +1,6 @@
 import { CustomerWithRelations } from "../../../../common/types";
 import { StageCustomers } from "./funnel-stage-classifier";
+import { calculateConversionRate, roundToOneDecimal } from "../../../../common/helpers/metrics.helper";
 
 export type StageMetrics = {
   total: number;
@@ -43,10 +44,3 @@ function calculateBasicMetrics(
   };
 }
 
-function calculateConversionRate(total: number, closed: number): number {
-  return total > 0 ? (closed / total) * 100 : 0;
-}
-
-function roundToOneDecimal(value: number): number {
-  return Math.round(value * 10) / 10;
-}

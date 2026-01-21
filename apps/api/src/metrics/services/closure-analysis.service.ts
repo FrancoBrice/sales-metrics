@@ -4,6 +4,7 @@ import { MetricsFilterDto } from "../dto/metrics-filter.dto";
 import { BaseMetricsService } from "./base-metrics.service";
 import { CustomerWithRelations } from "../../common/types";
 import { UNKNOWN_VALUE } from "../../common/constants";
+import { calculateConversionRateRounded } from "../../common/helpers/metrics.helper";
 
 export interface CategoryStats {
   category: string;
@@ -100,7 +101,7 @@ export class ClosureAnalysisService extends BaseMetricsService {
 
     const overallClosed = customers.filter((c) => c.closed).length;
     const overallTotal = customers.length;
-    const overallConversionRate = overallTotal > 0 ? (overallClosed / overallTotal) * 100 : 0;
+    const overallConversionRate = calculateConversionRateRounded(overallTotal, overallClosed);
 
     const convertToStats = (
       categoryData: Record<string, { total: number; closed: number }>,
@@ -108,14 +109,14 @@ export class ClosureAnalysisService extends BaseMetricsService {
     ): CategoryStats[] => {
       return Object.entries(categoryData)
         .map(([category, data]) => {
-          const conversionRate = data.total > 0 ? (data.closed / data.total) * 100 : 0;
+          const conversionRate = calculateConversionRateRounded(data.total, data.closed);
           const confidence = this.calculateConfidence(data.total, data.closed, overallRate);
 
           return {
             category,
             total: data.total,
             closed: data.closed,
-            conversionRate: Math.round(conversionRate * 10) / 10,
+            conversionRate,
             confidence,
             volume: 0,
           };

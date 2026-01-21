@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { LeadSource, PainPoints, JtbdPrimary } from "@vambe/shared";
 import { MetricsFilterDto } from "../dto/metrics-filter.dto";
 import { BaseMetricsService } from "./base-metrics.service";
+import { calculateConversionRateRounded } from "../../common/helpers/metrics.helper";
 
 @Injectable()
 export class OverviewService extends BaseMetricsService {
@@ -10,7 +11,7 @@ export class OverviewService extends BaseMetricsService {
 
     const totalCustomers = customers.length;
     const closedDeals = customers.filter((c) => c.closed).length;
-    const conversionRate = totalCustomers > 0 ? (closedDeals / totalCustomers) * 100 : 0;
+    const conversionRate = calculateConversionRateRounded(totalCustomers, closedDeals);
 
     const leadSourceCounts: Record<string, number> = {};
     const painPointStats: Record<string, { total: number; closed: number }> = {};
@@ -69,7 +70,7 @@ export class OverviewService extends BaseMetricsService {
         painPoint: painPoint as PainPoints,
         count: stats.total,
         closed: stats.closed,
-        conversionRate: stats.total > 0 ? (stats.closed / stats.total) * 100 : 0,
+        conversionRate: calculateConversionRateRounded(stats.total, stats.closed),
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
@@ -79,7 +80,7 @@ export class OverviewService extends BaseMetricsService {
         jtbd: jtbd as JtbdPrimary,
         count: stats.total,
         closed: stats.closed,
-        conversionRate: stats.total > 0 ? (stats.closed / stats.total) * 100 : 0,
+        conversionRate: calculateConversionRateRounded(stats.total, stats.closed),
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
@@ -90,13 +91,13 @@ export class OverviewService extends BaseMetricsService {
       seller,
       total: stats.total,
       closed: stats.closed,
-      conversionRate: stats.total > 0 ? (stats.closed / stats.total) * 100 : 0,
+      conversionRate: calculateConversionRateRounded(stats.total, stats.closed),
     }));
 
     return {
       totalCustomers,
       closedDeals,
-      conversionRate: Math.round(conversionRate * 10) / 10,
+      conversionRate,
       avgVolume: avgVolume ? Math.round(avgVolume) : null,
       topLeadSources,
       topPainPoints,

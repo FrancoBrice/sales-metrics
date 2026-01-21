@@ -1,4 +1,5 @@
 import { CustomerWithRelations } from "../../../../common/types";
+import { calculateConversionRate, roundToOneDecimal } from "../../../../common/helpers/metrics.helper";
 
 type CategoryStatsRaw = {
   total: number;
@@ -95,10 +96,3 @@ function calculateConversionRates(
   return result;
 }
 
-function calculateConversionRate(total: number, closed: number): number {
-  return total > 0 ? (closed / total) * 100 : 0;
-}
-
-function roundToOneDecimal(value: number): number {
-  return Math.round(value * 10) / 10;
-}

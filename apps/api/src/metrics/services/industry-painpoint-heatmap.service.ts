@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { MetricsFilterDto } from "../dto/metrics-filter.dto";
 import { BaseMetricsService } from "./base-metrics.service";
+import { calculateConversionRateRounded } from "../../common/helpers/metrics.helper";
 import { NO_PAIN_POINTS } from "../../common/constants";
 
 @Injectable()
@@ -56,7 +57,7 @@ export class IndustryPainPointHeatmapService extends BaseMetricsService {
     const cells = industries.flatMap((industry) =>
       painPointsArray.map((painPoint) => {
         const data = heatmapData[industry][painPoint] || { total: 0, closed: 0, volume: 0 };
-        const conversionRate = data.total > 0 ? (data.closed / data.total) * 100 : 0;
+        const conversionRate = calculateConversionRateRounded(data.total, data.closed);
         const avgVolume = data.total > 0 ? data.volume / data.total : 0;
 
         return {

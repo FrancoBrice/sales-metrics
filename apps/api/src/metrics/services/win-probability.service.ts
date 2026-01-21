@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { MetricsFilterDto } from "../dto/metrics-filter.dto";
 import { BaseMetricsService } from "./base-metrics.service";
+import { calculateConversionRate, calculateConversionRateRounded } from "../../common/helpers/metrics.helper";
 
 @Injectable()
 export class WinProbabilityService extends BaseMetricsService {
@@ -53,16 +54,16 @@ export class WinProbabilityService extends BaseMetricsService {
     const cells = urgencyOrder.flatMap((urgency) =>
       sentimentOrder.map((sentiment) => {
         const data = matrix[urgency][sentiment];
-        const conversionRate = data.total > 0 ? (data.closed / data.total) * 100 : 0;
+        const conversionRate = calculateConversionRateRounded(data.total, data.closed);
 
         const riskBreakdown = riskOrder.map((risk) => {
           const riskData = data.byRisk[risk];
-          const riskConversionRate = riskData.total > 0 ? (riskData.closed / riskData.total) * 100 : 0;
+          const riskConversionRate = calculateConversionRateRounded(riskData.total, riskData.closed);
           return {
             riskLevel: risk,
             total: riskData.total,
             closed: riskData.closed,
-            conversionRate: Math.round(riskConversionRate * 10) / 10,
+            conversionRate: riskConversionRate,
           };
         });
 
@@ -70,7 +71,7 @@ export class WinProbabilityService extends BaseMetricsService {
           riskOrder.reduce((sum, risk, index) => {
             const riskWeight = 1 - index * 0.2;
             const riskData = data.byRisk[risk];
-            const riskRate = riskData.total > 0 ? (riskData.closed / riskData.total) * 100 : 0;
+            const riskRate = calculateConversionRate(riskData.total, riskData.closed);
             return sum + riskRate * riskWeight * (riskData.total / Math.max(data.total, 1));
           }, 0) * 100;
 
@@ -79,7 +80,7 @@ export class WinProbabilityService extends BaseMetricsService {
           sentiment,
           total: data.total,
           closed: data.closed,
-          conversionRate: Math.round(conversionRate * 10) / 10,
+          conversionRate,
           winProbability: Math.min(100, Math.max(0, Math.round(weightedProbability * 10) / 10)),
           riskBreakdown,
         };
@@ -94,7 +95,7 @@ export class WinProbabilityService extends BaseMetricsService {
         }),
         { total: 0, closed: 0 }
       );
-      const conversionRate = urgencyData.total > 0 ? (urgencyData.closed / urgencyData.total) * 100 : 0;
+      const conversionRate = calculateConversionRateRounded(urgencyData.total, urgencyData.closed);
       return {
         urgency,
         total: urgencyData.total,
@@ -114,7 +115,7 @@ export class WinProbabilityService extends BaseMetricsService {
         },
         { total: 0, closed: 0 }
       );
-      const conversionRate = sentimentData.total > 0 ? (sentimentData.closed / sentimentData.total) * 100 : 0;
+      const conversionRate = calculateConversionRateRounded(sentimentData.total, sentimentData.closed);
       return {
         sentiment,
         total: sentimentData.total,

@@ -1,5 +1,6 @@
 import { CustomerWithRelations } from "../../../../common/types";
 import { UNKNOWN_VALUE, TOP_PERFORMERS_LIMIT } from "../../../../common/constants";
+import { calculateConversionRate } from "../../../../common/helpers/metrics.helper";
 
 type CategoryStatsRaw = {
   total: number;
@@ -82,6 +83,3 @@ function calculateConversionRates(
   return result;
 }
 
-function calculateConversionRate(total: number, closed: number): number {
-  return total > 0 ? (closed / total) * 100 : 0;
-}

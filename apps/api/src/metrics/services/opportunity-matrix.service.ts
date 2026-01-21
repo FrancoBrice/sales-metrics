@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { MetricsFilterDto } from "../dto/metrics-filter.dto";
 import { BaseMetricsService } from "./base-metrics.service";
 import { NO_PAIN_POINTS } from "../../common/constants";
+import { calculateConversionRateRounded } from "../../common/helpers/metrics.helper";
 
 @Injectable()
 export class OpportunityMatrixService extends BaseMetricsService {
@@ -67,7 +68,7 @@ export class OpportunityMatrixService extends BaseMetricsService {
       const avgVolume = stats.volumes.length > 0
         ? stats.volumes.reduce((a, b) => a + b, 0) / stats.volumes.length
         : 0;
-      const conversionRate = stats.total > 0 ? (stats.closed / stats.total) * 100 : 0;
+      const conversionRate = calculateConversionRateRounded(stats.total, stats.closed);
 
       return {
         category: "industry",
@@ -75,7 +76,7 @@ export class OpportunityMatrixService extends BaseMetricsService {
         total: stats.total,
         closed: stats.closed,
         avgVolume: Math.round(avgVolume),
-        conversionRate: Math.round(conversionRate * 10) / 10,
+        conversionRate,
       };
     });
 
@@ -83,7 +84,7 @@ export class OpportunityMatrixService extends BaseMetricsService {
       const avgVolume = stats.volumes.length > 0
         ? stats.volumes.reduce((a, b) => a + b, 0) / stats.volumes.length
         : 0;
-      const conversionRate = stats.total > 0 ? (stats.closed / stats.total) * 100 : 0;
+      const conversionRate = calculateConversionRateRounded(stats.total, stats.closed);
 
       return {
         category: "painPoint",
@@ -91,7 +92,7 @@ export class OpportunityMatrixService extends BaseMetricsService {
         total: stats.total,
         closed: stats.closed,
         avgVolume: Math.round(avgVolume),
-        conversionRate: Math.round(conversionRate * 10) / 10,
+        conversionRate,
       };
     });
 

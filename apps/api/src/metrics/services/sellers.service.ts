@@ -3,6 +3,7 @@ import { MetricsFilterDto } from "../dto/metrics-filter.dto";
 import { Sentiment, Industry, LeadSource, PainPoints, Urgency, RiskLevel } from "@vambe/shared";
 import { BaseMetricsService } from "./base-metrics.service";
 import { buildDateFilter } from "../../common/helpers/filter.helper";
+import { calculateConversionRate, calculateConversionRateRounded } from "../../common/helpers/metrics.helper";
 
 @Injectable()
 export class SellersService extends BaseMetricsService {
@@ -45,12 +46,12 @@ export class SellersService extends BaseMetricsService {
     }
 
     const sellers = Object.entries(sellersMap).map(([seller, stats]) => {
-      const conversionRate = stats.total > 0 ? (stats.closed / stats.total) * 100 : 0;
+      const conversionRate = calculateConversionRate(stats.total, stats.closed);
       const sentimentDistribution = Object.entries(stats.sentimentStats).map(([sentiment, data]) => ({
         sentiment: sentiment as Sentiment,
         total: data.total,
         closed: data.closed,
-        conversionRate: data.total > 0 ? (data.closed / data.total) * 100 : 0,
+        conversionRate: calculateConversionRate(data.total, data.closed),
         percentage: stats.total > 0 ? (data.total / stats.total) * 100 : 0,
       }));
 
@@ -58,7 +59,7 @@ export class SellersService extends BaseMetricsService {
         seller,
         total: stats.total,
         closed: stats.closed,
-        conversionRate: Math.round(conversionRate * 10) / 10,
+        conversionRate: calculateConversionRateRounded(stats.total, stats.closed),
         sentimentDistribution,
       };
     });
@@ -71,7 +72,7 @@ export class SellersService extends BaseMetricsService {
 
     const total = customers.length;
     const closed = customers.filter((c) => c.closed).length;
-    const conversionRate = total > 0 ? (closed / total) * 100 : 0;
+    const conversionRate = calculateConversionRateRounded(total, closed);
 
     const sentimentStats: Record<string, { total: number; closed: number }> = {
       POSITIVO: { total: 0, closed: 0 },
@@ -157,7 +158,7 @@ export class SellersService extends BaseMetricsService {
       sentiment: sentiment as Sentiment,
       total: stats.total,
       closed: stats.closed,
-      conversionRate: stats.total > 0 ? (stats.closed / stats.total) * 100 : 0,
+      conversionRate: calculateConversionRate(stats.total, stats.closed),
     }));
 
     const topIndustries = Object.entries(industryStats)
@@ -165,7 +166,7 @@ export class SellersService extends BaseMetricsService {
         industry: industry as Industry,
         total: stats.total,
         closed: stats.closed,
-        conversionRate: stats.total > 0 ? (stats.closed / stats.total) * 100 : 0,
+        conversionRate: calculateConversionRate(stats.total, stats.closed),
       }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
@@ -175,7 +176,7 @@ export class SellersService extends BaseMetricsService {
         source: source as LeadSource,
         total: stats.total,
         closed: stats.closed,
-        conversionRate: stats.total > 0 ? (stats.closed / stats.total) * 100 : 0,
+        conversionRate: calculateConversionRate(stats.total, stats.closed),
       }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
@@ -185,7 +186,7 @@ export class SellersService extends BaseMetricsService {
         painPoint: painPoint as PainPoints,
         total: stats.total,
         closed: stats.closed,
-        conversionRate: stats.total > 0 ? (stats.closed / stats.total) * 100 : 0,
+        conversionRate: calculateConversionRate(stats.total, stats.closed),
       }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
@@ -194,14 +195,14 @@ export class SellersService extends BaseMetricsService {
       urgency: urgency as Urgency,
       total: stats.total,
       closed: stats.closed,
-      conversionRate: stats.total > 0 ? (stats.closed / stats.total) * 100 : 0,
+      conversionRate: calculateConversionRate(stats.total, stats.closed),
     }));
 
     const riskBreakdown = Object.entries(riskLevelStats).map(([risk, stats]) => ({
       riskLevel: risk as RiskLevel,
       total: stats.total,
       closed: stats.closed,
-      conversionRate: stats.total > 0 ? (stats.closed / stats.total) * 100 : 0,
+      conversionRate: calculateConversionRate(stats.total, stats.closed),
     }));
 
     return {

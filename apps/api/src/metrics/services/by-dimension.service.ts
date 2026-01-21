@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { BaseMetricsService } from "./base-metrics.service";
+import { calculateConversionRateRounded } from "../../common/helpers/metrics.helper";
 
 @Injectable()
 export class ByDimensionService extends BaseMetricsService {
@@ -54,7 +55,7 @@ export class ByDimensionService extends BaseMetricsService {
           value,
           count: data.total,
           closedCount: data.closed,
-          conversionRate: data.total > 0 ? Math.round((data.closed / data.total) * 1000) / 10 : 0,
+          conversionRate: calculateConversionRateRounded(data.total, data.closed),
         }))
         .sort((a, b) => b.count - a.count),
     };
