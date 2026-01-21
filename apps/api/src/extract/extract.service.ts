@@ -5,9 +5,7 @@ import { ExtractionStatus, LeadSource, Integrations, Volume, Extraction } from "
 import { ExtractionParser, DeepSeekClient, mapExtractionDataToExtraction } from "./llm";
 import { detectLeadSource, detectVolume, detectIntegrations } from "./deterministic";
 import { processInBatches } from "../common/helpers/batching.helper";
-import { CONCURRENCY_LIMIT } from "../common/constants";
-
-const MIN_CONFIDENCE_THRESHOLD = 0.7;
+import { CONCURRENCY_LIMIT, MIN_CONFIDENCE_THRESHOLD } from "../common/constants";
 
 @Injectable()
 export class ExtractService {
@@ -390,7 +388,11 @@ export class ExtractService {
   }
 
   private calculateExtractionStats(
-    batchResults: Array<{ status: "fulfilled" | "rejected"; value?: any; reason?: unknown }>,
+    batchResults: Array<{
+      status: "fulfilled" | "rejected";
+      value?: { status?: string } | null;
+      reason?: unknown
+    }>,
     initialStats: { success: number; failed: number; skipped?: number }
   ) {
     const stats = { ...initialStats };

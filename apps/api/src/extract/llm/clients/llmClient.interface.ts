@@ -25,5 +25,3 @@ export interface LlmClient {
     hints?: DeterministicHints
   ): Promise<LlmExtractionResult>;
 }
-
-export const LLM_CLIENT = Symbol("LLM_CLIENT");

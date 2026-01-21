@@ -134,13 +134,19 @@ export class LlmInsightsClient implements InsightsClient {
     throw new Error("Max retries exceeded");
   }
 
-  private isValidInsights(data: any): boolean {
+  private isValidInsights(data: unknown): data is {
+    bottlenecks?: string[];
+    opportunities?: string[];
+    recommendations?: string[];
+  } {
+    if (typeof data !== "object" || data === null) {
+      return false;
+    }
+    const obj = data as Record<string, unknown>;
     return (
-      typeof data === "object" &&
-      data !== null &&
-      (Array.isArray(data.bottlenecks) || data.bottlenecks === undefined) &&
-      (Array.isArray(data.opportunities) || data.opportunities === undefined) &&
-      (Array.isArray(data.recommendations) || data.recommendations === undefined)
+      (Array.isArray(obj.bottlenecks) || obj.bottlenecks === undefined) &&
+      (Array.isArray(obj.opportunities) || obj.opportunities === undefined) &&
+      (Array.isArray(obj.recommendations) || obj.recommendations === undefined)
     );
   }
 }

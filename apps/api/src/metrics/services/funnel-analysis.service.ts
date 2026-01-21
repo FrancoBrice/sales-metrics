@@ -177,12 +177,27 @@ export class FunnelAnalysisService extends BaseMetricsService {
     };
   }
 
-  private evaluateFunnelValidity(analysis: any) {
+  private evaluateFunnelValidity(analysis: {
+    flowAnalysis: {
+      stage1To2: { possible: number; actual: number };
+      stage2To3: { possible: number; actual: number };
+      stage3To4: { possible: number; actual: number };
+      stage4To5: { possible: number; actual: number };
+    };
+  }) {
     const flowRates = {
-      stage1To2: analysis.flowAnalysis.stage1To2.actual / analysis.flowAnalysis.stage1To2.possible,
-      stage2To3: analysis.flowAnalysis.stage2To3.actual / analysis.flowAnalysis.stage2To3.possible,
-      stage3To4: analysis.flowAnalysis.stage3To4.actual / analysis.flowAnalysis.stage3To4.possible,
-      stage4To5: analysis.flowAnalysis.stage4To5.actual / analysis.flowAnalysis.stage4To5.possible,
+      stage1To2: analysis.flowAnalysis.stage1To2.possible > 0
+        ? analysis.flowAnalysis.stage1To2.actual / analysis.flowAnalysis.stage1To2.possible
+        : 0,
+      stage2To3: analysis.flowAnalysis.stage2To3.possible > 0
+        ? analysis.flowAnalysis.stage2To3.actual / analysis.flowAnalysis.stage2To3.possible
+        : 0,
+      stage3To4: analysis.flowAnalysis.stage3To4.possible > 0
+        ? analysis.flowAnalysis.stage3To4.actual / analysis.flowAnalysis.stage3To4.possible
+        : 0,
+      stage4To5: analysis.flowAnalysis.stage4To5.possible > 0
+        ? analysis.flowAnalysis.stage4To5.actual / analysis.flowAnalysis.stage4To5.possible
+        : 0,
     };
 
     const hasReverseFlow = Object.values(flowRates).some((rate) => rate > 1);

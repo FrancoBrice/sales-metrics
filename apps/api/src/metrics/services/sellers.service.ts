@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { MetricsFilterDto } from "../dto/metrics-filter.dto";
 import { Sentiment, Industry, LeadSource, PainPoints, Urgency, RiskLevel } from "@vambe/shared";
 import { BaseMetricsService } from "./base-metrics.service";
+import { buildDateFilter } from "../../common/helpers/filter.helper";
 
 @Injectable()
 export class SellersService extends BaseMetricsService {
@@ -218,8 +219,4 @@ export class SellersService extends BaseMetricsService {
     };
   }
 
-  private buildDateFilter(params: { dateFrom?: string; dateTo?: string }): any {
-    const { buildDateFilter } = require("../../common/helpers/filter.helper");
-    return buildDateFilter(params);
-  }
 }
