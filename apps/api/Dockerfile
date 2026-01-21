@@ -1,50 +1,55 @@
-# Multi-stage build for NestJS
 FROM node:20-alpine AS base
 
-# Install dependencies only when needed
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-RUN npm ci --only=production
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/shared/package.json ./packages/shared/
+COPY apps/api/package.json ./apps/api/
+COPY apps/api/prisma/schema.prisma ./apps/api/prisma/
 
-# Build stage
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
 FROM base AS builder
+RUN apk add --no-cache openssl
 WORKDIR /app
+
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
+COPY packages/shared ./packages/shared
+COPY apps/api ./apps/api
 
-# Generate Prisma client
-RUN npx prisma generate
+WORKDIR /app/packages/shared
+RUN pnpm run build
 
-# Build application
-RUN npm run build
+WORKDIR /app/apps/api
+RUN pnpm run build
 
-# Production stage
 FROM base AS runner
+RUN apk add --no-cache openssl
 WORKDIR /app
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
-# Create a non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nestjs
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nestjs
 
-# Copy necessary files
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/apps/api/dist ./dist
+COPY --from=builder /app/apps/api/package.json ./
+COPY --from=builder /app/apps/api/prisma ./prisma
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
+COPY --from=builder /app/packages/shared/package.json ./packages/shared/
 
-# Change ownership
 RUN chown -R nestjs:nodejs /app
 
 USER nestjs
 
 EXPOSE 8080
 
-ENV PORT 8080
+ENV PORT=8080
 
-CMD ["npm", "run", "start:prod"]
+CMD ["node", "dist/main"]
