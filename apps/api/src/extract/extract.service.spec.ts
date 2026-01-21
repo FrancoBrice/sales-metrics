@@ -68,6 +68,7 @@ describe("ExtractService", () => {
       },
       llmApiLog: {
         create: vi.fn(),
+        findFirst: vi.fn(),
       },
     };
 
@@ -88,12 +89,10 @@ describe("ExtractService", () => {
   });
 
   describe("extractFromMeeting", () => {
-    it("should return null when meeting does not exist", async () => {
+    it("should throw error when meeting does not exist", async () => {
       prismaService.meeting.findUnique.mockResolvedValue(null);
 
-      const result = await extractService.extractFromMeeting("non-existent");
-
-      expect(result).toBeNull();
+      await expect(extractService.extractFromMeeting("non-existent")).rejects.toThrow("Meeting non-existent not found");
       expect(prismaService.meeting.findUnique).toHaveBeenCalledWith({
         where: { id: "non-existent" },
         include: { customer: true },
@@ -147,6 +146,7 @@ describe("ExtractService", () => {
         ...mockExtraction,
         status: ExtractionStatus.FAILED,
       });
+      prismaService.llmApiLog.findFirst.mockResolvedValue(null);
       prismaService.llmApiLog.create.mockResolvedValue({});
 
       const result = await extractService.extractFromMeeting("meeting-1");
@@ -154,7 +154,7 @@ describe("ExtractService", () => {
       expect(result).toBeDefined();
       expect(result?.status).toBe(ExtractionStatus.FAILED);
       expect(result?.extraction).toBeNull();
-      expect(result?.error).toBeDefined();
+      expect("error" in result && result.error).toBeDefined();
       expect(deepSeekClient.extractFromTranscript).toHaveBeenCalled();
       expect(prismaService.llmApiLog.create).toHaveBeenCalledTimes(1);
       expect(extractionParser.parseAndSave).not.toHaveBeenCalled();

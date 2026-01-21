@@ -202,25 +202,6 @@ export class ValidationService {
 
     const merged = { ...defaultExtraction, ...normalized };
 
-    if (merged.jtbdPrimary === undefined || !Array.isArray(merged.jtbdPrimary)) {
-      merged.jtbdPrimary = [];
-    }
-    if (merged.painPoints === undefined || !Array.isArray(merged.painPoints)) {
-      merged.painPoints = [];
-    }
-    if (merged.integrations === undefined || !Array.isArray(merged.integrations)) {
-      merged.integrations = [];
-    }
-    if (merged.successMetrics === undefined || !Array.isArray(merged.successMetrics)) {
-      merged.successMetrics = [];
-    }
-    if (merged.objections === undefined || !Array.isArray(merged.objections)) {
-      merged.objections = [];
-    }
-    if (merged.volume === undefined) {
-      merged.volume = null;
-    }
-
     const result = ExtractionSchema.safeParse(merged);
 
     if (!result.success) {

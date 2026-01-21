@@ -5,7 +5,7 @@ import { ExtractionStatus, LeadSource, Integrations, Volume, Extraction } from "
 import { ExtractionParser, DeepSeekClient, mapExtractionDataToExtraction } from "./llm";
 import { detectLeadSource, detectVolume, detectIntegrations } from "./deterministic";
 import { processInBatches } from "../common/helpers/batching.helper";
-import { CONCURRENCY_LIMIT, MIN_CONFIDENCE_THRESHOLD } from "../common/constants";
+import { CONCURRENCY_LIMIT, MIN_CONFIDENCE_THRESHOLD, HOURS_24_MS } from "../common/constants";
 
 @Injectable()
 export class ExtractService {
@@ -36,37 +36,7 @@ export class ExtractService {
       );
 
       const extraction = this.mergeExtractionResults(deterministicResults, llmResult.extraction);
-      const modelName = llmResult.metadata?.model || "unknown";
-      const rawResponse = llmResult.rawResponse;
-
-      const saved = await this.prisma.extraction.upsert({
-        where: { meetingId: meeting.id },
-        update: {
-          model: modelName,
-          status: ExtractionStatus.SUCCESS,
-        },
-        create: {
-          meetingId: meeting.id,
-          model: modelName,
-          status: ExtractionStatus.SUCCESS,
-        },
-      });
-
-      await this.prisma.llmApiLog.create({
-        data: {
-          extractionId: saved.id,
-          provider: llmResult.metadata?.provider || "unknown",
-          model: modelName,
-          status: ExtractionStatus.SUCCESS,
-          response: rawResponse,
-          durationMs: llmResult.metadata?.durationMs,
-          promptTokens: llmResult.metadata?.promptTokens,
-          completionTokens: llmResult.metadata?.completionTokens,
-          totalTokens: llmResult.metadata?.totalTokens,
-        },
-      });
-
-      await this.extractionParser.parseAndSave(saved.id, extraction);
+      const saved = await this.saveExtractionSuccess(meeting.id, llmResult, extraction);
 
       return {
         id: saved.id,
@@ -75,61 +45,7 @@ export class ExtractService {
         status: saved.status,
       };
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      this.logger.error(`Extraction failed for meeting ${meetingId}: ${errorMessage}`, error instanceof Error ? error.stack : undefined);
-
-      const errorWithMetadata = error as { metadata?: { model?: string; provider?: string; durationMs?: number; promptTokens?: number; completionTokens?: number; totalTokens?: number }; rawResponse?: string };
-      const modelName = errorWithMetadata?.metadata?.model || "unknown";
-      const rawResponse = errorWithMetadata?.rawResponse || JSON.stringify({
-        error: String(error),
-        model: modelName,
-        timestamp: new Date().toISOString(),
-      });
-
-      const saved = await this.prisma.extraction.upsert({
-        where: { meetingId: meeting.id },
-        update: {
-          model: modelName,
-          status: ExtractionStatus.FAILED,
-        },
-        create: {
-          meetingId: meeting.id,
-          model: modelName,
-          status: ExtractionStatus.FAILED,
-        },
-      });
-
-      const existingLog = await this.prisma.llmApiLog.findFirst({
-        where: {
-          extractionId: saved.id,
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      if (!existingLog || existingLog.response !== rawResponse) {
-        await this.prisma.llmApiLog.create({
-          data: {
-            extractionId: saved.id,
-            provider: errorWithMetadata?.metadata?.provider || "unknown",
-            model: modelName,
-            status: ExtractionStatus.FAILED,
-            response: rawResponse,
-            error: String(error),
-            durationMs: errorWithMetadata?.metadata?.durationMs,
-            promptTokens: errorWithMetadata?.metadata?.promptTokens,
-            completionTokens: errorWithMetadata?.metadata?.completionTokens,
-            totalTokens: errorWithMetadata?.metadata?.totalTokens,
-          },
-        });
-      }
-
-      return {
-        id: saved.id,
-        meetingId: saved.meetingId,
-        extraction: null,
-        status: saved.status,
-        error: String(error),
-      };
+      return this.handleExtractionError(meeting.id, meetingId, error);
     }
   }
 
@@ -249,7 +165,7 @@ export class ExtractService {
     const recentExtractions = await this.prisma.extraction.findMany({
       where: {
         createdAt: {
-          gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+          gte: new Date(Date.now() - HOURS_24_MS),
         },
       },
       select: {
@@ -280,31 +196,33 @@ export class ExtractService {
       };
     }
 
-    const latestExtractions = await Promise.all(
-      Array.from(allRelevantMeetingIds).map(async (meetingId) => {
-        return await this.prisma.extraction.findFirst({
-          where: {
-            meetingId,
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-          select: {
-            meetingId: true,
-            status: true,
-          },
-        });
-      })
-    );
+    const latestExtractions = await this.prisma.extraction.findMany({
+      where: {
+        meetingId: { in: Array.from(allRelevantMeetingIds) },
+      },
+      select: {
+        meetingId: true,
+        status: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
 
-    const completedExtractions = latestExtractions.filter(
-      (e): e is { meetingId: string; status: string } =>
-        e !== null && (e.status === ExtractionStatus.SUCCESS || e.status === ExtractionStatus.FAILED)
+    const latestByMeetingId = new Map<string, string>();
+    for (const extraction of latestExtractions) {
+      if (!latestByMeetingId.has(extraction.meetingId)) {
+        latestByMeetingId.set(extraction.meetingId, extraction.status);
+      }
+    }
+
+    const completedExtractions = Array.from(latestByMeetingId.values()).filter(
+      (status) => status === ExtractionStatus.SUCCESS || status === ExtractionStatus.FAILED
     );
 
     const completed = completedExtractions.length;
-    const success = completedExtractions.filter((e) => e.status === ExtractionStatus.SUCCESS).length;
-    const failed = completedExtractions.filter((e) => e.status === ExtractionStatus.FAILED).length;
+    const success = completedExtractions.filter((status) => status === ExtractionStatus.SUCCESS).length;
+    const failed = completedExtractions.filter((status) => status === ExtractionStatus.FAILED).length;
 
     return {
       total,
@@ -446,6 +364,120 @@ export class ExtractService {
       integrations: deterministic.integrations.length > 0
         ? [...new Set([...deterministic.integrations, ...(llm.integrations || [])])]
         : (llm.integrations || []),
+    };
+  }
+
+  private async saveExtractionSuccess(
+    meetingId: string,
+    llmResult: LlmExtractionResult,
+    extraction: Extraction
+  ) {
+    const modelName = llmResult.metadata?.model || "unknown";
+    const rawResponse = llmResult.rawResponse;
+
+    const saved = await this.prisma.extraction.upsert({
+      where: { meetingId },
+      update: {
+        model: modelName,
+        status: ExtractionStatus.SUCCESS,
+      },
+      create: {
+        meetingId,
+        model: modelName,
+        status: ExtractionStatus.SUCCESS,
+      },
+    });
+
+    await this.prisma.llmApiLog.create({
+      data: {
+        extractionId: saved.id,
+        provider: llmResult.metadata?.provider || "unknown",
+        model: modelName,
+        status: ExtractionStatus.SUCCESS,
+        response: rawResponse,
+        durationMs: llmResult.metadata?.durationMs,
+        promptTokens: llmResult.metadata?.promptTokens,
+        completionTokens: llmResult.metadata?.completionTokens,
+        totalTokens: llmResult.metadata?.totalTokens,
+      },
+    });
+
+    await this.extractionParser.parseAndSave(saved.id, extraction);
+
+    return saved;
+  }
+
+  private async handleExtractionError(
+    meetingId: string,
+    meetingIdForLog: string,
+    error: unknown
+  ) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    this.logger.error(`Extraction failed for meeting ${meetingIdForLog}: ${errorMessage}`, error instanceof Error ? error.stack : undefined);
+
+    interface ErrorWithMetadata {
+      metadata?: {
+        model?: string;
+        provider?: string;
+        durationMs?: number;
+        promptTokens?: number;
+        completionTokens?: number;
+        totalTokens?: number;
+      };
+      rawResponse?: string;
+    }
+
+    const errorWithMetadata = error as ErrorWithMetadata;
+    const modelName = errorWithMetadata?.metadata?.model || "unknown";
+    const rawResponse = errorWithMetadata?.rawResponse || JSON.stringify({
+      error: String(error),
+      model: modelName,
+      timestamp: new Date().toISOString(),
+    });
+
+    const saved = await this.prisma.extraction.upsert({
+      where: { meetingId },
+      update: {
+        model: modelName,
+        status: ExtractionStatus.FAILED,
+      },
+      create: {
+        meetingId,
+        model: modelName,
+        status: ExtractionStatus.FAILED,
+      },
+    });
+
+    const existingLog = await this.prisma.llmApiLog.findFirst({
+      where: {
+        extractionId: saved.id,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (!existingLog || existingLog.response !== rawResponse) {
+      await this.prisma.llmApiLog.create({
+        data: {
+          extractionId: saved.id,
+          provider: errorWithMetadata?.metadata?.provider || "unknown",
+          model: modelName,
+          status: ExtractionStatus.FAILED,
+          response: rawResponse,
+          error: String(error),
+          durationMs: errorWithMetadata?.metadata?.durationMs,
+          promptTokens: errorWithMetadata?.metadata?.promptTokens,
+          completionTokens: errorWithMetadata?.metadata?.completionTokens,
+          totalTokens: errorWithMetadata?.metadata?.totalTokens,
+        },
+      });
+    }
+
+    return {
+      id: saved.id,
+      meetingId: saved.meetingId,
+      extraction: null,
+      status: saved.status,
+      error: String(error),
     };
   }
 }
