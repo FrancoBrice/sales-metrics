@@ -14,7 +14,7 @@ interface UseExtractionProgressReturn {
   progress: { current: number; total: number } | null;
   extracting: boolean;
   startExtraction: () => Promise<void>;
-  startExtractionWithCallback: (onComplete: (data: ProgressData) => void) => Promise<void>;
+  startExtractionWithCallback: (onComplete: (data: ProgressData) => void, expectedTotal?: number) => Promise<void>;
   checkInitialProgress: () => Promise<void>;
 }
 
@@ -22,12 +22,23 @@ export function useExtractionProgress(): UseExtractionProgressReturn {
   const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
   const [extracting, setExtracting] = useState(false);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const initialCompletedRef = useRef<number>(0);
+  const expectedTotalRef = useRef<number>(0);
+  const initialSuccessRef = useRef<number>(0);
+  const initialFailedRef = useRef<number>(0);
 
   const stopPolling = useCallback(() => {
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
       progressIntervalRef.current = null;
     }
+  }, []);
+
+  const resetProgressRefs = useCallback(() => {
+    initialCompletedRef.current = 0;
+    expectedTotalRef.current = 0;
+    initialSuccessRef.current = 0;
+    initialFailedRef.current = 0;
   }, []);
 
   const startPolling = useCallback(
@@ -42,32 +53,70 @@ export function useExtractionProgress(): UseExtractionProgressReturn {
             stopPolling();
             setExtracting(false);
             setProgress(null);
+            resetProgressRefs();
             return;
           }
 
-          setProgress({ current: progressData.completed, total: progressData.total });
+          const initialCompleted = initialCompletedRef.current;
+          const expectedTotal = expectedTotalRef.current;
 
-          if (progressData.completed >= progressData.total) {
-            stopPolling();
+          if (expectedTotal > 0) {
+            const relativeCompleted = Math.max(0, progressData.completed - initialCompleted);
+            const relativeTotal = expectedTotal;
 
-            setTimeout(() => {
-              setProgress(null);
-              if (onComplete) {
-                onComplete(progressData);
-              }
-            }, 500);
+            setProgress({
+              current: Math.min(relativeCompleted, relativeTotal),
+              total: relativeTotal
+            });
 
-            setExtracting(false);
+            if (relativeCompleted >= relativeTotal) {
+              stopPolling();
+
+              setTimeout(() => {
+                setProgress(null);
+                if (onComplete) {
+                  const relativeSuccess = Math.max(0, progressData.success - initialSuccessRef.current);
+                  const relativeFailed = Math.max(0, progressData.failed - initialFailedRef.current);
+                  onComplete({
+                    ...progressData,
+                    total: relativeTotal,
+                    completed: relativeCompleted,
+                    success: relativeSuccess,
+                    failed: relativeFailed,
+                  });
+                }
+                resetProgressRefs();
+              }, 500);
+
+              setExtracting(false);
+            }
+          } else {
+            setProgress({ current: progressData.completed, total: progressData.total });
+
+            if (progressData.completed >= progressData.total) {
+              stopPolling();
+
+              setTimeout(() => {
+                setProgress(null);
+                if (onComplete) {
+                  onComplete(progressData);
+                }
+                resetProgressRefs();
+              }, 500);
+
+              setExtracting(false);
+            }
           }
-        } catch {
-          stopPolling();
-        }
+      } catch {
+        stopPolling();
+        resetProgressRefs();
+      }
       };
 
       checkProgress();
       progressIntervalRef.current = setInterval(checkProgress, 1000);
     },
-    [stopPolling]
+    [stopPolling, resetProgressRefs]
   );
 
   const startExtraction = useCallback(async () => {
@@ -75,6 +124,18 @@ export function useExtractionProgress(): UseExtractionProgressReturn {
     setProgress({ current: 0, total: 1 });
 
     try {
+      let initialProgress: ProgressData | null = null;
+      try {
+        initialProgress = await api.extract.getProgress();
+        initialCompletedRef.current = initialProgress.completed;
+        initialSuccessRef.current = initialProgress.success;
+        initialFailedRef.current = initialProgress.failed;
+      } catch {
+        initialCompletedRef.current = 0;
+        initialSuccessRef.current = 0;
+        initialFailedRef.current = 0;
+      }
+
       const result = await api.extract.extractPendingAndFailed();
       const total = result.total || 0;
 
@@ -84,12 +145,8 @@ export function useExtractionProgress(): UseExtractionProgressReturn {
         return;
       }
 
-      try {
-        const initialProgress = await api.extract.getProgress();
-        setProgress({ current: initialProgress.completed, total: initialProgress.total || total });
-      } catch {
-        setProgress({ current: 0, total });
-      }
+      expectedTotalRef.current = total;
+      setProgress({ current: 0, total });
 
       startPolling();
     } catch {
@@ -100,13 +157,24 @@ export function useExtractionProgress(): UseExtractionProgressReturn {
   }, [startPolling, stopPolling]);
 
   const startExtractionWithCallback = useCallback(
-    async (onComplete: (data: ProgressData) => void) => {
+    async (onComplete: (data: ProgressData) => void, expectedTotalParam?: number) => {
       setExtracting(true);
-      setProgress({ current: 0, total: 1 });
 
       try {
+        let initialProgress: ProgressData | null = null;
+        try {
+          initialProgress = await api.extract.getProgress();
+          initialCompletedRef.current = initialProgress.completed;
+          initialSuccessRef.current = initialProgress.success;
+          initialFailedRef.current = initialProgress.failed;
+        } catch {
+          initialCompletedRef.current = 0;
+          initialSuccessRef.current = 0;
+          initialFailedRef.current = 0;
+        }
+
         const result = await api.extract.extractPendingAndFailed();
-        const total = result.total || 0;
+        const total = expectedTotalParam || result.total || 0;
 
         if (total === 0) {
           setExtracting(false);
@@ -114,12 +182,8 @@ export function useExtractionProgress(): UseExtractionProgressReturn {
           return;
         }
 
-        try {
-          const initialProgress = await api.extract.getProgress();
-          setProgress({ current: initialProgress.completed, total: initialProgress.total || total });
-        } catch {
-          setProgress({ current: 0, total });
-        }
+        expectedTotalRef.current = total;
+        setProgress({ current: 0, total });
 
         startPolling(onComplete);
       } catch {
@@ -132,17 +196,35 @@ export function useExtractionProgress(): UseExtractionProgressReturn {
   );
 
   const checkInitialProgress = useCallback(async () => {
+    if (extracting) {
+      return;
+    }
+
     try {
       const progressData = await api.extract.getProgress();
 
       if (progressData.total > 0 && progressData.completed < progressData.total) {
-        setExtracting(true);
-        setProgress({ current: progressData.completed, total: progressData.total });
+        const expectedTotal = expectedTotalRef.current;
+
+        if (expectedTotal > 0) {
+          const initialCompleted = initialCompletedRef.current;
+          const relativeCompleted = Math.max(0, progressData.completed - initialCompleted);
+
+          setExtracting(true);
+          setProgress({
+            current: Math.min(relativeCompleted, expectedTotal),
+            total: expectedTotal
+          });
+        } else {
+          setExtracting(true);
+          setProgress({ current: progressData.completed, total: progressData.total });
+        }
+
         startPolling();
       }
     } catch {
     }
-  }, [startPolling]);
+  }, [startPolling, extracting]);
 
   useEffect(() => {
     return () => {

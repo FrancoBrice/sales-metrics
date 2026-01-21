@@ -177,7 +177,7 @@ export default function Dashboard() {
                   type: progressData.failed === 0 ? ToastType.Success : ToastType.Info,
                 });
                 loadDashboardData();
-              });
+              }, estimatedTotal);
             } else if (uploadResult.duplicates > 0) {
               setToast({
                 message: `Análisis completado: 0 exitosos, 0 fallidos, ${uploadResult.duplicates} duplicados`,
