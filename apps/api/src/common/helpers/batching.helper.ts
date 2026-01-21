@@ -1,46 +1,37 @@
+import { PROCESSING_TIMEOUT_MS } from "../constants";
+
+function chunkArray<T>(array: T[], chunkSize: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += chunkSize) {
+    chunks.push(array.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
 export async function processInBatches<T, R>(
   items: T[],
   concurrency: number,
-  processor: (item: T) => Promise<R>,
-  delayBetweenBatches = 0
+  processor: (item: T) => Promise<R>
 ): Promise<Array<{ status: "fulfilled" | "rejected"; value?: R; reason?: unknown }>> {
+  if (items.length === 0) {
+    return [];
+  }
+
+  const chunks = chunkArray(items, concurrency);
   const results: Array<{ status: "fulfilled" | "rejected"; value?: R; reason?: unknown }> = [];
-  const executing: Promise<void>[] = [];
-  let index = 0;
 
-  const executeItem = async (item: T, itemIndex: number): Promise<void> => {
-    try {
-      const result = await Promise.race([
-        processor(item),
+  for (const chunk of chunks) {
+    const chunkPromises = chunk.map((item) => {
+      return Promise.race([
+        processor(item).then((value) => ({ status: "fulfilled" as const, value })),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error(`Request timeout after 90 seconds for item ${itemIndex}`)), 90000)
+          setTimeout(() => reject(new Error(`Request timeout after ${PROCESSING_TIMEOUT_MS / 1000} seconds`)), PROCESSING_TIMEOUT_MS)
         ),
-      ]);
-      results[itemIndex] = { status: "fulfilled", value: result };
-    } catch (error) {
-      results[itemIndex] = { status: "rejected", reason: error };
-    }
-  };
+      ]).catch((error) => ({ status: "rejected" as const, reason: error }));
+    });
 
-  while (index < items.length || executing.length > 0) {
-    while (executing.length < concurrency && index < items.length) {
-      const currentIndex = index++;
-      const promise = executeItem(items[currentIndex], currentIndex).then(() => {
-        const promiseIndex = executing.indexOf(promise);
-        if (promiseIndex > -1) {
-          executing.splice(promiseIndex, 1);
-        }
-      });
-      executing.push(promise);
-    }
-
-    if (executing.length > 0) {
-      await Promise.race(executing);
-    }
-
-    if (delayBetweenBatches > 0 && index < items.length && executing.length === 0) {
-      await new Promise((resolve) => setTimeout(resolve, delayBetweenBatches));
-    }
+    const chunkResults = await Promise.all(chunkPromises);
+    results.push(...chunkResults);
   }
 
   return results;

@@ -104,50 +104,6 @@ export class ExtractService {
     return stats;
   }
 
-  async retryFailedExtractions() {
-    const failedMeetingIds = await this.findFailedMeetings();
-
-    const stats = {
-      total: failedMeetingIds.length,
-      success: 0,
-      failed: 0,
-      skipped: 0,
-    };
-
-    if (failedMeetingIds.length === 0) {
-      return stats;
-    }
-
-    const batchResults = await processInBatches(
-      failedMeetingIds,
-      CONCURRENCY_LIMIT,
-      (meetingId) => this.extractFromMeeting(meetingId)
-    );
-
-    return this.calculateExtractionStats(batchResults, stats);
-  }
-
-  async extractAllPending() {
-    const pendingMeetings = await this.findPendingMeetings();
-
-    const stats = {
-      total: pendingMeetings.length,
-      success: 0,
-      failed: 0,
-    };
-
-    if (pendingMeetings.length === 0) {
-      return stats;
-    }
-
-    const batchResults = await processInBatches(
-      pendingMeetings,
-      CONCURRENCY_LIMIT,
-      (meeting) => this.extractFromMeeting(meeting.id)
-    );
-
-    return this.calculateExtractionStats(batchResults, stats);
-  }
 
   async extractAllPendingAndFailed() {
     return this.processAllPendingExtractions();

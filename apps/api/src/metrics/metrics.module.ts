@@ -7,9 +7,6 @@ import {
 } from "./services/insights";
 import {
   OverviewService,
-  ByDimensionService,
-  ConversionFunnelService,
-  VolumeDistributionService,
   LeadsOverTimeService,
   SankeyService,
   IndustryPainPointHeatmapService,
@@ -18,7 +15,6 @@ import {
   VolumeFlowService,
   SellersService,
   SalesFunnelService,
-  FunnelAnalysisService,
   ClosureAnalysisService,
 } from "./services";
 
@@ -29,9 +25,6 @@ import {
     LlmInsightsClient,
     BasicInsightsClient,
     OverviewService,
-    ByDimensionService,
-    ConversionFunnelService,
-    VolumeDistributionService,
     LeadsOverTimeService,
     SankeyService,
     IndustryPainPointHeatmapService,
@@ -40,7 +33,6 @@ import {
     VolumeFlowService,
     SellersService,
     SalesFunnelService,
-    FunnelAnalysisService,
     ClosureAnalysisService,
   ],
 })

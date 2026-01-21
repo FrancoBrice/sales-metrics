@@ -66,24 +66,6 @@ export interface MetricsOverview {
   }>;
 }
 
-export interface MetricsByDimension {
-  dimension: string;
-  values: Array<{
-    value: string;
-    count: number;
-    closedCount: number;
-    conversionRate: number;
-  }>;
-}
-
-export interface ConversionFunnel {
-  stages: Array<{
-    name: string;
-    count: number;
-    percentage: number;
-  }>;
-}
-
 export interface CustomerFilters {
   seller?: string;
   closed?: boolean;
@@ -214,9 +196,6 @@ export const api = {
         }>;
       }>(`/metrics/sellers/${encodeURIComponent(seller)}${query ? `?${query}` : ""}`);
     },
-    byDimension: (dimension: string) =>
-      fetchApi<MetricsByDimension>(`/metrics/by-dim?dimension=${dimension}`),
-    conversionFunnel: () => fetchApi<ConversionFunnel>("/metrics/conversion-funnel"),
     leadsOverTime: (filters?: { seller?: string; dateFrom?: string; dateTo?: string }) => {
       const params = new URLSearchParams();
       if (filters?.seller) params.set("seller", filters.seller);
@@ -322,34 +301,6 @@ export const api = {
         }>;
       }>(`/metrics/win-probability${query ? `?${query}` : ""}`);
     },
-    salesFunnelEnhanced: (filters?: { seller?: string; dateFrom?: string; dateTo?: string }) => {
-      const params = new URLSearchParams();
-      if (filters?.seller) params.set("seller", filters.seller);
-      if (filters?.dateFrom) params.set("dateFrom", filters.dateFrom);
-      if (filters?.dateTo) params.set("dateTo", filters.dateTo);
-
-      const query = params.toString();
-      return fetchApi<{
-        stages: Array<{
-          name: string;
-          total: number;
-          closed: number;
-          conversionRate: number;
-          progressionRate?: number;
-          breakdown: {
-            byLeadSource: Record<string, { total: number; closed: number; conversionRate: number }>;
-            byJTBD: Record<string, { total: number; closed: number; conversionRate: number }>;
-            byIndustry: Record<string, { total: number; closed: number; conversionRate: number }>;
-          };
-          topPerformers: string[];
-          dropOffRate: number;
-        }>;
-        trends: {
-          conversionTrend: Array<{ period: string; conversionRate: number }>;
-          leadSourceEvolution: Record<string, Array<{ period: string; count: number }>>;
-        };
-      }>(`/metrics/sales-funnel-enhanced${query ? `?${query}` : ""}`);
-    },
     salesFunnelInsights: (filters?: { seller?: string; dateFrom?: string; dateTo?: string }) => {
       const params = new URLSearchParams();
       if (filters?.seller) params.set("seller", filters.seller);
@@ -412,9 +363,7 @@ export const api = {
     },
   },
   extract: {
-    extractAll: () => fetchApi<{ total: number; success: number; failed: number }>("/extract/bulk/all", { method: "POST" }),
     extractPendingAndFailed: () => fetchApi<{ total: number; success: number; failed: number; pending: number; retried: number }>("/extract/bulk/pending-and-failed", { method: "POST" }),
-    retryFailed: () => fetchApi<{ total: number; success: number; failed: number; skipped: number }>("/extract/bulk/retry-failed", { method: "POST" }),
     getProgress: () => fetchApi<{ total: number; completed: number; success: number; failed: number; pending: number; retried: number }>("/extract/progress", { method: "GET" }),
   },
 };

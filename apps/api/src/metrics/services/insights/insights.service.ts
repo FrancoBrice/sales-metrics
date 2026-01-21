@@ -8,6 +8,7 @@ import { CACHE_TTL_MS } from "../../../common/constants";
 export class InsightsService {
   private readonly logger = new Logger(InsightsService.name);
   private readonly cache = new Map<string, { result: InsightsResult; timestamp: number }>();
+  private readonly MAX_CACHE_SIZE = 100;
 
   constructor(
     private readonly llmClient: LlmInsightsClient,
@@ -34,6 +35,8 @@ export class InsightsService {
       };
     }
 
+    this.evictExpiredEntries();
+
     try {
       let result: InsightsResult;
 
@@ -49,6 +52,13 @@ export class InsightsService {
         }
       } else {
         result = await this.basicClient.generateInsights(data);
+      }
+
+      if (this.cache.size >= this.MAX_CACHE_SIZE) {
+        const firstKey = this.cache.keys().next().value;
+        if (firstKey) {
+          this.cache.delete(firstKey);
+        }
       }
 
       this.cache.set(cacheKey, {
@@ -71,8 +81,12 @@ export class InsightsService {
     return `${stagesKey}|${breakdownKey}`;
   }
 
-  clearCache(): void {
-    this.cache.clear();
-    this.logger.debug("Insights cache cleared");
+  private evictExpiredEntries(): void {
+    const now = Date.now();
+    for (const [key, value] of this.cache.entries()) {
+      if (now - value.timestamp >= CACHE_TTL_MS) {
+        this.cache.delete(key);
+      }
+    }
   }
 }

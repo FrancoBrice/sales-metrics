@@ -1,12 +1,8 @@
 import { Controller, Get, Query, Param } from "@nestjs/common";
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { MetricsFilterDto } from "./dto/metrics-filter.dto";
-import { GetByDimensionDto } from "./dto/get-by-dimension.dto";
 import { GetSellerDetailsParamDto } from "./dto/get-seller-details.dto";
 import { OverviewService } from "./services/overview.service";
-import { ByDimensionService } from "./services/by-dimension.service";
-import { ConversionFunnelService } from "./services/conversion-funnel.service";
-import { VolumeDistributionService } from "./services/volume-distribution.service";
 import { LeadsOverTimeService } from "./services/leads-over-time.service";
 import { SankeyService } from "./services/sankey.service";
 import { IndustryPainPointHeatmapService } from "./services/industry-painpoint-heatmap.service";
@@ -15,7 +11,6 @@ import { WinProbabilityService } from "./services/win-probability.service";
 import { VolumeFlowService } from "./services/volume-flow.service";
 import { SellersService } from "./services/sellers.service";
 import { SalesFunnelService } from "./services/sales-funnel.service";
-import { FunnelAnalysisService } from "./services/funnel-analysis.service";
 import { ClosureAnalysisService } from "./services/closure-analysis.service";
 
 @ApiTags("Metrics")
@@ -23,9 +18,6 @@ import { ClosureAnalysisService } from "./services/closure-analysis.service";
 export class MetricsController {
   constructor(
     private readonly overviewService: OverviewService,
-    private readonly byDimensionService: ByDimensionService,
-    private readonly conversionFunnelService: ConversionFunnelService,
-    private readonly volumeDistributionService: VolumeDistributionService,
     private readonly leadsOverTimeService: LeadsOverTimeService,
     private readonly sankeyService: SankeyService,
     private readonly industryPainPointHeatmapService: IndustryPainPointHeatmapService,
@@ -34,7 +26,6 @@ export class MetricsController {
     private readonly volumeFlowService: VolumeFlowService,
     private readonly sellersService: SellersService,
     private readonly salesFunnelService: SalesFunnelService,
-    private readonly funnelAnalysisService: FunnelAnalysisService,
     private readonly closureAnalysisService: ClosureAnalysisService
   ) { }
 
@@ -42,24 +33,6 @@ export class MetricsController {
   @ApiOperation({ summary: "Get aggregated metrics overview" })
   async getOverview(@Query() query: MetricsFilterDto) {
     return this.overviewService.getOverview(query);
-  }
-
-  @Get("by-dim")
-  @ApiOperation({ summary: "Get metrics by dimension" })
-  async getByDimension(@Query() query: GetByDimensionDto) {
-    return this.byDimensionService.getByDimension(query.dimension);
-  }
-
-  @Get("conversion-funnel")
-  @ApiOperation({ summary: "Get conversion funnel metrics" })
-  async getConversionFunnel() {
-    return this.conversionFunnelService.getConversionFunnel();
-  }
-
-  @Get("volume-distribution")
-  @ApiOperation({ summary: "Get volume distribution metrics" })
-  async getVolumeDistribution() {
-    return this.volumeDistributionService.getVolumeDistribution();
   }
 
   @Get("leads-over-time")
@@ -110,22 +83,10 @@ export class MetricsController {
     return this.sellersService.getSellerDetails(params.seller, { dateFrom: query.dateFrom, dateTo: query.dateTo });
   }
 
-  @Get("sales-funnel-enhanced")
-  @ApiOperation({ summary: "Get enhanced sales funnel with multi-dimensional analysis" })
-  async getSalesFunnelEnhanced(@Query() query: MetricsFilterDto) {
-    return this.salesFunnelService.getSalesFunnelEnhanced(query);
-  }
-
   @Get("sales-funnel-enhanced/insights")
   @ApiOperation({ summary: "Get AI-generated insights for the sales funnel" })
   async getSalesFunnelInsights(@Query() query: MetricsFilterDto) {
     return this.salesFunnelService.getSalesFunnelInsights(query);
-  }
-
-  @Get("funnel-analysis")
-  @ApiOperation({ summary: "Analyze funnel data quality and validity" })
-  async analyzeFunnelDataQuality(@Query() query: MetricsFilterDto) {
-    return this.funnelAnalysisService.analyzeFunnelDataQuality(query);
   }
 
   @Get("closure-analysis")

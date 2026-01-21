@@ -6,6 +6,7 @@ import { LlmClient, DeterministicHints, LlmExtractionResult } from "./llmClient.
 import { ValidationService } from "../services/validation.service";
 import { buildExtractionPrompt } from "../prompt/promptBuilder";
 import { tryParseJson } from "../utils/jsonRepair";
+import { LLM_TIMEOUT_MS, LLM_MAX_TOKENS, LLM_TEMPERATURE_LOW } from "../../../common/constants";
 
 type LLMApiClient = OpenAI;
 
@@ -43,12 +44,12 @@ export class DeepSeekClient implements LlmClient {
         const completionPromise = this.apiClient.chat.completions.create({
           messages: [{ role: "user", content: prompt }],
           model: this.modelName,
-          temperature: 0.2,
-          max_tokens: 4096,
+          temperature: LLM_TEMPERATURE_LOW,
+          max_tokens: LLM_MAX_TOKENS,
         });
 
         const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Request timeout after 60 seconds")), 60000)
+          setTimeout(() => reject(new Error(`Request timeout after ${LLM_TIMEOUT_MS / 1000} seconds`)), LLM_TIMEOUT_MS)
         );
 
         const completion = await Promise.race([completionPromise, timeoutPromise]);

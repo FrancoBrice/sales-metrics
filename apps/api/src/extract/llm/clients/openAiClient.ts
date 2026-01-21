@@ -6,6 +6,7 @@ import { LlmClient, DeterministicHints, LlmExtractionResult } from "./llmClient.
 import { ValidationService } from "../services/validation.service";
 import { buildExtractionPrompt } from "../prompt/promptBuilder";
 import { tryParseJson } from "../utils/jsonRepair";
+import { LLM_TIMEOUT_MS } from "../../../common/constants";
 
 @Injectable()
 export class OpenAiClient implements LlmClient {
@@ -38,7 +39,7 @@ export class OpenAiClient implements LlmClient {
       });
 
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Request timeout after 60 seconds")), 60000)
+        setTimeout(() => reject(new Error(`Request timeout after ${LLM_TIMEOUT_MS / 1000} seconds`)), LLM_TIMEOUT_MS)
       );
 
       const completion = await Promise.race([completionPromise, timeoutPromise]);

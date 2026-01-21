@@ -39,15 +39,8 @@ export class ValidationService {
       return valueMappings[trimmed];
     }
 
-    const typoFixes: Record<string, string> = {
-      TECNLOGIA: "TECNOLOGIA",
-    };
-
-    if (trimmed in typoFixes) {
-      const fixed = typoFixes[trimmed];
-      if (fixed in enumObject) {
-        return enumObject[fixed] as T;
-      }
+    if (trimmed === "TECNLOGIA" && "TECNOLOGIA" in enumObject) {
+      return enumObject["TECNOLOGIA"] as T;
     }
 
     return null;

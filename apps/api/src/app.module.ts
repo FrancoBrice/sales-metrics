@@ -7,14 +7,15 @@ import { IngestModule } from "./ingest/ingest.module";
 import { ExtractModule } from "./extract/extract.module";
 import { CustomersModule } from "./customers/customers.module";
 import { MetricsModule } from "./metrics/metrics.module";
+import { THROTTLER_TTL_MS, THROTTLER_LIMIT } from "./common/constants";
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([
       {
-        ttl: 60000,
-        limit: 100,
+        ttl: THROTTLER_TTL_MS,
+        limit: THROTTLER_LIMIT,
       },
     ]),
     PrismaModule,

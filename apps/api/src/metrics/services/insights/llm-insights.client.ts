@@ -4,6 +4,7 @@ import OpenAI from "openai";
 import { InsightsClient, InsightsData, InsightsResult } from "./insights-client.interface";
 import { buildInsightsPrompt } from "./prompt/insights-prompt.builder";
 import { tryParseJson } from "../../../extract/llm/utils";
+import { LLM_TIMEOUT_MS, LLM_MAX_TOKENS, LLM_TEMPERATURE_MEDIUM } from "../../../common/constants";
 
 type LLMApiClient = OpenAI;
 
@@ -40,12 +41,12 @@ export class LlmInsightsClient implements InsightsClient {
             { role: "user", content: prompt },
           ],
           model: this.modelName,
-          temperature: 0.3,
-          max_tokens: 4096,
+          temperature: LLM_TEMPERATURE_MEDIUM,
+          max_tokens: LLM_MAX_TOKENS,
         });
 
         const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Request timeout after 60 seconds")), 60000)
+          setTimeout(() => reject(new Error(`Request timeout after ${LLM_TIMEOUT_MS / 1000} seconds`)), LLM_TIMEOUT_MS)
         );
 
         const completion = await Promise.race([completionPromise, timeoutPromise]);
