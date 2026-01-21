@@ -45,10 +45,6 @@ export class IngestController {
       throw new BadRequestException("File must be a CSV");
     }
 
-    if (file.size > CSV_MAX_SIZE) {
-      throw new BadRequestException(`File size exceeds maximum allowed size of ${CSV_MAX_SIZE / 1024 / 1024}MB`);
-    }
-
     return this.ingestService.processCsv(file.buffer);
   }
 }

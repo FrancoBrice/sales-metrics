@@ -2,6 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { parse } from "csv-parse/sync";
 import { PrismaService } from "../prisma/prisma.service";
 import { CsvRow } from "@vambe/shared";
+import { getDateRange } from "../common/helpers/date.helper";
 
 @Injectable()
 export class IngestService {
@@ -30,16 +31,25 @@ export class IngestService {
 
     for (const record of records) {
       try {
+        if (!this.isValidRecord(record)) {
+          results.errors.push(`Invalid record: missing required fields`);
+          results.processed++;
+          continue;
+        }
+
         const email = record["Correo Electronico"].toLowerCase().trim();
         const meetingDate = this.parseDate(record["Fecha de la Reunion"]);
+        if (!meetingDate || isNaN(meetingDate.getTime())) {
+          results.errors.push(`Invalid date format in record: ${record.Nombre || "unknown"}`);
+          results.processed++;
+          continue;
+        }
+
         const seller = record["Vendedor asignado"].trim();
         const closed = record.closed === "1";
         const transcript = record.Transcripcion.trim();
 
-        const startOfDay = new Date(meetingDate);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(meetingDate);
-        endOfDay.setHours(23, 59, 59, 999);
+        const { startOfDay, endOfDay } = getDateRange(meetingDate);
 
         const existingCustomer = await this.prisma.customer.findFirst({
           where: {
@@ -65,19 +75,20 @@ export class IngestService {
               continue;
             }
 
-            await this.prisma.meeting.update({
-              where: { id: existingMeeting.id },
-              data: { transcript },
-            });
-
-            await this.prisma.customer.update({
-              where: { id: existingCustomer.id },
-              data: {
-                name: record.Nombre,
-                phone: record["Numero de Telefono"],
-                closed,
-              },
-            });
+            await Promise.all([
+              this.prisma.meeting.update({
+                where: { id: existingMeeting.id },
+                data: { transcript },
+              }),
+              this.prisma.customer.update({
+                where: { id: existingCustomer.id },
+                data: {
+                  name: record.Nombre,
+                  phone: record["Numero de Telefono"],
+                  closed,
+                },
+              }),
+            ]);
 
             results.updated++;
             results.processed++;
@@ -108,8 +119,9 @@ export class IngestService {
         results.processed++;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        this.logger.error(`Failed to process record ${record.Nombre}: ${errorMessage}`, error instanceof Error ? error.stack : undefined);
-        results.errors.push(`Error processing ${record.Nombre}: ${errorMessage}`);
+        const recordName = record?.Nombre || "unknown";
+        this.logger.error(`Failed to process record ${recordName}: ${errorMessage}`, error instanceof Error ? error.stack : undefined);
+        results.errors.push(`Error processing ${recordName}: ${errorMessage}`);
         results.processed++;
       }
     }
@@ -117,8 +129,37 @@ export class IngestService {
     return results;
   }
 
-  private parseDate(dateStr: string): Date {
-    const [year, month, day] = dateStr.split("-").map(Number);
+  private parseDate(dateStr: string): Date | null {
+    if (!dateStr || typeof dateStr !== "string") {
+      return null;
+    }
+
+    const parts = dateStr.split("-");
+    if (parts.length !== 3) {
+      return null;
+    }
+
+    const [year, month, day] = parts.map(Number);
+
+    if (isNaN(year) || isNaN(month) || isNaN(day)) {
+      return null;
+    }
+
+    if (month < 1 || month > 12 || day < 1 || day > 31) {
+      return null;
+    }
+
     return new Date(year, month - 1, day);
+  }
+
+  private isValidRecord(record: CsvRow): boolean {
+    return !!(
+      record["Correo Electronico"] &&
+      record["Fecha de la Reunion"] &&
+      record["Vendedor asignado"] &&
+      record.Transcripcion &&
+      record.Nombre &&
+      record["Numero de Telefono"] !== undefined
+    );
   }
 }

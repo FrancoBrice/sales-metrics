@@ -5,7 +5,6 @@ import {
   HttpException,
   HttpStatus,
   Logger,
-  NotFoundException,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
 

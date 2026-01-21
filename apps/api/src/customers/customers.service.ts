@@ -5,6 +5,7 @@ import { ListCustomersDto } from "./dto/list-customers.dto";
 import { CustomerWithRelations, CustomerMapped, CustomerDetailMapped } from "../common/types";
 import { buildDateFilter } from "../common/helpers/filter.helper";
 import { getExtractionFromCustomer } from "../common/helpers/extraction.helper";
+import { formatDateToISO } from "../common/helpers/date.helper";
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "../common/constants";
 
 @Injectable()
@@ -41,21 +42,7 @@ export class CustomersService {
     const requiresInMemoryFilter = !!filter.leadSource || !!filter.industry;
 
     if (requiresInMemoryFilter) {
-      const allCandidates = await this.prisma.customer.findMany({
-        where,
-        include: {
-          meetings: {
-            include: {
-              extractions: {
-                include: { data: true },
-                orderBy: { createdAt: "desc" },
-                take: 1,
-              },
-            },
-          },
-        },
-        orderBy: { meetingDate: "desc" },
-      });
+      const allCandidates = await this.findCustomersWithExtractions(where);
 
       const filtered = allCandidates.map(this.mapCustomer).filter((c) => {
         if (filter.leadSource && c.extraction?.leadSource !== filter.leadSource) return false;
@@ -79,23 +66,7 @@ export class CustomersService {
     } else {
       const [total, customers] = await Promise.all([
         this.prisma.customer.count({ where }),
-        this.prisma.customer.findMany({
-          where,
-          include: {
-            meetings: {
-              include: {
-                extractions: {
-                  include: { data: true },
-                  orderBy: { createdAt: "desc" },
-                  take: 1,
-                },
-              },
-            },
-          },
-          orderBy: { meetingDate: "desc" },
-          skip,
-          take: limit,
-        }),
+        this.findCustomersWithExtractions(where, skip, limit),
       ]);
 
       return {
@@ -149,7 +120,7 @@ export class CustomersService {
       email: customer.email,
       phone: customer.phone,
       seller: customer.seller,
-      meetingDate: customer.meetingDate.toISOString().split("T")[0],
+      meetingDate: formatDateToISO(customer.meetingDate),
       closed: customer.closed,
       createdAt: customer.createdAt.toISOString(),
       meetingId: meeting?.id ?? null,
@@ -168,11 +139,35 @@ export class CustomersService {
       email: customer.email,
       phone: customer.phone,
       seller: customer.seller,
-      meetingDate: customer.meetingDate.toISOString().split("T")[0],
+      meetingDate: formatDateToISO(customer.meetingDate),
       closed: customer.closed,
       createdAt: customer.createdAt.toISOString(),
       meetingId: meeting?.id ?? null,
       extraction,
     };
+  }
+
+  private async findCustomersWithExtractions(
+    where: Prisma.CustomerWhereInput,
+    skip?: number,
+    take?: number
+  ): Promise<CustomerWithRelations[]> {
+    return this.prisma.customer.findMany({
+      where,
+      include: {
+        meetings: {
+          include: {
+            extractions: {
+              include: { data: true },
+              orderBy: { createdAt: "desc" },
+              take: 1,
+            },
+          },
+        },
+      },
+      orderBy: { meetingDate: "desc" },
+      ...(skip !== undefined && { skip }),
+      ...(take !== undefined && { take }),
+    });
   }
 }

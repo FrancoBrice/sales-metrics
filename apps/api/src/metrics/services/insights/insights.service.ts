@@ -2,12 +2,12 @@ import { Injectable, Logger } from "@nestjs/common";
 import { InsightsClient, InsightsData, InsightsResult } from "./insights-client.interface";
 import { LlmInsightsClient } from "./llm-insights.client";
 import { BasicInsightsClient } from "./basic-insights.client";
+import { CACHE_TTL_MS } from "../../../common/constants";
 
 @Injectable()
 export class InsightsService {
   private readonly logger = new Logger(InsightsService.name);
   private readonly cache = new Map<string, { result: InsightsResult; timestamp: number }>();
-  private readonly CACHE_TTL_MS = 5 * 60 * 1000;
 
   constructor(
     private readonly llmClient: LlmInsightsClient,
@@ -21,7 +21,7 @@ export class InsightsService {
     const cacheKey = this.generateCacheKey(data);
 
     const cached = this.cache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL_MS) {
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
       this.logger.debug("Returning cached insights");
       return {
         ...cached.result,
