@@ -11,18 +11,23 @@ import { LLM_TIMEOUT_MS } from "../../../common/constants";
 @Injectable()
 export class OpenAiClient implements LlmClient {
   private readonly logger = new Logger(OpenAiClient.name);
-  private readonly openai: OpenAI;
+  private openai: OpenAI | null = null;
   private readonly modelName = "gpt-4o-mini";
 
   constructor(
     private readonly configService: ConfigService,
     private readonly validationService: ValidationService
-  ) {
-    const apiKey = this.configService.get<string>("OPENAI_API_KEY");
-    if (!apiKey) {
-      throw new Error("OPENAI_API_KEY is required. Please configure it in the environment variables.");
+  ) {}
+
+  private getClient(): OpenAI {
+    if (!this.openai) {
+      const apiKey = this.configService.get<string>("OPENAI_API_KEY");
+      if (!apiKey) {
+        throw new Error("OPENAI_API_KEY is required. Please configure it in the environment variables.");
+      }
+      this.openai = new OpenAI({ apiKey });
     }
-    this.openai = new OpenAI({ apiKey });
+    return this.openai;
   }
 
   async extractFromTranscript(
@@ -32,8 +37,9 @@ export class OpenAiClient implements LlmClient {
     const startTime = Date.now();
     try {
       const prompt = buildExtractionPrompt(transcript, hints);
+      const client = this.getClient();
 
-      const completionPromise = this.openai.chat.completions.create({
+      const completionPromise = client.chat.completions.create({
         messages: [{ role: "user", content: prompt }],
         model: this.modelName,
       });
