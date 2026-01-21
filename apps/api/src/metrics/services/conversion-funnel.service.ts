@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { BaseMetricsService } from "./base-metrics.service";
 import { calculateConversionRate } from "../../common/helpers/metrics.helper";
+import { CustomerWithRelations } from "../../common/types";
 
 @Injectable()
 export class ConversionFunnelService extends BaseMetricsService {
@@ -20,11 +21,11 @@ export class ConversionFunnelService extends BaseMetricsService {
     });
 
     const total = customers.length;
-    const withMeeting = customers.filter((c) => c.meetings.length > 0).length;
+    const withMeeting = customers.filter((c: CustomerWithRelations) => c.meetings.length > 0).length;
     const withExtraction = customers.filter(
-      (c) => c.meetings.some((m) => m.extractions.length > 0)
+      (c: CustomerWithRelations) => c.meetings.some((m: { extractions: Array<unknown> }) => m.extractions.length > 0)
     ).length;
-    const closed = customers.filter((c) => c.closed).length;
+    const closed = customers.filter((c: CustomerWithRelations) => c.closed).length;
 
     return {
       stages: [

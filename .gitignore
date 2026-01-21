@@ -10,6 +10,7 @@ dist
 vambe_clients.csv
 vambe_clients_negative.csv
 vambe_clients_short.csv
+*.csv
 instructions.md
 test.md
 dev.db.backup

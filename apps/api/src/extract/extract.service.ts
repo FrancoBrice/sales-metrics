@@ -81,7 +81,7 @@ export class ExtractService {
     const failedMeetingIds = await this.findFailedMeetings();
 
     const allMeetingIds = [
-      ...pendingMeetings.map((m) => m.id),
+      ...pendingMeetings.map((m: { id: string }) => m.id),
       ...failedMeetingIds,
     ];
 
@@ -114,7 +114,7 @@ export class ExtractService {
     const failedMeetingIds = await this.findFailedMeetings();
 
     const allMeetingIds = [
-      ...pendingMeetings.map((m) => m.id),
+      ...pendingMeetings.map((m: { id: string }) => m.id),
       ...failedMeetingIds,
     ];
 
@@ -133,7 +133,7 @@ export class ExtractService {
       },
     });
 
-    const recentMeetingIds = new Set(recentExtractions.map((e) => e.meetingId));
+    const recentMeetingIds = new Set(recentExtractions.map((e: { meetingId: string }) => e.meetingId));
     const allRelevantMeetingIds = new Set([
       ...allMeetingIds,
       ...Array.from(recentMeetingIds),
@@ -219,7 +219,7 @@ export class ExtractService {
       return [];
     }
 
-    const meetingIds = failedExtractions.map((e) => e.meetingId);
+    const meetingIds = failedExtractions.map((e: { meetingId: string }) => e.meetingId);
 
     const allExtractions = await this.prisma.extraction.findMany({
       where: {

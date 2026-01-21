@@ -88,7 +88,7 @@ export class CustomersService {
       orderBy: { seller: "asc" },
     });
 
-    return customers.map((c) => c.seller);
+    return customers.map((c: { seller: string }) => c.seller);
   }
 
   async findOne(id: string): Promise<CustomerDetailMapped> {
