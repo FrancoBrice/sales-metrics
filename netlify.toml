@@ -1,0 +1,7 @@
+[build]
+  command = "pnpm install && pnpm --filter shared build && pnpm --filter web build"
+  publish = "apps/web/out"
+
+[build.environment]
+  NODE_VERSION = "20"
+  PNPM_VERSION = "9.15.0"
