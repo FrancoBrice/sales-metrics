@@ -6,6 +6,7 @@ import { LeadSourceLabels, JtbdPrimaryLabels, IndustryLabels, PainPointsLabels, 
 import { Loading, EmptyStateWithType, EmptyState } from "@/components/ui/Loading";
 import { Card } from "@/components/ui/Card";
 import { Button, ButtonVariant } from "@/components/ui/Button";
+import { SparkleIcon } from "@/components/ui/SparkleIcon";
 import { performanceColors } from "@/constants/colors";
 import "@/styles/charts/closure-analysis.css";
 
@@ -200,7 +201,10 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
               onClick={loadInsights}
               disabled={loadingInsights}
             >
-              {loadingInsights ? "Generando..." : insights ? "Regenerar Insights con IA" : "Generar Insights con IA"}
+              <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                {loadingInsights ? "Generando..." : insights ? "Regenerar Insights con IA" : "Generar Insights con IA"}
+                <SparkleIcon />
+              </span>
             </Button>
           </div>
 

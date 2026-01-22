@@ -37,6 +37,26 @@
   gap: 0.5rem;
 }
 
+.tab-link-text {
+  position: relative;
+  display: inline-block;
+}
+
+.sparkle-wrapper {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sparkle-icon {
+  opacity: 0.9;
+  filter: drop-shadow(0 0 2px currentColor);
+  color: inherit;
+}
+
 .tab-link:hover {
   color: var(--color-text);
   background: var(--color-surface-elevated);
@@ -46,6 +66,11 @@
   color: var(--color-primary);
   border-bottom-color: var(--color-primary);
   background: rgba(var(--color-primary-rgb), 0.05);
+}
+
+.tab-link.active .sparkle-icon {
+  opacity: 1;
+  filter: drop-shadow(0 0 3px currentColor);
 }
 
 @media (max-width: 768px) {
