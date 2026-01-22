@@ -168,7 +168,7 @@ export default function Dashboard() {
             loadDashboardData();
           }}
           onUploadComplete={(uploadResult) => {
-            const estimatedTotal = Math.max(uploadResult.created + uploadResult.updated, 1);
+            const estimatedTotal = uploadResult.created + uploadResult.updated;
 
             if (estimatedTotal > 0) {
               startExtractionWithCallback((progressData) => {

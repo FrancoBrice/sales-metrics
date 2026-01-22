@@ -30,8 +30,8 @@ export function ProgressSnackbar({ message, progress, total, onClose }: Progress
         <div
           className="progress-bar-fill"
           style={{
-            '--progress-width': `${isNaN(percentage) ? 0 : Math.max(0, Math.min(percentage, 100))}%`
-          } as React.CSSProperties}
+            width: `${isNaN(percentage) ? 0 : Math.max(0, Math.min(percentage, 100))}%`
+          }}
         />
       </div>
     </div>
