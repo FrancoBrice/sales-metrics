@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { SparkleIcon } from "./ui/SparkleIcon";
 
 export function Navigation() {
   const pathname = usePathname();
@@ -13,7 +14,7 @@ export function Navigation() {
     { href: "/sellers", label: "Vendedores" },
     { href: "/opportunities", label: "Oportunidades" },
     { href: "/win-probability", label: "Probabilidad de Cierre" },
-    { href: "/sales-funnel", label: "Análisis de Cierres" },
+    { href: "/sales-funnel", label: "Análisis de Cierres", showSparkle: true },
     { href: "/industries", label: "Industrias" },
     { href: "/conversion-flow", label: "Flujo de Conversión" },
     { href: "/pain-points", label: "Pain Points" },
@@ -25,7 +26,14 @@ export function Navigation() {
         <div className="tabs-list">
           {links.map((link) => (
             <Link key={link.href} href={link.href} className={`tab-link ${pathname === link.href ? "active" : ""}`}>
-              {link.label}
+              <span className="tab-link-text">
+                {link.label}
+                {link.showSparkle && (
+                  <span className="sparkle-wrapper">
+                    <SparkleIcon className="sparkle-icon" />
+                  </span>
+                )}
+              </span>
             </Link>
           ))}
         </div>
