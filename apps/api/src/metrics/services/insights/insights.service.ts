@@ -23,7 +23,6 @@ export class InsightsService {
 
     const cached = this.cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-      this.logger.debug("Returning cached insights");
       return {
         ...cached.result,
         metadata: cached.result.metadata
@@ -43,7 +42,6 @@ export class InsightsService {
       if (useLlm) {
         try {
           result = await this.llmClient.generateInsights(data);
-          this.logger.debug("Generated LLM insights successfully");
         } catch (error) {
           this.logger.warn(
             `LLM insights failed, falling back to basic: ${error}`
