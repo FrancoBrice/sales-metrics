@@ -67,13 +67,6 @@
   margin-bottom: 1rem;
 }
 
-.customer-profile-info-group {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 2rem;
-}
-
 .customer-profile-info-item {
   font-size: 0.875rem;
 }
@@ -107,4 +100,28 @@
 
 .customer-profile-bar-fill.secondary {
   background: var(--color-secondary);
+}
+
+.customer-profile-info-group-card {
+  padding: 1rem;
+}
+
+.customer-profile-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.customer-profile-tag {
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+}
+
+.customer-profile-volume-unit {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.customer-profile-volume-peak {
+  margin-left: 0.5rem;
 }

@@ -127,30 +127,30 @@ export function CustomerProfileModal({ customerId, onClose }: CustomerProfileMod
 
         {extraction ? (
           <>
-            <div className="customer-profile-info-group">
-              <div className="customer-profile-card" style={{ padding: "1rem" }}>
+            <div className="modal-info-group">
+              <div className="customer-profile-card customer-profile-info-group-card">
                 <h4 className="customer-profile-section-title">
                   Información Básica
                 </h4>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.875rem" }}>
+                <div className="modal-card-content">
                   <div>
-                    <span style={{ color: "var(--color-text-muted)" }}>Industria: </span>
+                    <span className="modal-info-label">Industria: </span>
                     <span className="badge badge-info">
                       {getLabel(IndustryLabels, extraction.industry)}
                     </span>
                   </div>
                   <div>
-                    <span style={{ color: "var(--color-text-muted)" }}>Modelo de Negocio: </span>
+                    <span className="modal-info-label">Modelo de Negocio: </span>
                     <span className="badge badge-info">
                       {getLabel(BusinessModelLabels, extraction.businessModel)}
                     </span>
                   </div>
                   <div>
-                    <span style={{ color: "var(--color-text-muted)" }}>Fuente de Lead: </span>
+                    <span className="modal-info-label">Fuente de Lead: </span>
                     <span>{getLabel(LeadSourceLabels, extraction.leadSource)}</span>
                   </div>
                   <div>
-                    <span style={{ color: "var(--color-text-muted)" }}>Sentimiento: </span>
+                    <span className="modal-info-label">Sentimiento: </span>
                     <span className={`badge ${
                       extraction.sentiment === "POSITIVO" ? "badge-success" :
                       extraction.sentiment === "ESCEPTICO" ? "badge-danger" :
@@ -160,7 +160,7 @@ export function CustomerProfileModal({ customerId, onClose }: CustomerProfileMod
                     </span>
                   </div>
                   <div>
-                    <span style={{ color: "var(--color-text-muted)" }}>Urgencia: </span>
+                    <span className="modal-info-label">Urgencia: </span>
                     <span className={`badge ${
                       extraction.urgency === "INMEDIATA" || extraction.urgency === "ALTA" ? "badge-danger" :
                       extraction.urgency === "MEDIA" ? "badge-warning" :
@@ -170,7 +170,7 @@ export function CustomerProfileModal({ customerId, onClose }: CustomerProfileMod
                     </span>
                   </div>
                   <div>
-                    <span style={{ color: "var(--color-text-muted)" }}>Nivel de Riesgo: </span>
+                    <span className="modal-info-label">Nivel de Riesgo: </span>
                     <span className={`badge ${
                       extraction.riskLevel === "ALTO" ? "badge-danger" :
                       extraction.riskLevel === "MEDIO" ? "badge-warning" :
@@ -182,35 +182,35 @@ export function CustomerProfileModal({ customerId, onClose }: CustomerProfileMod
                 </div>
               </div>
 
-              <div className="card" style={{ padding: "1rem", background: "var(--color-surface-elevated)" }}>
-                <h4 style={{ fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.75rem", color: "var(--color-text-muted)" }}>
+              <div className="modal-card">
+                <h4 className="modal-card-title">
                   Madurez y Complejidad
                 </h4>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.875rem" }}>
+                <div className="modal-card-content">
                   <div>
-                    <span style={{ color: "var(--color-text-muted)" }}>Madurez Proceso: </span>
+                    <span className="modal-info-label">Madurez Proceso: </span>
                     <span>{getLabel(ProcessMaturityLabels, extraction.processMaturity)}</span>
                   </div>
                   <div>
-                    <span style={{ color: "var(--color-text-muted)" }}>Madurez Herramientas: </span>
+                    <span className="modal-info-label">Madurez Herramientas: </span>
                     <span>{getLabel(ToolingMaturityLabels, extraction.toolingMaturity)}</span>
                   </div>
                   <div>
-                    <span style={{ color: "var(--color-text-muted)" }}>Complejidad Conocimiento: </span>
+                    <span className="modal-info-label">Complejidad Conocimiento: </span>
                     <span>{getLabel(KnowledgeComplexityLabels, extraction.knowledgeComplexity)}</span>
                   </div>
                   {extraction.volume && (
                     <div>
-                      <span style={{ color: "var(--color-text-muted)" }}>Volumen: </span>
+                      <span className="modal-info-label">Volumen: </span>
                       <span>
                         {extraction.volume.quantity || "-"}{" "}
                         {extraction.volume.quantity && (
-                          <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
+                          <span className="customer-profile-volume-unit">
                             {getLabel(VolumeUnitLabels, extraction.volume.unit)}
                           </span>
                         )}
                         {extraction.volume.isPeak && (
-                          <span className="badge badge-warning" style={{ marginLeft: "0.5rem" }}>
+                          <span className="badge badge-warning customer-profile-volume-peak">
                             Peak
                           </span>
                         )}
@@ -221,42 +221,42 @@ export function CustomerProfileModal({ customerId, onClose }: CustomerProfileMod
               </div>
             </div>
 
-            <div style={{ marginBottom: "2rem" }}>
-              <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1rem" }}>Pain Points</h3>
-              <div className="tag-list">
+            <div className="modal-section">
+              <h3 className="modal-section-title">Pain Points</h3>
+              <div className="customer-profile-tag-list">
                 {extraction.painPoints && extraction.painPoints.length > 0 ? (
                   extraction.painPoints.map((pp: string) => (
-                    <span key={pp} className="tag" style={{ fontSize: "0.875rem", padding: "0.5rem 1rem" }}>
+                    <span key={pp} className="tag customer-profile-tag">
                       {getLabel(PainPointsLabels, pp)}
                     </span>
                   ))
                 ) : (
-                  <span style={{ color: "var(--color-text-muted)" }}>No se identificaron pain points</span>
+                  <span className="modal-empty-state">No se identificaron pain points</span>
                 )}
               </div>
             </div>
 
-            <div style={{ marginBottom: "2rem" }}>
-              <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1rem" }}>Jobs-to-be-Done</h3>
-              <div className="tag-list">
+            <div className="modal-section">
+              <h3 className="modal-section-title">Jobs-to-be-Done</h3>
+              <div className="customer-profile-tag-list">
                 {extraction.jtbdPrimary && extraction.jtbdPrimary.length > 0 ? (
                   extraction.jtbdPrimary.map((jtbd: string) => (
-                    <span key={jtbd} className="tag" style={{ fontSize: "0.875rem", padding: "0.5rem 1rem" }}>
+                    <span key={jtbd} className="tag customer-profile-tag">
                       {getLabel(JtbdPrimaryLabels, jtbd)}
                     </span>
                   ))
                 ) : (
-                  <span style={{ color: "var(--color-text-muted)" }}>No se identificaron JTBD</span>
+                  <span className="modal-empty-state">No se identificaron JTBD</span>
                 )}
               </div>
             </div>
 
             {extraction.integrations && extraction.integrations.length > 0 && (
-              <div style={{ marginBottom: "2rem" }}>
-                <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1rem" }}>Integraciones Necesarias</h3>
-                <div className="tag-list">
+              <div className="modal-section">
+                <h3 className="modal-section-title">Integraciones Necesarias</h3>
+                <div className="customer-profile-tag-list">
                   {extraction.integrations.map((integration: string) => (
-                    <span key={integration} className="badge badge-info" style={{ fontSize: "0.875rem", padding: "0.5rem 1rem" }}>
+                    <span key={integration} className="badge badge-info customer-profile-tag">
                       {getLabel(IntegrationsLabels, integration)}
                     </span>
                   ))}
@@ -265,11 +265,11 @@ export function CustomerProfileModal({ customerId, onClose }: CustomerProfileMod
             )}
 
             {extraction.successMetrics && extraction.successMetrics.length > 0 && (
-              <div style={{ marginBottom: "2rem" }}>
-                <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1rem" }}>Métricas de Éxito</h3>
-                <div className="tag-list">
+              <div className="modal-section">
+                <h3 className="modal-section-title">Métricas de Éxito</h3>
+                <div className="customer-profile-tag-list">
                   {extraction.successMetrics.map((metric: string) => (
-                    <span key={metric} className="badge badge-success" style={{ fontSize: "0.875rem", padding: "0.5rem 1rem" }}>
+                    <span key={metric} className="badge badge-success customer-profile-tag">
                       {getLabel(SuccessMetricLabels, metric)}
                     </span>
                   ))}
@@ -278,11 +278,11 @@ export function CustomerProfileModal({ customerId, onClose }: CustomerProfileMod
             )}
 
             {extraction.objections && extraction.objections.length > 0 && (
-              <div style={{ marginBottom: "2rem" }}>
-                <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1rem" }}>Objeciones</h3>
-                <div className="tag-list">
+              <div className="modal-section">
+                <h3 className="modal-section-title">Objeciones</h3>
+                <div className="customer-profile-tag-list">
                   {extraction.objections.map((objection: string) => (
-                    <span key={objection} className="badge badge-danger" style={{ fontSize: "0.875rem", padding: "0.5rem 1rem" }}>
+                    <span key={objection} className="badge badge-danger customer-profile-tag">
                       {getLabel(ObjectionsLabels, objection)}
                     </span>
                   ))}
@@ -291,29 +291,15 @@ export function CustomerProfileModal({ customerId, onClose }: CustomerProfileMod
             )}
           </>
         ) : (
-          <div style={{ padding: "2rem", textAlign: "center", color: "var(--color-text-muted)" }}>
+          <div className="modal-empty-state">
             <p>No hay información de extracción disponible para este cliente.</p>
           </div>
         )}
 
         {customer.transcript && (
-          <div style={{ marginTop: "2rem", paddingTop: "2rem", borderTop: "2px solid var(--color-border)" }}>
-            <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1rem" }}>Transcripción de la Reunión</h3>
-            <blockquote
-              style={{
-                background: "var(--color-surface-elevated)",
-                borderLeft: "4px solid var(--color-primary)",
-                padding: "1.5rem",
-                margin: 0,
-                borderRadius: "var(--radius-md)",
-                fontSize: "0.875rem",
-                lineHeight: "1.8",
-                color: "var(--color-text)",
-                whiteSpace: "pre-wrap",
-                maxHeight: "400px",
-                overflowY: "auto",
-              }}
-            >
+          <div className="modal-transcript">
+            <h3 className="modal-section-title">Transcripción de la Reunión</h3>
+            <blockquote className="modal-transcript-blockquote">
               {customer.transcript}
             </blockquote>
           </div>
