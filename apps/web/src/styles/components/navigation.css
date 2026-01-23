@@ -1,4 +1,4 @@
-.container {
+.nav-container {
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   position: relative;
@@ -7,7 +7,7 @@
   width: 100%;
 }
 
-.innerContainer {
+.nav-inner-container {
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 2rem;
@@ -18,7 +18,7 @@
   min-height: 60px;
 }
 
-.toggleBtn {
+.nav-toggle-btn {
   display: none;
   background: none;
   border: none;
@@ -28,7 +28,7 @@
   margin-left: auto;
 }
 
-.linksList {
+.nav-links-list {
   display: flex;
   gap: 0;
   overflow-x: auto;
@@ -37,11 +37,11 @@
   align-items: center;
 }
 
-.linksList::-webkit-scrollbar {
+.nav-links-list::-webkit-scrollbar {
   display: none;
 }
 
-.link {
+.nav-link {
   padding: 1rem 1.5rem;
   color: var(--color-text-muted);
   text-decoration: none;
@@ -56,23 +56,23 @@
   height: 60px;
 }
 
-.link:hover {
+.nav-link:hover {
   color: var(--color-text);
   background: var(--color-surface-elevated);
 }
 
-.linkActive {
+.nav-link-active {
   color: var(--color-primary);
   border-bottom-color: var(--color-primary);
   background: rgba(var(--color-primary-rgb), 0.05);
 }
 
-.linkText {
+.nav-link-text {
   position: relative;
   display: inline-block;
 }
 
-.sparkleWrapper {
+.nav-sparkle-wrapper {
   position: absolute;
   top: -6px;
   right: -10px;
@@ -81,29 +81,29 @@
   justify-content: center;
 }
 
-.sparkleIcon {
+.nav-sparkle-icon {
   opacity: 0.9;
   filter: drop-shadow(0 0 2px currentColor);
   color: inherit;
 }
 
-.linkActive .sparkleIcon {
+.nav-link-active .nav-sparkle-icon {
   opacity: 1;
   filter: drop-shadow(0 0 3px currentColor);
 }
 
 @media (max-width: 768px) {
-  .innerContainer {
+  .nav-inner-container {
     padding: 0.5rem 1rem;
     flex-wrap: wrap;
   }
 
-  .toggleBtn {
+  .nav-toggle-btn {
     display: flex;
     margin-left: auto;
   }
 
-  .linksList {
+  .nav-links-list {
     display: none;
     flex-direction: column;
     width: 100%;
@@ -112,11 +112,11 @@
     animation: slideDown 0.2s ease-out;
   }
 
-  .linksList.open {
+  .nav-links-list.open {
     display: flex;
   }
 
-  .link {
+  .nav-link {
     width: 100%;
     height: auto;
     padding: 0.875rem 1.5rem;
@@ -124,11 +124,11 @@
     border-left: 3px solid transparent;
   }
 
-  .link:last-child {
+  .nav-link:last-child {
     border-bottom: none;
   }
 
-  .linkActive {
+  .nav-link-active {
     border-bottom-color: var(--color-border);
     border-left-color: var(--color-primary);
   }

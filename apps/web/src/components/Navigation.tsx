@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { MdMenu, MdClose } from "react-icons/md";
 import { SparkleIcon } from "./ui/SparkleIcon";
-import styles from "./Navigation.module.css";
 
 export function Navigation() {
   const pathname = usePathname();
@@ -29,28 +28,28 @@ export function Navigation() {
   ];
 
   return (
-    <nav className={styles.container}>
-      <div className={styles.innerContainer}>
+    <nav className="nav-container">
+      <div className="nav-inner-container">
         <button
-          className={styles.toggleBtn}
+          className="nav-toggle-btn"
           onClick={() => setIsOpen(!isOpen)}
           aria-label="Toggle menu"
         >
           {isOpen ? <MdClose size={24} /> : <MdMenu size={24} />}
         </button>
 
-        <div className={`${styles.linksList} ${isOpen ? styles.open : ""}`}>
+        <div className={`nav-links-list ${isOpen ? "open" : ""}`}>
           {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={pathname === link.href ? styles.linkActive : styles.link}
+              className={pathname === link.href ? "nav-link-active" : "nav-link"}
             >
-              <span className={styles.linkText}>
+              <span className="nav-link-text">
                 {link.label}
                 {link.showSparkle && (
-                  <span className={styles.sparkleWrapper}>
-                    <SparkleIcon className={styles.sparkleIcon} />
+                  <span className="nav-sparkle-wrapper">
+                    <SparkleIcon className="nav-sparkle-icon" />
                   </span>
                 )}
               </span>
