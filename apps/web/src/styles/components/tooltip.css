@@ -1,0 +1,57 @@
+.ui-tooltip-content {
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  min-width: 200px;
+  max-width: 320px;
+  pointer-events: none;
+  font-size: 0.875rem;
+  z-index: 9999;
+}
+
+.tooltip-portal {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.tooltip-portal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ui-tooltip-header {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.5rem;
+}
+
+.ui-tooltip-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.ui-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ui-tooltip-label {
+  color: var(--color-text-muted);
+}
+
+.ui-tooltip-value {
+  font-weight: 600;
+  color: var(--color-text);
+}

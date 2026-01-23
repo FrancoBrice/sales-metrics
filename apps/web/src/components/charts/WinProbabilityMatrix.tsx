@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { UrgencyLabels, SentimentLabels, Urgency, Sentiment } from "@vambe/shared";
 import { CustomerFilters } from "@/lib/api";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { EmptyStateWithType } from "@/components/ui/Loading";
 
 interface WinProbabilityMatrixProps {
@@ -92,19 +93,19 @@ export function WinProbabilityMatrix({ filters }: WinProbabilityMatrixProps) {
       const r = Math.floor(34 - (intensity - 0.7) * 30 * 3.33);
       const g = Math.floor(197);
       const b = Math.floor(94);
-      return `rgba(${r}, ${g}, ${b}, ${Math.max(0.4, intensity)})`;
+      return `rgba(${r}, ${g}, ${b}, ${Math.max(0.75, intensity)})`;
     } else if (intensity >= 0.4) {
       const factor = (intensity - 0.4) / 0.3;
       const r = Math.floor(234 - factor * 200);
       const g = Math.floor(179 + factor * 18);
       const b = Math.floor(8 + factor * 86);
-      return `rgba(${r}, ${g}, ${b}, ${Math.max(0.3, intensity)})`;
+      return `rgba(${r}, ${g}, ${b}, ${Math.max(0.65, intensity)})`;
     } else {
       const factor = intensity / 0.4;
       const r = Math.floor(239 - factor * 5);
       const g = Math.floor(68 + factor * 111);
       const b = Math.floor(68 + factor * 0);
-      return `rgba(${r}, ${g}, ${b}, ${Math.max(0.2, intensity)})`;
+      return `rgba(${r}, ${g}, ${b}, ${Math.max(0.45, intensity)})`;
     }
   };
 
@@ -157,30 +158,53 @@ export function WinProbabilityMatrix({ filters }: WinProbabilityMatrixProps) {
                 return (
                   <div
                     key={`${urgency}-${sentiment}`}
-                    className={cell ? "win-probability-matrix-cell" : "win-probability-matrix-cell win-probability-matrix-cell-empty"}
+                    className={cell ? "win-probability-matrix-cell filled" : "win-probability-matrix-cell win-probability-matrix-cell-empty"}
                     style={{
                       background: getColor(cell),
                       minHeight: getCellSize(cell),
                       minWidth: getCellSize(cell),
                     }}
-                    title={
-                      cell
-                        ? `${UrgencyLabels[urgency as Urgency] || urgency} × ${SentimentLabels[sentiment as Sentiment] || sentiment}\nTotal: ${cell.total}\nCerrados: ${cell.closed}\nTasa Conversión: ${cell.conversionRate.toFixed(1)}%\nProbabilidad de Cierre: ${cell.winProbability.toFixed(1)}%`
-                        : "Sin datos"
-                    }
                   >
                     {cell && (
-                      <>
-                        <div className="win-probability-matrix-cell-probability">
-                          {cell.winProbability.toFixed(0)}%
+                      <Tooltip
+                        content={
+                          <div className="ui-tooltip-body">
+                            <div className="ui-tooltip-header">
+                              {UrgencyLabels[urgency as Urgency] || urgency} / {SentimentLabels[sentiment as Sentiment] || sentiment}
+                            </div>
+                            <div className="ui-tooltip-row">
+                              <span className="ui-tooltip-label">Total Leads</span>
+                              <span className="ui-tooltip-value">{cell.total}</span>
+                            </div>
+                            <div className="ui-tooltip-row">
+                              <span className="ui-tooltip-label">Cerrados</span>
+                              <span className="ui-tooltip-value">{cell.closed}</span>
+                            </div>
+                            <div className="ui-tooltip-row">
+                              <span className="ui-tooltip-label">Tasa Conversión</span>
+                              <span className="ui-tooltip-value">{cell.conversionRate.toFixed(1)}%</span>
+                            </div>
+                            <div className="ui-tooltip-row">
+                              <span className="ui-tooltip-label">Prob. Cierre</span>
+                              <span className="ui-tooltip-value" style={{ color: cell.winProbability > 70 ? 'var(--color-success)' : cell.winProbability > 40 ? 'var(--color-info)' : 'var(--color-danger)' }}>
+                                {cell.winProbability.toFixed(1)}%
+                              </span>
+                            </div>
+                          </div>
+                        }
+                      >
+                        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                          <div className="win-probability-matrix-cell-probability">
+                            {cell.winProbability.toFixed(0)}%
+                          </div>
+                          <div className="win-probability-matrix-cell-count">
+                            {cell.total} leads
+                          </div>
+                          <div className="win-probability-matrix-cell-percentage">
+                            {cell.conversionRate.toFixed(1)}% real
+                          </div>
                         </div>
-                        <div className="win-probability-matrix-cell-count">
-                          {cell.total} leads
-                        </div>
-                        <div className="win-probability-matrix-cell-percentage">
-                          {cell.conversionRate.toFixed(1)}% real
-                        </div>
-                      </>
+                      </Tooltip>
                     )}
                   </div>
                 );
@@ -234,15 +258,15 @@ export function WinProbabilityMatrix({ filters }: WinProbabilityMatrixProps) {
             <strong>Leyenda:</strong>
           </div>
           <div className="win-probability-matrix-legend-item">
-            <span className="win-probability-matrix-legend-color" style={{ background: "rgba(239, 68, 68, 0.6)" }} />
+            <span className="win-probability-matrix-legend-color" style={{ background: "rgba(239, 68, 68, 0.7)" }} />
             Baja probabilidad (0-40%)
           </div>
           <div className="win-probability-matrix-legend-item">
-            <span className="win-probability-matrix-legend-color" style={{ background: "rgba(234, 179, 8, 0.7)" }} />
+            <span className="win-probability-matrix-legend-color" style={{ background: "rgba(234, 179, 8, 0.8)" }} />
             Media probabilidad (40-70%)
           </div>
           <div className="win-probability-matrix-legend-item">
-            <span className="win-probability-matrix-legend-color" style={{ background: "rgba(34, 197, 94, 0.8)" }} />
+            <span className="win-probability-matrix-legend-color" style={{ background: "rgba(34, 197, 94, 0.9)" }} />
             Alta probabilidad (70-100%)
           </div>
           <div className="win-probability-matrix-legend-note">

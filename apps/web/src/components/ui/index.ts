@@ -11,3 +11,4 @@ export { UploadModal } from "./UploadModal";
 export { MetricsCards } from "./MetricsCards";
 export { CustomerProfileModal } from "./CustomerProfileModal";
 export { SearchInput } from "./SearchInput";
+export { Tooltip } from "./Tooltip";
