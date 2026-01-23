@@ -6,7 +6,7 @@ import { Filters } from "@/components/features/Filters";
 import { CustomersTable } from "@/components/features/CustomersTable";
 import { Pagination } from "@/components/features/Pagination";
 import { CustomerProfileModal } from "@/components/ui/CustomerProfileModal";
-import { Loading, EmptyState } from "@/components/ui/Loading";
+import { Loading, EmptyStateWithType } from "@/components/ui/Loading";
 import { SearchInput } from "@/components/ui/SearchInput";
 
 export default function CustomersPage() {
@@ -96,10 +96,9 @@ export default function CustomersPage() {
           />
 
           {customers.length === 0 ? (
-            <EmptyState
-              title="No se encontraron clientes"
-              message="Intenta ajustar los filtros de búsqueda"
-            />
+            <div className="card">
+              <EmptyStateWithType type="customers" />
+            </div>
           ) : (
             <Pagination
               page={filters.page || 1}

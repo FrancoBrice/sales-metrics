@@ -119,7 +119,9 @@ export default function SellersMetricsPage() {
       </div>
 
       {sellerMetrics.length === 0 ? (
-        <EmptyStateWithType type="sellers" />
+        <div className="card">
+          <EmptyStateWithType type="sellers" />
+        </div>
       ) : (
         <div className="sellers-list">
           {sortedSellerMetrics.map((seller) => {
@@ -173,23 +175,23 @@ export default function SellersMetricsPage() {
                   </div>
 
                   {totalSentiment > 0 && (
-                     <div className="seller-sentiment-indicators">
-                       {seller.sentimentDistribution.map((sentiment) => {
-                         if (sentiment.total === 0) return null;
-                         return (
-                           <div key={sentiment.sentiment} className="seller-sentiment-item">
-                             <span className={`seller-sentiment-dot ${sentiment.sentiment === "POSITIVO" ? "positive" : sentiment.sentiment === "ESCEPTICO" ? "negative" : "neutral"}`}></span>
-                             <span className="seller-sentiment-label">
-                               {SentimentLabels[sentiment.sentiment as Sentiment]}
-                             </span>
-                             <span className="seller-sentiment-count">
-                               {sentiment.total}
-                             </span>
-                           </div>
-                         );
-                       })}
-                     </div>
-                   )}
+                    <div className="seller-sentiment-indicators">
+                      {seller.sentimentDistribution.map((sentiment) => {
+                        if (sentiment.total === 0) return null;
+                        return (
+                          <div key={sentiment.sentiment} className="seller-sentiment-item">
+                            <span className={`seller-sentiment-dot ${sentiment.sentiment === "POSITIVO" ? "positive" : sentiment.sentiment === "ESCEPTICO" ? "negative" : "neutral"}`}></span>
+                            <span className="seller-sentiment-label">
+                              {SentimentLabels[sentiment.sentiment as Sentiment]}
+                            </span>
+                            <span className="seller-sentiment-count">
+                              {sentiment.total}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {/* Column 3: Action */}

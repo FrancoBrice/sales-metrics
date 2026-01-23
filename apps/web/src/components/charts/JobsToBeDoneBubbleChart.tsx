@@ -49,7 +49,7 @@ export function JobsToBeDoneBubbleChart() {
         const allJtbds = new Set(chartData.map(d => d.jtbd));
         setSelectedJtbds(allJtbds);
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -71,7 +71,7 @@ export function JobsToBeDoneBubbleChart() {
   if (loading) return <div className="card loading-placeholder">Cargando gráfico...</div>;
   if (data.length === 0) return (
     <div className="card">
-      <EmptyStateWithType type="pain-points" />
+      <EmptyStateWithType type="jtbd" />
     </div>
   );
 

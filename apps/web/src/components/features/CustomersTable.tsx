@@ -12,7 +12,6 @@ import {
   VolumeUnit,
 } from "@vambe/shared";
 import { Badge, BadgeVariant, Tag } from "@/components/ui/Badge";
-import { EmptyState } from "@/components/ui/Loading";
 
 interface CustomersTableProps {
   customers: CustomerWithExtraction[];
@@ -28,15 +27,6 @@ function getLabel<T extends string>(
 }
 
 export function CustomersTable({ customers, onCustomerClick }: CustomersTableProps) {
-  if (customers.length === 0) {
-    return (
-      <EmptyState
-        title="No hay clientes"
-        message="Importa un archivo CSV para comenzar"
-      />
-    );
-  }
-
   const rowClass = onCustomerClick ? "clickable" : "";
 
   return (

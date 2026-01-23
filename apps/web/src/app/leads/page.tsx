@@ -117,7 +117,9 @@ export default function LeadsPage() {
           <div className="spinner"></div>
         </div>
       ) : data.length === 0 ? (
-        <EmptyStateWithType type="leads" />
+        <div className="card">
+          <EmptyStateWithType type="leads" />
+        </div>
       ) : (
         <div className="card">
           <div className="card-header">

@@ -355,7 +355,7 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
 
         <div className="closure-chart">
           {sortedData.length === 0 ? (
-            <EmptyState title="No hay datos disponibles" message={`No hay datos disponibles para ${getDimensionLabel(selectedDimension)}`} />
+            <EmptyStateWithType type="closure-analysis" />
           ) : (
             sortedData.map((item) => {
               const conversionRate = item.conversionRate;

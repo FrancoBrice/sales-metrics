@@ -158,7 +158,9 @@ export default function Dashboard() {
           </div>
         </>
       ) : (
-        <EmptyStateWithType type="dashboard" />
+        <div className="card">
+          <EmptyStateWithType type="dashboard" />
+        </div>
       )}
 
       {showUpload && (

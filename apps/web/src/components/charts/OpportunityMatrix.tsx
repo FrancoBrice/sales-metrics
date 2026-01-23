@@ -8,6 +8,7 @@ import { quadrantColors, chartColors } from "@/constants/colors";
 import { CustomerFilters } from "@/lib/api";
 import "@/styles/charts/opportunity-matrix.css";
 import { TooltipContent, TooltipRow } from "@/components/ui/Tooltip";
+import { EmptyStateWithType } from "@/components/ui/Loading";
 
 interface OpportunityMatrixProps {
   filters?: CustomerFilters;
@@ -66,9 +67,7 @@ export function OpportunityMatrix({ filters }: OpportunityMatrixProps) {
   if (!data || data.opportunities.length === 0) {
     return (
       <div className="card">
-        <p className="opportunity-matrix-empty-message">
-          No hay datos disponibles para la matriz de oportunidades
-        </p>
+        <EmptyStateWithType type="opportunities" />
       </div>
     );
   }

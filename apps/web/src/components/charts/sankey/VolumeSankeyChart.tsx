@@ -11,7 +11,7 @@ import {
 } from "@vambe/shared";
 import { sankeyColorList, quadrantColors, businessModelColors, volumeUnitColors, volumeStatusColors } from "@/constants/colors";
 import { SankeyNode, SankeyLink, SankeyHiddenNodes, useSankeyData } from "./shared";
-import { EmptyState } from "@/components/ui/Loading";
+import { EmptyStateWithType } from "@/components/ui/Loading";
 
 interface SankeyData {
   nodes: { name: string; category: string }[];
@@ -26,7 +26,7 @@ export function VolumeSankeyChart() {
   useEffect(() => {
     api.metrics.volumeFlow()
       .then(setData)
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -50,10 +50,7 @@ export function VolumeSankeyChart() {
   if (loading) return <div className="card loading-placeholder">Cargando diagrama...</div>;
   if (!data || !processedData || processedData.nodes.length === 0) return (
     <div className="card">
-      <EmptyState
-        title="No hay datos de volumen"
-        message="Aún no hay datos disponibles para mostrar el análisis de volumen"
-      />
+      <EmptyStateWithType type="volume-analysis" />
     </div>
   );
 

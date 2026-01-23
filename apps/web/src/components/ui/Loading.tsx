@@ -58,6 +58,11 @@ export function EmptyStateWithType({ type, className = "" }: { type: string; cla
           title: "No hay datos disponibles",
           message: "No hay datos disponibles para el análisis de probabilidad"
         };
+      case "closure-analysis":
+        return {
+          title: "No hay datos disponibles",
+          message: "Aún no hay datos disponibles para el análisis de cierres"
+        };
       case "industries":
         return {
           title: "No hay datos disponibles",
@@ -67,6 +72,11 @@ export function EmptyStateWithType({ type, className = "" }: { type: string; cla
         return {
           title: "No hay datos disponibles",
           message: "No hay datos de Pain Points disponibles"
+        };
+      case "jtbd":
+        return {
+          title: "No hay datos disponibles",
+          message: "No hay datos de Jobs to be Done disponibles"
         };
       case "sellers":
         return {
