@@ -1,13 +1,14 @@
-.PHONY: help setup dev db-up db-down db-reset clean install
+.PHONY: help setup dev down db-up db-down db-reset clean install
 
 help: ## Mostrar comandos disponibles
 	@echo "Comandos disponibles:"
 	@echo "  make setup     - Setup completo del proyecto (primera vez)"
 	@echo "  make dev       - Iniciar desarrollo (DB + API + Web)"
+	@echo "  make down      - Detener desarrollo (API + Web)"
 	@echo "  make db-up     - Iniciar solo PostgreSQL"
 	@echo "  make db-down   - Detener PostgreSQL"
 	@echo "  make db-reset  - Resetear base de datos"
-	@echo "  make clean     - Limpiar todo (DB + node_modules)"
+	@echo "  make clean     - Limpiar todo"
 	@echo "  make install   - Instalar dependencias"
 
 setup: ## Setup inicial completo
@@ -33,6 +34,13 @@ setup: ## Setup inicial completo
 dev: db-up ## Iniciar desarrollo
 	@echo "Iniciando desarrollo..."
 	@pnpm dev
+
+down: ## Detener desarrollo
+	@echo "Deteniendo desarrollo..."
+	@-pkill -f "nest start.*--watch" 2>/dev/null || true
+	@-pkill -f "next dev" 2>/dev/null || true
+	@-pkill -f "concurrently.*dev" 2>/dev/null || true
+	@echo "Desarrollo detenido"
 
 db-up: ## Iniciar PostgreSQL
 	@docker-compose up -d

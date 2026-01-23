@@ -25,6 +25,9 @@ DEEPSEEK_API_KEY="your-key"
 
 # Iniciar desarrollo
 make dev
+
+# Detener desarrollo
+make down
 ```
 
 #### Opción 2: Manual
