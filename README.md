@@ -4,6 +4,11 @@
 
 Panel interactivo para análisis inteligente de métricas de ventas basado en transcripciones de reuniones. Extrae automáticamente insights con IA, identifica patrones y genera visualizaciones interactivas.
 
+## Funcionalidades Principales
+
+- **Importar CSV**: Sube archivos CSV con datos de clientes y reuniones para procesamiento masivo
+- **Analizar Pendientes**: Procesa automáticamente todas las transcripciones pendientes y reintenta las extracciones fallidas con IA
+
 ## Inicio Rápido
 
 ### Prerrequisitos
@@ -41,6 +46,7 @@ docker-compose up -d
 # Configurar variables de entorno (apps/api/.env)
 DATABASE_URL="postgresql://vambe:vambe_secret@localhost:5433/sales_metrics"
 DEEPSEEK_API_KEY="your-key"
+API_PORT=3001
 
 # Generar cliente Prisma
 pnpm db:generate
