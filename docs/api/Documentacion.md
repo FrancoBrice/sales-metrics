@@ -175,10 +175,20 @@ Esquema optimizado para analytics:
 
 ## Testing
 
-### Cobertura Completa con Vitest
-- **31 tests unitarios** en extractores determinísticos
-- **Tests de integración** para flujo completo de extracción
-- **Mocks** para dependencias externas (API de IA)
+### Estrategia de Testing: Enfoque en Componentes Críticos y Testeables
+**Decisión**: Implementar tests unitarios para extractores determinísticos (regex) y tests de integración para el flujo completo de extracción, en lugar de cobertura completa de todo el sistema.
+
+**Razones**:
+- **Extractores determinísticos son críticos**: Los regex de lead source y volume son la base del sistema híbrido y deben funcionar correctamente para guiar al LLM
+- **Testeabilidad**: Los extractores determinísticos son puros y fáciles de testear con casos específicos (diferentes fuentes, volúmenes, edge cases)
+- **Validación del flujo de integración**: El test de integración valida que el merge entre resultados determinísticos y LLM funciona correctamente
+- **Tiempo limitado**: En una prueba técnica, es más valioso demostrar testing estratégico que cobertura completa
+
+**Alternativas consideradas**:
+- Cobertura completa de todos los servicios (demasiado tiempo para una prueba técnica)
+- Solo tests unitarios sin integración (no valida el flujo completo)
+- Solo tests de integración sin unitarios (más difícil de debuggear fallos específicos)
+- No hacer test descartado para confiabilidad de extracciones determinísticas
 
 ## API Endpoints
 
