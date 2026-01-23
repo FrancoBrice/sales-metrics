@@ -61,7 +61,14 @@ export class ValidationService {
   }
 
   validateAndMerge(partial: Partial<Extraction>, transcript: string): Extraction {
-    const defaultExtraction: Extraction = {
+    const defaultExtraction = this.createDefaultExtraction();
+    const normalized = this.normalizeExtraction(partial);
+    const merged = { ...defaultExtraction, ...normalized };
+    return this.validateExtraction(merged);
+  }
+
+  private createDefaultExtraction(): Extraction {
+    return {
       industry: null,
       businessModel: null,
       jtbdPrimary: [],
@@ -78,14 +85,24 @@ export class ValidationService {
       sentiment: null,
       volume: null,
     };
+  }
 
+  private normalizeExtraction(partial: Partial<Extraction>): Partial<Extraction> {
+    return {
+      ...this.normalizeSimpleEnums(partial),
+      ...this.normalizeJtbdAndPainPoints(partial),
+      ...this.normalizeArrayEnums(partial),
+      volume: partial.volume ?? null,
+    };
+  }
+
+  private normalizeSimpleEnums(partial: Partial<Extraction>): Partial<Extraction> {
     const industryMappings: Record<string, Industry> = {
       RESTAURANT: Industry.HOSPITALIDAD,
       RESTAURANTE: Industry.HOSPITALIDAD,
     };
 
-    const normalized: Partial<Extraction> = {
-      ...defaultExtraction,
+    return {
       industry: this.normalizeEnumValue(
         partial.industry,
         Industry as Record<string, Industry>,
@@ -124,78 +141,84 @@ export class ValidationService {
         Sentiment as Record<string, Sentiment>
       ),
     };
+  }
 
-    const rawJtbdPrimary = Array.isArray(partial.jtbdPrimary)
-      ? partial.jtbdPrimary
-      : [];
-    const rawPainPoints = Array.isArray(partial.painPoints)
-      ? partial.painPoints
-      : [];
+  private normalizeJtbdAndPainPoints(partial: Partial<Extraction>): {
+    jtbdPrimary: JtbdPrimary[];
+    painPoints: PainPoints[];
+  } {
+    const rawJtbdPrimary = Array.isArray(partial.jtbdPrimary) ? partial.jtbdPrimary : [];
+    const rawPainPoints = Array.isArray(partial.painPoints) ? partial.painPoints : [];
 
-    const painPointsValues = Object.values(PainPoints) as string[];
-    const validJtbdPrimary: JtbdPrimary[] = [];
-    const misplacedToPainPoints: PainPoints[] = [];
-
-    rawJtbdPrimary.forEach((val) => {
-      if (typeof val === "string") {
-        const trimmed = val.trim().toUpperCase();
-        const asJtbd = this.normalizeEnumValue(
-          trimmed,
-          JtbdPrimary as Record<string, JtbdPrimary>
-        );
-        if (asJtbd) {
-          validJtbdPrimary.push(asJtbd);
-        } else if (painPointsValues.includes(trimmed)) {
-          const asPainPoint = this.normalizeEnumValue(
-            trimmed,
-            PainPoints as Record<string, PainPoints>
-          );
-          if (asPainPoint && !misplacedToPainPoints.includes(asPainPoint)) {
-            misplacedToPainPoints.push(asPainPoint);
-          }
-        }
-      }
-    });
-
+    const { validJtbdPrimary, misplacedToPainPoints } =
+      this.processJtbdPrimary(rawJtbdPrimary);
     const normalizedPainPoints = this.normalizeEnumArray(
       rawPainPoints,
       PainPoints as Record<string, PainPoints>
     );
 
-    normalized.jtbdPrimary = validJtbdPrimary;
-    normalized.painPoints = [
-      ...normalizedPainPoints,
-      ...misplacedToPainPoints.filter(
-        (val) => !normalizedPainPoints.includes(val)
-      ),
-    ];
+    return {
+      jtbdPrimary: validJtbdPrimary,
+      painPoints: [
+        ...normalizedPainPoints,
+        ...misplacedToPainPoints.filter((val) => !normalizedPainPoints.includes(val)),
+      ],
+    };
+  }
 
-    if (Array.isArray(partial.integrations)) {
-      normalized.integrations = this.normalizeEnumArray(
-        partial.integrations,
-        Integrations as Record<string, Integrations>
+  private processJtbdPrimary(
+    rawJtbdPrimary: unknown[]
+  ): { validJtbdPrimary: JtbdPrimary[]; misplacedToPainPoints: PainPoints[] } {
+    const validJtbdPrimary: JtbdPrimary[] = [];
+    const misplacedToPainPoints: PainPoints[] = [];
+    const painPointsValues = Object.values(PainPoints) as string[];
+
+    rawJtbdPrimary.forEach((val) => {
+      if (typeof val !== "string") {
+        return;
+      }
+
+      const trimmed = val.trim().toUpperCase();
+      const asJtbd = this.normalizeEnumValue(
+        trimmed,
+        JtbdPrimary as Record<string, JtbdPrimary>
       );
-    }
-    if (Array.isArray(partial.successMetrics)) {
-      normalized.successMetrics = this.normalizeEnumArray(
-        partial.successMetrics,
-        SuccessMetric as Record<string, SuccessMetric>
-      );
-    }
-    if (Array.isArray(partial.objections)) {
-      normalized.objections = this.normalizeEnumArray(
-        partial.objections,
-        Objections as Record<string, Objections>
-      );
-    }
 
-    if (partial.volume !== undefined) {
-      normalized.volume = partial.volume;
-    }
+      if (asJtbd) {
+        validJtbdPrimary.push(asJtbd);
+      } else if (painPointsValues.includes(trimmed)) {
+        const asPainPoint = this.normalizeEnumValue(
+          trimmed,
+          PainPoints as Record<string, PainPoints>
+        );
+        if (asPainPoint && !misplacedToPainPoints.includes(asPainPoint)) {
+          misplacedToPainPoints.push(asPainPoint);
+        }
+      }
+    });
 
-    const merged = { ...defaultExtraction, ...normalized };
+    return { validJtbdPrimary, misplacedToPainPoints };
+  }
 
-    const result = ExtractionSchema.safeParse(merged);
+  private normalizeArrayEnums(partial: Partial<Extraction>): Partial<Extraction> {
+    return {
+      integrations: Array.isArray(partial.integrations)
+        ? this.normalizeEnumArray(partial.integrations, Integrations as Record<string, Integrations>)
+        : [],
+      successMetrics: Array.isArray(partial.successMetrics)
+        ? this.normalizeEnumArray(
+            partial.successMetrics,
+            SuccessMetric as Record<string, SuccessMetric>
+          )
+        : [],
+      objections: Array.isArray(partial.objections)
+        ? this.normalizeEnumArray(partial.objections, Objections as Record<string, Objections>)
+        : [],
+    };
+  }
+
+  private validateExtraction(extraction: Partial<Extraction>): Extraction {
+    const result = ExtractionSchema.safeParse(extraction);
 
     if (!result.success) {
       throw new Error(`Validation failed: ${result.error.message}`);
