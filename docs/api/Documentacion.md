@@ -43,6 +43,11 @@ Esquema optimizado para analytics:
 - `ExtractionData`: Datos estructurados extraídos
 - `LlmApiLog`: Logs completos de llamadas IA
 
+### Índices
+Se definieron índices UNIQUE en relaciones 1:1 para optimizar consultas:
+- `Extraction.meetingId`: UNIQUE - Una extraction por meeting, optimiza búsquedas por meetingId
+- `ExtractionData.extractionId`: UNIQUE - Una ExtractionData por Extraction, optimiza joins
+
 ## Sistema de Extracción IA
 
 ### Arquitectura Híbrida Determinística + LLM
