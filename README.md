@@ -26,9 +26,11 @@ Panel interactivo para análisis inteligente de métricas de ventas basado en tr
 # Setup completo (primera vez)
 make setup
 
-# Configurar variables de entorno (apps/api/.env)
+# Configurar variables de entorno
+# Copia apps/api/.env.example a apps/api/.env y completa los valores
 DATABASE_URL="postgresql://vambe:vambe_secret@localhost:5433/sales_metrics"
 DEEPSEEK_API_KEY="your-key"
+API_PORT=3001
 
 # Iniciar desarrollo
 make dev
@@ -45,7 +47,8 @@ pnpm install
 # Iniciar PostgreSQL
 docker-compose up -d
 
-# Configurar variables de entorno (apps/api/.env)
+# Configurar variables de entorno
+# Copia apps/api/.env.example a apps/api/.env y completa los valores
 DATABASE_URL="postgresql://vambe:vambe_secret@localhost:5433/sales_metrics"
 DEEPSEEK_API_KEY="your-key"
 API_PORT=3001
