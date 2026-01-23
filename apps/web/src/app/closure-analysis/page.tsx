@@ -5,7 +5,7 @@ import { ClosureAnalysisChart } from "@/components/charts/ClosureAnalysisChart";
 import { Filters } from "@/components/features/Filters";
 import { api } from "@/lib/api";
 
-export default function SalesFunnelPage() {
+export default function ClosureAnalysisPage() {
   const [sellers, setSellers] = useState<string[]>([]);
   const [filters, setFilters] = useState<{ seller?: string; dateFrom?: string; dateTo?: string }>({});
 

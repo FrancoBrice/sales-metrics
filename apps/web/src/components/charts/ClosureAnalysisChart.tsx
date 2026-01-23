@@ -92,7 +92,7 @@ export function ClosureAnalysisChart({ filters }: ClosureAnalysisChartProps) {
   async function loadInsights() {
     setLoadingInsights(true);
     try {
-      const insightsData = await api.metrics.salesFunnelInsights(filters);
+      const insightsData = await api.metrics.closureInsights(filters);
       setInsights(insightsData);
     } catch {
       setInsights(null);

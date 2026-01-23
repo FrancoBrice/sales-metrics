@@ -145,9 +145,9 @@ export default function Dashboard() {
                 description="Métricas por vendedor"
               />
               <LinkCard
-                href="/sales-funnel"
+                href="/closure-analysis"
                 title="Análisis de Cierres"
-                description="Embudo de ventas"
+                description="Cierres por categoría e insights IA"
               />
               <LinkCard
                 href="/pain-points"

@@ -82,4 +82,3 @@ function calculateConversionRates(
   }
   return result;
 }
-

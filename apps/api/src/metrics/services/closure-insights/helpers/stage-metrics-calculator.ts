@@ -1,5 +1,5 @@
 import { CustomerWithRelations } from "../../../../common/types";
-import { StageCustomers } from "./funnel-stage-classifier";
+import { StageCustomers } from "./stage-classifier";
 import { calculateConversionRate, roundToOneDecimal } from "../../../../common/helpers/metrics.helper";
 
 export type StageMetrics = {
@@ -43,4 +43,3 @@ function calculateBasicMetrics(
     dropOffRate: roundToOneDecimal(dropOffRate),
   };
 }
-

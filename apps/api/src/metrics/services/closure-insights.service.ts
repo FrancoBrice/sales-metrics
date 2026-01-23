@@ -12,7 +12,7 @@ import {
   extractTopPerformers,
   calculateTimeSeries,
   calculateUrgencySentimentMetrics,
-} from "./sales-funnel/helpers";
+} from "./closure-insights/helpers";
 
 const STAGE_NAMES = [
   "Lead Generation",
@@ -23,7 +23,7 @@ const STAGE_NAMES = [
 ] as const;
 
 @Injectable()
-export class SalesFunnelInsightsService extends BaseMetricsService {
+export class ClosureInsightsService extends BaseMetricsService {
   constructor(
     protected readonly prisma: PrismaService,
     private readonly insightsService: InsightsService,
@@ -32,7 +32,7 @@ export class SalesFunnelInsightsService extends BaseMetricsService {
     super(prisma);
   }
 
-  async getSalesFunnelInsights(filter: MetricsFilterDto): Promise<{
+  async getClosureInsights(filter: MetricsFilterDto): Promise<{
     bottlenecks: string[];
     opportunities: string[];
     recommendations: string[];

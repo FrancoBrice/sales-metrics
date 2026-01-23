@@ -35,4 +35,3 @@ export function calculateTimeSeries(customers: CustomerWithRelations[]): {
 
   return { conversionTrend };
 }
-

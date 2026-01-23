@@ -7,5 +7,5 @@ export { OpportunityMatrixService } from "./opportunity-matrix.service";
 export { WinProbabilityService } from "./win-probability.service";
 export { VolumeFlowService } from "./volume-flow.service";
 export { SellersService } from "./sellers.service";
-export { SalesFunnelInsightsService } from "./sales-funnel.service";
+export { ClosureInsightsService } from "./closure-insights.service";
 export { ClosureAnalysisService } from "./closure-analysis.service";

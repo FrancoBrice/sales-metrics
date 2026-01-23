@@ -22,7 +22,7 @@ export function Navigation() {
     { href: "/sellers", label: "Vendedores" },
     { href: "/opportunities", label: "Oportunidades" },
     { href: "/win-probability", label: "Probabilidad" },
-    { href: "/sales-funnel", label: "Análisis de Cierres", showSparkle: true },
+    { href: "/closure-analysis", label: "Análisis de Cierres", showSparkle: true },
     { href: "/industries", label: "Industrias" },
     { href: "/conversion-flow", label: "Flujo de Conversión" },
     { href: "/pain-points", label: "Pain Points" },

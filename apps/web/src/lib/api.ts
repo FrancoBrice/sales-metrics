@@ -301,7 +301,7 @@ export const api = {
         }>;
       }>(`/metrics/win-probability${query ? `?${query}` : ""}`);
     },
-    salesFunnelInsights: (filters?: { seller?: string; dateFrom?: string; dateTo?: string }) => {
+    closureInsights: (filters?: { seller?: string; dateFrom?: string; dateTo?: string }) => {
       const params = new URLSearchParams();
       if (filters?.seller) params.set("seller", filters.seller);
       if (filters?.dateFrom) params.set("dateFrom", filters.dateFrom);
@@ -317,7 +317,7 @@ export const api = {
           underperformers: Array<{ category: string; total: number; closed: number; conversionRate: number }>;
           significantFindings: Array<{ category: string; dimension: string; significance: string; reasoning: string }>;
         };
-      }>(`/metrics/sales-funnel-enhanced/insights${query ? `?${query}` : ""}`);
+      }>(`/metrics/closure-analysis/insights${query ? `?${query}` : ""}`);
     },
     closureAnalysis: (filters?: { seller?: string; dateFrom?: string; dateTo?: string }) => {
       const params = new URLSearchParams();

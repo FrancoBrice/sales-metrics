@@ -14,7 +14,7 @@ import {
   WinProbabilityService,
   VolumeFlowService,
   SellersService,
-  SalesFunnelInsightsService,
+  ClosureInsightsService,
   ClosureAnalysisService,
 } from "./services";
 
@@ -32,7 +32,7 @@ import {
     WinProbabilityService,
     VolumeFlowService,
     SellersService,
-    SalesFunnelInsightsService,
+    ClosureInsightsService,
     ClosureAnalysisService,
   ],
 })
