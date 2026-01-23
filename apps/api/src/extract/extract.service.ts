@@ -252,8 +252,8 @@ export class ExtractService {
     }
 
     return Array.from(extractionsByMeetingId.entries())
-      .filter(([_, data]) => 
-        data.status === ExtractionStatus.FAILED && 
+      .filter(([_, data]) =>
+        data.status === ExtractionStatus.FAILED &&
         data.failedCount < MAX_EXTRACTION_RETRIES
       )
       .map(([meetingId]) => meetingId);

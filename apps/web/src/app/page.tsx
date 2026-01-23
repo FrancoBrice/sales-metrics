@@ -41,9 +41,12 @@ export default function Dashboard() {
 
   async function handleExtractFromDashboard() {
     try {
-      const result = await api.extract.extractPendingAndFailed();
+      await checkInitialProgress();
 
-      if (result.total === 0) {
+      const progressData = await api.extract.getProgress();
+      const pendingCount = progressData.pending + progressData.retried;
+
+      if (pendingCount === 0) {
         setToast({
           message: "No hay registros pendientes para procesar",
           type: ToastType.Info,
@@ -57,7 +60,7 @@ export default function Dashboard() {
           type: progressData.failed === 0 ? ToastType.Success : ToastType.Info,
         });
         loadDashboardData();
-      });
+      }, pendingCount);
     } catch {
       setToast({
         message: "Error al iniciar el análisis",
@@ -169,10 +172,11 @@ export default function Dashboard() {
           onSuccess={() => {
             loadDashboardData();
           }}
-          onUploadComplete={(uploadResult) => {
+          onUploadComplete={async (uploadResult) => {
             const estimatedTotal = uploadResult.created + uploadResult.updated;
 
             if (estimatedTotal > 0) {
+              await checkInitialProgress();
               startExtractionWithCallback((progressData) => {
                 setToast({
                   message: buildUploadCompletionMessage(progressData, uploadResult.duplicates),

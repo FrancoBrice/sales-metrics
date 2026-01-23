@@ -90,8 +90,8 @@ export function useExtractionProgress(): UseExtractionProgressReturn {
           });
 
           const isComplete = expectedTotal > 0
-            ? (progressData.completed - initialCompleted) >= expectedTotal
-            : progressData.completed >= progressData.total;
+            ? (progressData.completed - initialCompleted) >= expectedTotal && progressData.pending === 0
+            : progressData.completed >= progressData.total && progressData.pending === 0;
 
           if (isComplete) {
             stopPolling();
@@ -103,7 +103,7 @@ export function useExtractionProgress(): UseExtractionProgressReturn {
               if (onComplete) {
                 const relativeSuccess = Math.max(0, progressData.success - initialSuccessRef.current);
                 const relativeFailed = Math.max(0, progressData.failed - initialFailedRef.current);
-                const relativeCompleted = Math.max(0, progressData.completed - initialCompleted); // Re-calc just in case
+                const relativeCompleted = Math.max(0, progressData.completed - initialCompleted);
 
                 onComplete({
                   ...progressData,
@@ -163,19 +163,25 @@ export function useExtractionProgress(): UseExtractionProgressReturn {
       setExtracting(true);
 
       try {
-        await captureInitialState();
+        if (expectedTotalParam === undefined) {
+          await captureInitialState();
+          const result = await api.extract.extractPendingAndFailed();
+          const total = result.total || 0;
 
-        const result = await api.extract.extractPendingAndFailed();
-        const total = expectedTotalParam || result.total || 0;
+          if (total === 0) {
+            setExtracting(false);
+            setProgress(null);
+            return;
+          }
 
-        if (total === 0) {
-          setExtracting(false);
-          setProgress(null);
-          return;
+          expectedTotalRef.current = total;
+          setProgress({ current: 0, total });
+        } else {
+          await api.extract.extractPendingAndFailed();
+          expectedTotalRef.current = expectedTotalParam;
+          setProgress({ current: 0, total: expectedTotalParam });
         }
 
-        expectedTotalRef.current = total;
-        setProgress({ current: 0, total });
         startPolling(onComplete);
       } catch (error) {
         console.error("Error starting extraction with callback:", error);
@@ -188,6 +194,7 @@ export function useExtractionProgress(): UseExtractionProgressReturn {
   );
 
   const checkInitialProgress = useCallback(async () => {
+    await captureInitialState();
   }, []);
 
   useEffect(() => {
