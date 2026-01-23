@@ -16,6 +16,7 @@ import { api } from "@/lib/api";
 import { PainPointsLabels, PainPoints } from "@vambe/shared";
 import { EmptyStateWithType } from "@/components/ui/Loading";
 import { quadrantColors, chartColors } from "@/constants/colors";
+import { TooltipContent, TooltipRow } from "@/components/ui/Tooltip";
 
 interface PainPointData {
   x: number;
@@ -49,7 +50,7 @@ export function PainPointsBubbleChart() {
         const allPainPoints = new Set(chartData.map(d => d.painPoint));
         setSelectedPainPoints(allPainPoints);
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -172,7 +173,7 @@ export function PainPointsBubbleChart() {
               dataKey="y"
               name="Conversión"
               unit="%"
-              domain={[0, 'auto']}
+              domain={[0, 100]}
               label={{
                 value: 'Tasa de Conversión (%)',
                 angle: -90,
@@ -192,31 +193,26 @@ export function PainPointsBubbleChart() {
                 if (active && payload && payload.length) {
                   const data = payload[0].payload;
                   return (
-                    <div className="pain-points-tooltip">
-                      <p className="pain-points-tooltip-title">
-                        {data.name}
-                      </p>
-                      <div className="pain-points-tooltip-content">
-                        <div className="pain-points-tooltip-row">
-                          <span className="pain-points-tooltip-label">Volumen:</span>
-                          <span className="pain-points-tooltip-value">{data.x} leads</span>
-                        </div>
-                        <div className="pain-points-tooltip-row">
-                          <span className="pain-points-tooltip-label">Conversión:</span>
-                          <span className="pain-points-tooltip-value conversion" style={{ color: getColor(data.y) }}>
-                            {data.y}%
-                          </span>
-                        </div>
-                        <div className="pain-points-tooltip-row">
-                          <span className="pain-points-tooltip-label">Casos (Count):</span>
-                          <span className="pain-points-tooltip-value">{data.z}</span>
-                        </div>
-                        <div className="pain-points-tooltip-row">
-                          <span className="pain-points-tooltip-label">Cerrados:</span>
-                          <span className="pain-points-tooltip-value" style={{ color: quadrantColors.highValue }}>{data.closed}</span>
-                        </div>
-                      </div>
-                    </div>
+                    <TooltipContent title={data.name}>
+                      <TooltipRow
+                        label="Volumen:"
+                        value={`${data.x} leads`}
+                      />
+                      <TooltipRow
+                        label="Conversión:"
+                        value={`${data.y}%`}
+                        valueColor={getColor(data.y)}
+                      />
+                      <TooltipRow
+                        label="Casos (Count):"
+                        value={data.z}
+                      />
+                      <TooltipRow
+                        label="Cerrados:"
+                        value={data.closed}
+                        valueColor={quadrantColors.highValue}
+                      />
+                    </TooltipContent>
                   );
                 }
                 return null;
