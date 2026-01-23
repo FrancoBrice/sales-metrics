@@ -6,6 +6,7 @@ import { UrgencyLabels, SentimentLabels, Urgency, Sentiment } from "@vambe/share
 import { CustomerFilters } from "@/lib/api";
 import { Tooltip, TooltipContent, TooltipRow } from "@/components/ui/Tooltip";
 import { EmptyStateWithType } from "@/components/ui/Loading";
+import "@/styles/charts/win-probability-matrix.css";
 
 interface WinProbabilityMatrixProps {
   filters?: CustomerFilters;
@@ -131,8 +132,8 @@ export function WinProbabilityMatrix({ filters }: WinProbabilityMatrixProps) {
         <div
           className="win-probability-matrix-grid"
           style={{
-            gridTemplateColumns: `120px repeat(${sentimentOrder.length}, minmax(150px, 1fr))`,
-          }}
+            "--sentiment-count": sentimentOrder.length
+          } as React.CSSProperties}
         >
           <div className="win-probability-matrix-header-cell win-probability-matrix-header-cell.first">
             Urgencia / Sentimiento
@@ -191,7 +192,7 @@ export function WinProbabilityMatrix({ filters }: WinProbabilityMatrixProps) {
                           </TooltipContent>
                         }
                       >
-                        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                        <div className="win-probability-matrix-cell-content-wrapper">
                           <div className="win-probability-matrix-cell-probability">
                             {cell.winProbability.toFixed(0)}%
                           </div>

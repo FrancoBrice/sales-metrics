@@ -6,6 +6,7 @@ import { Filters } from "@/components/features/Filters";
 import { LeadSourceLabels } from "@vambe/shared";
 import { EmptyStateWithType } from "@/components/ui/Loading";
 import { leadSourceColors, chartPalette } from "@/constants/colors";
+import { TooltipContent, TooltipRow } from "@/components/ui/Tooltip";
 import {
   LineChart,
   Line,
@@ -16,6 +17,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import "@/styles/pages/leads.css";
 
 interface LeadsTimeData {
   period: string;
@@ -28,7 +30,6 @@ const PALETTE = chartPalette;
 
 const getColor = (source: string, index: number) => {
   if (SOURCE_COLORS[source]) return SOURCE_COLORS[source];
-  // Simple hash for consistent fallback color
   return PALETTE[index % PALETTE.length];
 };
 
@@ -37,6 +38,7 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [sellers, setSellers] = useState<string[]>([]);
   const [filters, setFilters] = useState<CustomerFilters>({});
+  const [hiddenSeries, setHiddenSeries] = useState<string[]>([]);
 
   useEffect(() => {
     loadSellers();
@@ -71,25 +73,17 @@ export default function LeadsPage() {
     }
   }
 
-  // Get all unique sources present in the data for creating lines
   const allSources = Array.from(
     new Set(data.flatMap((d) => Object.keys(d.bySource)))
   );
 
-  // Transform data for Recharts: flatten bySource into the main object
   const chartData = data.map((item) => {
     const flattened: any = { period: item.period, total: item.total };
-    // Initialize all sources to 0 to ensure lines drop to 0
     allSources.forEach((source) => {
-      flattened[source] = 0;
-    });
-    Object.entries(item.bySource).forEach(([source, count]) => {
-      flattened[source] = count;
+      flattened[source] = item.bySource[source] || 0;
     });
     return flattened;
   });
-
-  const [hiddenSeries, setHiddenSeries] = useState<string[]>([]);
 
   const handleLegendClick = (e: any) => {
     const dataKey = e.dataKey;
@@ -105,7 +99,7 @@ export default function LeadsPage() {
       <div className="header">
         <div>
           <h1>Análisis de Leads</h1>
-          <p style={{ marginTop: "0.5rem", color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
+          <p className="leads-page-subtitle">
             Evolución temporal de leads por fuente de origen
           </p>
         </div>
@@ -128,18 +122,12 @@ export default function LeadsPage() {
         <div className="card">
           <div className="card-header">
             <h3 className="card-title">Evolución de Leads por Fuente</h3>
-            <span
-              style={{
-                fontSize: "0.75rem",
-                color: "var(--color-text-muted)",
-                fontWeight: "normal",
-              }}
-            >
+            <span className="leads-chart-legend-hint">
               Haz clic en la leyenda para mostrar/ocultar fuentes
             </span>
           </div>
 
-          <div style={{ height: "500px", padding: "1rem", fontSize: "0.875rem" }}>
+          <div className="leads-chart-container">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={chartData}
@@ -165,79 +153,36 @@ export default function LeadsPage() {
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
                       return (
-                        <div
-                          style={{
-                            backgroundColor: "var(--color-surface-elevated)",
-                            border: "1px solid var(--color-border)",
-                            padding: "0.75rem",
-                            borderRadius: "var(--radius-md)",
-                            boxShadow: "var(--shadow-lg)",
-                          }}
-                        >
-                          <p
-                            style={{
-                              color: "var(--color-text-muted)",
-                              marginBottom: "0.5rem",
-                              fontSize: "0.875rem",
-                            }}
-                          >
-                            {label}
-                          </p>
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: "0.25rem",
-                            }}
-                          >
-                            {payload.map((entry: any, index: number) => (
-                              <div
-                                key={index}
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "0.5rem",
-                                  fontSize: "0.875rem",
-                                  color: "var(--color-text)",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    width: "8px",
-                                    height: "8px",
-                                    borderRadius: "50%",
-                                    backgroundColor: entry.color,
-                                  }}
-                                />
-                                <span>
-                                  {(LeadSourceLabels as any)[entry.name] ||
-                                    entry.name}
-                                  : {entry.value}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
+                        <TooltipContent title={label}>
+                          {payload.map((entry: any, index: number) => (
+                            <TooltipRow
+                              key={index}
+                              label={
+                                <div className="leads-tooltip-label-container">
+                                  <div
+                                    className="leads-tooltip-dot"
+                                    style={{ backgroundColor: entry.color }}
+                                  />
+                                  <span>
+                                    {(LeadSourceLabels as any)[entry.name] || entry.name}
+                                  </span>
+                                </div>
+                              }
+                              value={entry.value}
+                            />
+                          ))}
+                        </TooltipContent>
                       );
                     }
                     return null;
                   }}
                 />
                 <Legend
-                  formatter={(value, entry: any) => {
+                  formatter={(value) => {
                     const label = (LeadSourceLabels as any)[value] || value;
+                    const isHidden = hiddenSeries.includes(value);
                     return (
-                      <span
-                        style={{
-                          color: hiddenSeries.includes(value)
-                            ? "var(--color-text-muted)"
-                            : "var(--color-text)",
-                          textDecoration: hiddenSeries.includes(value)
-                            ? "line-through"
-                            : "none",
-                          cursor: "pointer",
-                        }}
-                      >
+                      <span className={`leads-legend-item ${isHidden ? 'hidden' : ''}`}>
                         {label}
                       </span>
                     );

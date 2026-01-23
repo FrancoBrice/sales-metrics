@@ -29,6 +29,7 @@
   border-radius: var(--radius-md);
   overflow: hidden;
   min-width: fit-content;
+  grid-template-columns: 120px repeat(var(--sentiment-count, 3), minmax(150px, 1fr));
 }
 
 .win-probability-matrix-header-row {
@@ -98,6 +99,15 @@
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
+}
+
+.win-probability-matrix-cell-content-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .win-probability-matrix-cell-value {

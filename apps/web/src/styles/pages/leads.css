@@ -1,0 +1,45 @@
+.leads-page-subtitle {
+  margin-top: 0.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.leads-chart-legend-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-weight: normal;
+}
+
+.leads-chart-container {
+  height: 500px;
+  padding: 1rem;
+  font-size: 0.875rem;
+}
+
+.leads-tooltip-label-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.leads-tooltip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.leads-legend-wrapper {
+  padding-top: 20px;
+}
+
+.leads-legend-item {
+  cursor: pointer;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.leads-legend-item.hidden {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
