@@ -1,0 +1,147 @@
+.container {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: relative;
+  z-index: 100;
+  padding: 0;
+  width: 100%;
+}
+
+.innerContainer {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: auto;
+  min-height: 60px;
+}
+
+.toggleBtn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text);
+  padding: 0.5rem;
+  margin-left: auto;
+}
+
+.linksList {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  width: 100%;
+  align-items: center;
+}
+
+.linksList::-webkit-scrollbar {
+  display: none;
+}
+
+.link {
+  padding: 1rem 1.5rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 60px;
+}
+
+.link:hover {
+  color: var(--color-text);
+  background: var(--color-surface-elevated);
+}
+
+.linkActive {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  background: rgba(var(--color-primary-rgb), 0.05);
+}
+
+.linkText {
+  position: relative;
+  display: inline-block;
+}
+
+.sparkleWrapper {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sparkleIcon {
+  opacity: 0.9;
+  filter: drop-shadow(0 0 2px currentColor);
+  color: inherit;
+}
+
+.linkActive .sparkleIcon {
+  opacity: 1;
+  filter: drop-shadow(0 0 3px currentColor);
+}
+
+@media (max-width: 768px) {
+  .innerContainer {
+    padding: 0.5rem 1rem;
+    flex-wrap: wrap;
+  }
+
+  .toggleBtn {
+    display: flex;
+    margin-left: auto;
+  }
+
+  .linksList {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 0.5rem;
+    border-top: 1px solid var(--color-border);
+    animation: slideDown 0.2s ease-out;
+  }
+
+  .linksList.open {
+    display: flex;
+  }
+
+  .link {
+    width: 100%;
+    height: auto;
+    padding: 0.875rem 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+    border-left: 3px solid transparent;
+  }
+
+  .link:last-child {
+    border-bottom: none;
+  }
+
+  .linkActive {
+    border-bottom-color: var(--color-border);
+    border-left-color: var(--color-primary);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
