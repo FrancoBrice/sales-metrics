@@ -6,6 +6,8 @@ import { api } from "@/lib/api";
 import { IndustryLabels, PainPointsLabels, Industry, PainPoints } from "@vambe/shared";
 import { quadrantColors, chartColors } from "@/constants/colors";
 import { CustomerFilters } from "@/lib/api";
+import "@/styles/charts/opportunity-matrix.css";
+import { TooltipContent, TooltipRow } from "@/components/ui/Tooltip";
 
 interface OpportunityMatrixProps {
   filters?: CustomerFilters;
@@ -111,8 +113,8 @@ export function OpportunityMatrix({ filters }: OpportunityMatrixProps) {
     y: opp.conversionRate,
     z: opp.total,
     name: opp.category === "industry"
-      ? IndustryLabels[opp.name as Industry] || opp.name
-      : PainPointsLabels[opp.name as PainPoints] || opp.name,
+      ? (IndustryLabels[opp.name as Industry] || opp.name)
+      : (opp.name === "SIN_PAIN_POINTS" ? "Desconocido" : (PainPointsLabels[opp.name as PainPoints] || opp.name)),
     category: opp.category,
     fullName: opp.name,
     total: opp.total,
@@ -170,9 +172,9 @@ export function OpportunityMatrix({ filters }: OpportunityMatrixProps) {
               dataKey="x"
               name="Volumen"
               unit=""
-              domain={[0, maxVolume * 1.1]}
+              domain={[0, Math.ceil(maxVolume * 1.1)]}
               label={{
-                value: 'Volumen Promedio',
+                value: 'Volumen Promedio (Semanal)',
                 position: 'insideBottom',
                 offset: -10,
                 style: { fill: "var(--color-text)", fontSize: "0.875rem", fontWeight: 500 }
@@ -252,52 +254,30 @@ export function OpportunityMatrix({ filters }: OpportunityMatrixProps) {
                 if (active && payload && payload.length) {
                   const data = payload[0].payload;
                   return (
-                    <div style={{
-                      background: "var(--color-surface-elevated)",
-                      border: "1px solid var(--color-border)",
-                      padding: "1rem",
-                      borderRadius: "10px",
-                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                      minWidth: "250px"
-                    }}>
-                      <p style={{
-                        fontWeight: 700,
-                        marginBottom: "0.75rem",
-                        fontSize: "1rem",
-                        color: "var(--color-text)"
-                      }}>
-                        {data.name}
-                      </p>
-                      <div style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "0.5rem",
-                        fontSize: "0.875rem"
-                      }}>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ color: "var(--color-text-muted)" }}>Cuadrante:</span>
-                          <span style={{ fontWeight: 600, color: getQuadrantColor({ category: data.category, name: data.fullName, total: 0, closed: 0, avgVolume: 0, conversionRate: 0 } as Opportunity) }}>
-                            {data.quadrant}
-                          </span>
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ color: "var(--color-text-muted)" }}>Volumen Promedio:</span>
-                          <span style={{ fontWeight: 600, color: "var(--color-text)" }}>{data.x}</span>
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ color: "var(--color-text-muted)" }}>Conversión:</span>
-                          <span style={{ fontWeight: 600, color: "var(--color-text)" }}>{data.y.toFixed(1)}%</span>
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ color: "var(--color-text-muted)" }}>Total Leads:</span>
-                          <span style={{ fontWeight: 600, color: "var(--color-text)" }}>{data.total}</span>
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ color: "var(--color-text-muted)" }}>Cerrados:</span>
-                          <span style={{ fontWeight: 600, color: quadrantColors.highValue }}>{data.closed}</span>
-                        </div>
-                      </div>
-                    </div>
+                    <TooltipContent title={data.name}>
+                      <TooltipRow
+                        label="Cuadrante:"
+                        value={data.quadrant}
+                        valueColor={getQuadrantColor({ category: data.category, name: data.fullName, total: 0, closed: 0, avgVolume: 0, conversionRate: 0 } as Opportunity)}
+                      />
+                      <TooltipRow
+                        label="Volumen Promedio (Semanal):"
+                        value={data.x === 0 ? "Desconocido" : data.x}
+                      />
+                      <TooltipRow
+                        label="Conversión:"
+                        value={`${data.y.toFixed(1)}%`}
+                      />
+                      <TooltipRow
+                        label="Total Leads:"
+                        value={data.total}
+                      />
+                      <TooltipRow
+                        label="Cerrados:"
+                        value={data.closed}
+                        valueColor={quadrantColors.highValue}
+                      />
+                    </TooltipContent>
                   );
                 }
                 return null;
@@ -322,50 +302,45 @@ export function OpportunityMatrix({ filters }: OpportunityMatrixProps) {
         </ResponsiveContainer>
       </div>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-        gap: "1rem",
-        marginTop: "2rem"
-      }}>
-        <div className="opportunity-matrix-legend-item opportunity-matrix-legend-high-value">
+      <div className="opportunity-matrix-legend-grid">
+        <div className="opportunity-matrix-legend-item">
           <div className="opportunity-matrix-legend-color" style={{ background: quadrantColors.highValue }}></div>
           <div>
-            <strong style={{ color: quadrantColors.highValue }}>Alto Valor</strong>
-            <p>Alto volumen y alta conversión. Priorizar y escalar.</p>
+            <span className="opportunity-matrix-legend-title" style={{ color: quadrantColors.highValue }}>Alto Valor</span>
+            <span className="opportunity-matrix-legend-desc">Alto volumen y alta conversión. Priorizar y escalar.</span>
             <span className="opportunity-matrix-legend-count">
               {data.quadrants.highValue.length} oportunidades
             </span>
           </div>
         </div>
 
-        <div className="opportunity-matrix-legend-item opportunity-matrix-legend-quick-wins">
+        <div className="opportunity-matrix-legend-item">
           <div className="opportunity-matrix-legend-color" style={{ background: quadrantColors.quickWins }}></div>
           <div>
-            <strong style={{ color: quadrantColors.quickWins }}>Quick Wins</strong>
-            <p>Bajo volumen pero alta conversión. Fácil de cerrar.</p>
+            <span className="opportunity-matrix-legend-title" style={{ color: quadrantColors.quickWins }}>Quick Wins</span>
+            <span className="opportunity-matrix-legend-desc">Bajo volumen pero alta conversión. Fácil de cerrar.</span>
             <span className="opportunity-matrix-legend-count">
               {data.quadrants.quickWins.length} oportunidades
             </span>
           </div>
         </div>
 
-        <div className="opportunity-matrix-legend-item opportunity-matrix-legend-development">
+        <div className="opportunity-matrix-legend-item">
           <div className="opportunity-matrix-legend-color" style={{ background: quadrantColors.development }}></div>
           <div>
-            <strong style={{ color: quadrantColors.development }}>Desarrollo</strong>
-            <p>Alto volumen pero baja conversión. Mejorar estrategia.</p>
+            <span className="opportunity-matrix-legend-title" style={{ color: quadrantColors.development }}>Desarrollo</span>
+            <span className="opportunity-matrix-legend-desc">Alto volumen pero baja conversión. Mejorar estrategia.</span>
             <span className="opportunity-matrix-legend-count">
               {data.quadrants.development.length} oportunidades
             </span>
           </div>
         </div>
 
-        <div className="opportunity-matrix-legend-item opportunity-matrix-legend-low-priority">
+        <div className="opportunity-matrix-legend-item">
           <div className="opportunity-matrix-legend-color" style={{ background: quadrantColors.lowPriority }}></div>
           <div>
-            <strong style={{ color: quadrantColors.lowPriority }}>Baja Prioridad</strong>
-            <p>Bajo volumen y baja conversión. Evaluar cuidadosamente.</p>
+            <span className="opportunity-matrix-legend-title" style={{ color: quadrantColors.lowPriority }}>Baja Prioridad</span>
+            <span className="opportunity-matrix-legend-desc">Bajo volumen y baja conversión. Evaluar cuidadosamente.</span>
             <span className="opportunity-matrix-legend-count">
               {data.quadrants.lowPriority.length} oportunidades
             </span>

@@ -3,6 +3,7 @@ import { MetricsFilterDto } from "../dto/metrics-filter.dto";
 import { BaseMetricsService } from "./base-metrics.service";
 import { NO_PAIN_POINTS } from "../../common/constants";
 import { calculateConversionRateRounded } from "../../common/helpers/metrics.helper";
+import { VolumeUnit } from "@vambe/shared";
 
 @Injectable()
 export class OpportunityMatrixService extends BaseMetricsService {
@@ -16,21 +17,28 @@ export class OpportunityMatrixService extends BaseMetricsService {
       const extraction = this.getExtraction(customer);
       if (!extraction) continue;
 
-      const volume = extraction.volume?.quantity || 0;
+      const rawVolume = extraction.volume?.quantity || 0;
+      const unit = extraction.volume?.unit;
 
-      if (extraction.industry) {
-        const industry = extraction.industry;
-        if (!industryStats[industry]) {
-          industryStats[industry] = { total: 0, closed: 0, volumes: [], labels: [] };
-        }
-        industryStats[industry].total++;
-        industryStats[industry].volumes.push(volume);
-        if (customer.closed) {
-          industryStats[industry].closed++;
-        }
-        if (!industryStats[industry].labels.includes(industry)) {
-          industryStats[industry].labels.push(industry);
-        }
+      let volume = rawVolume;
+
+      if (unit === VolumeUnit.DIARIO) {
+        volume = rawVolume * 7;
+      } else if (unit === VolumeUnit.MENSUAL) {
+        volume = rawVolume / 4;
+      }
+
+      const industry = extraction.industry || "Desconocido";
+      if (!industryStats[industry]) {
+        industryStats[industry] = { total: 0, closed: 0, volumes: [], labels: [] };
+      }
+      industryStats[industry].total++;
+      industryStats[industry].volumes.push(volume);
+      if (customer.closed) {
+        industryStats[industry].closed++;
+      }
+      if (!industryStats[industry].labels.includes(industry)) {
+        industryStats[industry].labels.push(industry);
       }
 
       const painPoints = extraction.painPoints || [];

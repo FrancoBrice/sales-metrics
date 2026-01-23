@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { UrgencyLabels, SentimentLabels, Urgency, Sentiment } from "@vambe/shared";
 import { CustomerFilters } from "@/lib/api";
-import { Tooltip } from "@/components/ui/Tooltip";
+import { Tooltip, TooltipContent, TooltipRow } from "@/components/ui/Tooltip";
 import { EmptyStateWithType } from "@/components/ui/Loading";
 
 interface WinProbabilityMatrixProps {
@@ -168,29 +168,27 @@ export function WinProbabilityMatrix({ filters }: WinProbabilityMatrixProps) {
                     {cell && (
                       <Tooltip
                         content={
-                          <div className="ui-tooltip-body">
-                            <div className="ui-tooltip-header">
-                              {UrgencyLabels[urgency as Urgency] || urgency} / {SentimentLabels[sentiment as Sentiment] || sentiment}
-                            </div>
-                            <div className="ui-tooltip-row">
-                              <span className="ui-tooltip-label">Total Leads</span>
-                              <span className="ui-tooltip-value">{cell.total}</span>
-                            </div>
-                            <div className="ui-tooltip-row">
-                              <span className="ui-tooltip-label">Cerrados</span>
-                              <span className="ui-tooltip-value">{cell.closed}</span>
-                            </div>
-                            <div className="ui-tooltip-row">
-                              <span className="ui-tooltip-label">Tasa Conversión</span>
-                              <span className="ui-tooltip-value">{cell.conversionRate.toFixed(1)}%</span>
-                            </div>
-                            <div className="ui-tooltip-row">
-                              <span className="ui-tooltip-label">Prob. Cierre</span>
-                              <span className="ui-tooltip-value" style={{ color: cell.winProbability > 70 ? 'var(--color-success)' : cell.winProbability > 40 ? 'var(--color-info)' : 'var(--color-danger)' }}>
-                                {cell.winProbability.toFixed(1)}%
-                              </span>
-                            </div>
-                          </div>
+                          <TooltipContent
+                            title={`${UrgencyLabels[urgency as Urgency] || urgency} / ${SentimentLabels[sentiment as Sentiment] || sentiment}`}
+                          >
+                            <TooltipRow
+                              label="Total Leads"
+                              value={cell.total}
+                            />
+                            <TooltipRow
+                              label="Cerrados"
+                              value={cell.closed}
+                            />
+                            <TooltipRow
+                              label="Tasa Conversión"
+                              value={`${cell.conversionRate.toFixed(1)}%`}
+                            />
+                            <TooltipRow
+                              label="Prob. Cierre"
+                              value={`${cell.winProbability.toFixed(1)}%`}
+                              valueColor={cell.winProbability > 70 ? 'var(--color-success)' : cell.winProbability > 40 ? 'var(--color-info)' : 'var(--color-danger)'}
+                            />
+                          </TooltipContent>
                         }
                       >
                         <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
