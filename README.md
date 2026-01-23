@@ -4,6 +4,8 @@
 
 Panel interactivo para análisis inteligente de métricas de ventas basado en transcripciones de reuniones. Extrae automáticamente insights con IA, identifica patrones y genera visualizaciones interactivas.
 
+![Dashboard Preview](docs/dashboard-preview.png)
+
 ## Funcionalidades Principales
 
 - **Importar CSV**: Sube archivos CSV con datos de clientes y reuniones para procesamiento masivo
