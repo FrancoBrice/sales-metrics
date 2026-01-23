@@ -1,2 +1,2 @@
 export { LlmClient, DeterministicHints, LlmExtractionResult } from "./llmClient.interface";
-export { DeepSeekClient } from "./deepseekClient";
+export { DeepSeekClient, DeepSeekResponseParser, RetryHandler } from "./deepseek";

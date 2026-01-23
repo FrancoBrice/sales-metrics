@@ -1,7 +1,8 @@
 import { Module } from "@nestjs/common";
 import { ExtractController } from "./extract.controller";
 import { ExtractService } from "./extract.service";
-import { DeepSeekClient, ValidationService, ExtractionParser } from "./llm";
+import { DeepSeekClient, DeepSeekResponseParser, RetryHandler } from "./llm";
+import { ValidationService, ExtractionParser } from "./llm";
 
 @Module({
   controllers: [ExtractController],
@@ -9,6 +10,8 @@ import { DeepSeekClient, ValidationService, ExtractionParser } from "./llm";
     ExtractService,
     ValidationService,
     ExtractionParser,
+    DeepSeekResponseParser,
+    RetryHandler,
     DeepSeekClient,
   ],
   exports: [ExtractService],

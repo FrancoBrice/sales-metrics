@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ExtractService } from "./extract.service";
 import { PrismaService } from "../prisma/prisma.service";
-import { DeepSeekClient } from "./llm/clients/deepseekClient";
+import { DeepSeekClient } from "./llm";
 import { ExtractionParser } from "./llm/services/extraction.parser";
 import { ExtractionStatus, LeadSource, VolumeUnit, Industry, PainPoints } from "@vambe/shared";
 import { LlmExtractionResult } from "./llm";
