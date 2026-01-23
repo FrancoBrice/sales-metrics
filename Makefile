@@ -16,7 +16,7 @@ setup: ## Setup inicial completo
 	@echo "[2/5] Iniciando PostgreSQL..."
 	@docker-compose up -d
 	@echo "[3/5] Esperando que PostgreSQL este listo..."
-	@sleep 5
+	@until docker exec vambe-postgres pg_isready -U vambe -d sales_metrics > /dev/null 2>&1; do sleep 1; done
 	@echo "[4/5] Generando cliente Prisma..."
 	@pnpm db:generate
 	@echo "[5/5] Creando esquema de base de datos..."
@@ -46,7 +46,7 @@ db-reset: ## Resetear base de datos
 	@echo "Reseteando base de datos..."
 	@docker-compose down -v
 	@docker-compose up -d
-	@sleep 5
+	@until docker exec vambe-postgres pg_isready -U vambe -d sales_metrics > /dev/null 2>&1; do sleep 1; done
 	@pnpm db:push
 	@echo "Base de datos reseteada"
 
