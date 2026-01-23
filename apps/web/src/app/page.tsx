@@ -72,7 +72,7 @@ export default function Dashboard() {
         <p className="hero-subtitle">ANÁLISIS INTELIGENTE DE VENTAS</p>
         <h1 className="hero-title">TUS DATOS A DECISIONES, EN SEGUNDOS</h1>
         <p className="hero-description">
-          Automatiza el análisis de transcripciones con IA. <strong>Extrae insights automáticamente</strong>, identifica patrones y toma decisiones basadas en datos. <strong>Más precisión, más velocidad</strong>, sin esfuerzo manual.
+          Automatiza el análisis de transcripciones con IA. <strong>Extrae insights automáticamente</strong>, identifica patrones y toma decisiones basadas en datos.
         </p>
       </div>
 
