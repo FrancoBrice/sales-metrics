@@ -5,6 +5,7 @@ export const DEFAULT_PAGE = 1;
 
 export const CONCURRENCY_LIMIT = 10;
 export const CSV_MAX_SIZE = 5 * 1024 * 1024;
+export const MAX_EXTRACTION_RETRIES = 3;
 
 export const MIN_CONFIDENCE_THRESHOLD = 0.7;
 

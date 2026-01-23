@@ -5,7 +5,7 @@ import { ExtractionStatus, LeadSource, Integrations, Volume, Extraction } from "
 import { ExtractionParser, DeepSeekClient, mapExtractionDataToExtraction } from "./llm";
 import { detectLeadSource, detectVolume, detectIntegrations } from "./deterministic";
 import { processInBatches } from "../common/helpers/batching.helper";
-import { CONCURRENCY_LIMIT, MIN_CONFIDENCE_THRESHOLD, HOURS_24_MS } from "../common/constants";
+import { CONCURRENCY_LIMIT, MIN_CONFIDENCE_THRESHOLD, HOURS_24_MS, MAX_EXTRACTION_RETRIES } from "../common/constants";
 
 @Injectable()
 export class ExtractService {
@@ -235,18 +235,27 @@ export class ExtractService {
       },
     });
 
-    const latestByMeetingId = new Map<string, { status: string; createdAt: Date }>();
+    const extractionsByMeetingId = new Map<string, { status: string; createdAt: Date; failedCount: number }>();
     for (const extraction of allExtractions) {
-      if (!latestByMeetingId.has(extraction.meetingId)) {
-        latestByMeetingId.set(extraction.meetingId, {
+      const existing = extractionsByMeetingId.get(extraction.meetingId);
+      if (!existing) {
+        extractionsByMeetingId.set(extraction.meetingId, {
           status: extraction.status,
           createdAt: extraction.createdAt,
+          failedCount: extraction.status === ExtractionStatus.FAILED ? 1 : 0,
         });
+      } else {
+        if (extraction.status === ExtractionStatus.FAILED) {
+          existing.failedCount++;
+        }
       }
     }
 
-    return Array.from(latestByMeetingId.entries())
-      .filter(([_, extraction]) => extraction.status === ExtractionStatus.FAILED)
+    return Array.from(extractionsByMeetingId.entries())
+      .filter(([_, data]) => 
+        data.status === ExtractionStatus.FAILED && 
+        data.failedCount < MAX_EXTRACTION_RETRIES
+      )
       .map(([meetingId]) => meetingId);
   }
 

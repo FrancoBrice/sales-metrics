@@ -188,25 +188,7 @@ export function useExtractionProgress(): UseExtractionProgressReturn {
   );
 
   const checkInitialProgress = useCallback(async () => {
-    if (extracting) return;
-
-    try {
-      const progressData = await api.extract.getProgress();
-
-      if (progressData.total > 0 && progressData.completed < progressData.total) {
-        setExtracting(true);
-        setProgress({
-          current: progressData.completed,
-          total: progressData.total
-        });
-
-        resetProgressRefs();
-
-        startPolling();
-      }
-    } catch {
-    }
-  }, [startPolling, extracting, resetProgressRefs]);
+  }, []);
 
   useEffect(() => {
     return () => {
