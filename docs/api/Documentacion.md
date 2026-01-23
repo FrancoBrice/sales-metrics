@@ -1,37 +1,62 @@
 
 # Decisiones Técnicas y Arquitectura
 
-## Tecnologías Elegidas
+## Decisiones de Stack Tecnológico
 
-### Stack Principal
-- **Backend**: NestJS con Node.js (mismo stack que utiliza Vambe)
-- **Frontend**: Next.js con React (mismo stack que utiliza Vambe)
-- **Base de Datos**: PostgreSQL relacional
-- **ORM**: Prisma para consultas tipo objeto
-- **Gestor de Paquetes**: pnpm con workspace para monorepo
-- **Testing**: Vitest para tests unitarios rápidos
-- **TypeScript**: En todo el stack para type safety
+### Backend: NestJS + Node.js
+**Decisión**: Utilizar NestJS con Node.js para el backend.
 
-### IA y Procesamiento
-- **Modelo LLM**: DeepSeek (API de bajo costo, sin rate limiting)
-- **Arquitectura Híbrida**: Regex determinístico + LLM para máxima precisión y costo-efectividad
-- **Procesamiento**: Promise.race con batches para concurrencia controlada
+**Razones**:
+- Mismo stack que utiliza Vambe
+- NestJS proporciona estructura modular y escalable con decoradores e inyección de dependencias
+- TypeScript nativo para type safety en todo el stack
+- Arquitectura basada en módulos facilita mantenimiento y testing
 
-## Estructura del Proyecto
+**Alternativas consideradas**: Django que es el stack que utilizo en mi empresa, pero descartado para mostrar familiaridad con el stack de vambe
 
-### Monorepo
-Se decidió utilizar una estructura de monorepo separado en dos apps para esta prueba técnica, permitiendo:
-- Demostrar habilidades full-stack diferenciadas
-- Desarrollo paralelo eficiente en tiempo limitado
+### Frontend: Next.js + React
+**Decisión**: Utilizar Next.js con React para el frontend.
+
+**Razones**:
+- Mismo stack que utiliza Vambe
+- File-based routing simplifica la estructura de rutas
+- Integración nativa con React Server Components
+- Familiaridad con React
+
+### Base de Datos: PostgreSQL + Prisma
+**Decisión**: PostgreSQL como base de datos relacional con Prisma como ORM.
+
+**Razones**:
+- PostgreSQL ofrece robustez y características avanzadas (JSON, arrays, índices) necesarias para analytics
+- Prisma proporciona type safety end-to-end desde DB hasta código TypeScript
+- Migraciones versionadas facilitan el control de cambios en el esquema
+- Relaciones bien definidas para datos estructurados de clientes y extracciones
+
+**Alternativas consideradas**: MongoDB (más flexible pero menos estructura para relaciones), SQLite pero se descartó para ser compatible con supabase más fácilmente
+
+### Modelo LLM: DeepSeek
+**Decisión**: Utilizar DeepSeek en lugar de OpenAI u otros proveedores.
+
+**Razones**:
+- API de bajo costo
+- Sin rate limiting temporal
+- Compatible con la API de OpenAI (mismo SDK)
+- Suficiente calidad para tareas de categorización estructurada
+
+**Alternativas consideradas**: OpenAI descartado porque no tiene capa gratuita, los resultados eran similares en pruebas así que se descartó. De todas formas integrar un nuevo proveedor es simple dada la modularidad del código, solo es necesario crear una nueva carpeta similar a la de deepseek e implementar la api, luego es directo conectarlo al flujo de extraction.
+
+## Decisiones de Arquitectura
+
+### Monorepo con pnpm Workspace
+**Decisión**: Estructura de monorepo separando frontend y backend en apps independientes.
+
+**Razones**:
+- Desarrollo paralelo eficiente en tiempo limitado (1 semana)
 - Evaluación independiente de cada componente
-- Reutilización de tipos/interfaces comunes mediante pnpm workspace
+- Reutilización de tipos/interfaces comunes mediante `packages/shared`
+- Un solo repositorio facilita el deployment y mantenimiento
 
-### Organización de Código
-- **apps/**: Código fuente de aplicaciones
-  - **api/**: Backend NestJS para procesamiento LLM
-  - **web/**: Frontend Next.js para visualización
-- **packages/shared/**: Tipos, enums, schemas compartidos
-- **docs/**: Documentación completa del proyecto
+**Alternativas consideradas**: Repositorios separados (más complejo para sincronización), estructura monolítica (menos modular)
 
 ## Base de Datos
 
@@ -43,156 +68,110 @@ Esquema optimizado para analytics:
 - `ExtractionData`: Datos estructurados extraídos
 - `LlmApiLog`: Logs completos de llamadas IA
 
-### Índices
-Se definieron índices UNIQUE en relaciones 1:1 para optimizar consultas:
-- `Extraction.meetingId`: UNIQUE - Una extraction por meeting, optimiza búsquedas por meetingId
-- `ExtractionData.extractionId`: UNIQUE - Una ExtractionData por Extraction, optimiza joins
+### Índices UNIQUE en Relaciones 1:1
+**Decisión**: Usar índices UNIQUE en `Extraction.meetingId` y `ExtractionData.extractionId` en lugar de permitir múltiples registros.
 
-## Sistema de Extracción IA
+**Razones**:
+- **Integridad de datos**: Índices UNIQUE garantizan relaciones 1:1 a nivel de base de datos
+- **Prevención de duplicados en extracciones**: `upsert` permite re-ejecutar extracciones sin crear duplicados, facilitando reintentos automáticos
+- **Performance**: Optimiza búsquedas frecuentes por `meetingId` y joins
 
-### Arquitectura Híbrida Determinística + LLM
+**Implementación**: `upsert` con `where: { meetingId }` actualiza o crea según exista
 
-Se implementó un sistema de dos etapas: primero se ejecutan funciones determinísticas que buscan patrones específicos en las transcripciones para detectar lead source, volumen e integraciones mediante expresiones regulares y mapeos de palabras clave. Estos resultados se pasan como hints al LLM para guiar su análisis.
+**Alternativas consideradas**: Múltiples extracciones por meeting (permite historial pero no necesario para este caso)
 
-**Sistema de confianza:**
-- **Threshold mínimo**: 0.7 (70% de confianza requerida para usar resultado determinístico)
-- Si el resultado determinístico supera el threshold, se usa directamente
-- Si no supera el threshold, se envía al LLM como hint para mejorar precisión
-- Resultados determinísticos tienen prioridad sobre LLM cuando superan umbral de confianza
+### Prevención de Duplicados en Ingesta CSV
+**Decisión**: Detectar y prevenir duplicados por combinación de email + fecha (mismo día) + vendedor durante el procesamiento de CSV, en lugar de crear registros duplicados.
 
-**Ventajas del enfoque híbrido:**
-- Ciertos datos como lead source y volumen aparecen explícitamente en transcripciones
-- Detección determinística es más rápida, económica y precisa
-- Reduce errores de interpretación del modelo
-- Optimización costo-beneficio: regex barato + LLM solo cuando necesario
+**Razones**:
+- **Normalización de email**: Lowercase y trim evita duplicados por diferencias de formato (ej: "Juan@Email.com" vs "juan@email.com")
+- **Criterios múltiples**: Email + fecha + vendedor asegura que solo se detecte como duplicado cuando realmente lo es
+- **Duplicados exactos**: Si email, fecha, vendedor y transcript son idénticos, omite para evitar procesamiento innecesario
 
-### Procesamiento en Background con Batches
+**Alternativas consideradas**:
+- Solo email (permitiría duplicados del mismo cliente en mismo día con diferente vendedor)
+- Crear siempre generaría duplicados innecesarios, afectando las métricas y procesando más veces de lo necesario con llm.
+- Índice UNIQUE en email (no permite múltiples reuniones del mismo cliente en diferentes días)
 
-Las extracciones se procesan de forma asíncrona en background utilizando un sistema de batches con límite de concurrencia. Esto permite que el endpoint retorne inmediatamente con estadísticas mientras las extracciones se ejecutan en paralelo, mejorando la experiencia del usuario al evitar tiempos de espera largos.
+## Decisiones de Diseño del Sistema
 
-**Decisiones técnicas:**
-- Se utiliza Promise.race con timeouts para evitar que extracciones individuales bloqueen el proceso completo
-- Esta decisión evita la complejidad de configurar un sistema de colas como RabbitMQ para un proyecto de esta escala
-- Mantiene un control razonable sobre la carga del sistema
+### Arquitectura Híbrida: Regex Determinístico + LLM
+**Decisión**: Combinar detección determinística (regex) con procesamiento LLM en lugar de usar solo LLM.
 
-### Sistema de Reintentos
+**Razones**:
+- **Costo-efectividad**: Regex es gratuito y rápido para datos explícitos (lead source, volumen)
+- **Precisión**: Ciertos datos aparecen explícitamente en transcripciones (ej: "500 mensajes diarios")
+- **Velocidad**: Detección determinística es instantánea vs segundos de LLM
+- **Control de calidad**: El regex es testeable y nos permite ser más precisos y determinísticos
 
-Se implementó un mecanismo de reintentos automáticos para extracciones fallidas, con un límite máximo configurable. El sistema identifica meetings con extracciones fallidas que aún no han alcanzado el límite de reintentos y los incluye automáticamente en el siguiente ciclo de procesamiento.
+**Implementación**:
+- Regex detecta lead source, volumen e integraciones con umbral de confianza
+- Si supera threshold (0.7), se usa directamente
+- Si no supera, se pasa como hint al LLM para guiar su análisis
+- Resultados determinísticos tienen prioridad sobre LLM cuando superan umbral
 
-**Beneficios:**
-- Mejora la resiliencia del sistema ante fallos temporales de la API del LLM
-- Maneja problemas de red sin requerir intervención manual
+**Alternativas consideradas**: Solo LLM menos testeable y controlado
 
-### Tracking de Progreso
+### Procesamiento Asíncrono con Batches
+**Decisión**: Procesar extracciones en background con batches y Promise.race en lugar de sistema de colas.
 
-El servicio expone un endpoint de progreso que calcula estadísticas en tiempo real sobre extracciones pendientes, completadas, exitosas y fallidas. Incluye también meetings recientes procesados en las últimas 24 horas para dar contexto al usuario sobre el estado general del sistema.
+**Razones**:
+- **Simplicidad**: Evita complejidad de configurar RabbitMQ/Redis para un proyecto de esta escala
+- **UX mejorada**: Endpoint retorna inmediatamente con estadísticas mientras procesa en background
+- **Control de carga**: Límite de concurrencia (10) previene sobrecarga del sistema
+- **Resiliencia**: Promise.race con timeouts evita que extracciones individuales bloqueen el proceso
 
-**UX Benefits:**
-- Permite al frontend implementar polling y mostrar barras de progreso
-- Mejora la experiencia de usuario durante la carga de archivos CSV grandes
+**Alternativas consideradas**: Sistema de colas (RabbitMQ/Redis - demasiado complejo), procesamiento síncrono (mala UX para archivos grandes)
 
-### Manejo de Errores y Logging
+### Insights con IA: Carga Bajo Demanda y Datos Dinámicos
+**Decisión**: Implementar insights generados por IA con carga bajo demanda (botón explícito) y datos dinámicos basados en filtros actuales, en lugar de cargar automáticamente al renderizar la página.
 
-Todas las llamadas al LLM se registran en una tabla separada (LlmApiLog) que almacena metadatos como proveedor, modelo utilizado, tokens consumidos, duración y respuestas completas.
+**Razones**:
+- **Performance inicial**: Evita retrasar la carga de la página principal con llamadas costosas a LLM
+- **Control de costos**: El usuario decide cuándo generar insights, evitando llamadas innecesarias a la API
+- **Datos dinámicos**: Los insights se generan con los datos filtrados actuales (vendedor, rango de fechas), proporcionando análisis relevante al contexto
+- **Fallback resiliente**: Si falla el LLM, usa insights básicos determinísticos para garantizar disponibilidad
 
-**Beneficios:**
-- Facilita el debugging y el análisis de costos
-- Los errores se capturan y se almacenan como extracciones con estado FAILED
-- El sistema continúa procesando otros meetings incluso cuando algunos fallan
+**Implementación**:
+- Botón "Generar Insights con IA" visible pero no ejecuta hasta que el usuario lo presiona
+- Al hacer clic, envía filtros actuales al backend que genera insights con datos dinámicos
+- Botón cambia a "Regenerar Insights con IA" después de la primera generación
 
-## Deployment
+**Alternativas consideradas**:
+- Carga automática (mala UX por tiempos de espera iniciales y costos innecesarios)
+- Insights estáticos (no se adaptan a filtros, menos útiles)
+- Sin fallback (página se rompe si falla LLM)
 
-### Frontend (Netlify)
-- Build automático con `netlify.toml`
-- Variables de entorno configurables
-- Capa gratuita con buen rendimiento
+### Arquitectura Modular de Integración DeepSeek
+**Decisión**: Separar la integración DeepSeek en capas independientes (Client, Parser, RetryHandler, Exceptions) en lugar de un solo archivo monolítico.
 
-### Backend (Koyeb)
-- Despliegue directo desde GitHub
-- Tier gratuito suficiente para la demo
+**Razones**:
+- **Separación de responsabilidades**: Cada componente tiene una función clara y única
+- **Testeabilidad**: Componentes independientes fáciles de mockear y testear
+- **Mantenibilidad**: Cambios en una capa no afectan las demás
+- **Reutilización**: `RetryHandler` puede usarse en otros contextos
+- **Extensibilidad**: Fácil agregar nuevos proveedores LLM siguiendo la misma estructura
 
-### Base de Datos (Supabase)
-- PostgreSQL
-- Tier gratuito
+**Estructura**:
+- `DeepSeekClient`: Orquesta el flujo completo (HTTP, retry, error handling)
+- `DeepSeekResponseParser`: Parsea y valida respuestas JSON
+- `RetryHandler`: Maneja reintentos con backoff exponencial
+- `DeepSeekExceptions`: Excepciones tipadas para diferentes tipos de errores
 
-## Funcionalidades Detalladas
+**Alternativas consideradas**: Cliente monolítico (más simple pero menos mantenible), abstracción completa de HTTP client (over-engineering para este caso)
 
-### Sistema de Extracción IA
+### Enums en lugar de Texto Libre para Categorías LLM
+**Decisión**: Usar enums predefinidos para todas las categorías extraídas por el LLM en lugar de permitir respuestas de texto libre.
 
-#### Extracción Determinística (Regex)
-- **Fuentes de leads**: LinkedIn, conferencias, recomendaciones
-- **Volumen de interacciones**: mensajes/día, interacciones/semana (con threshold de confianza)
-- **Integraciones requeridas**: CRM, tickets, reservas
+**Razones**:
+- **Consistencia en analytics**: Evita fragmentación de datos (ej: "fintech", "FinTech", "tecnología financiera" → todos `FINTECH`)
+- **Validación automática**: Zod schemas validan respuestas, reduciendo errores
+- **Performance**: Queries más eficientes con valores enum vs búsquedas de texto
+- **UX mejorada**: Frontend puede filtrar sin búsquedas complejas de texto
 
-**Nota**: Cuando el regex no alcanza el threshold de confianza (70%), el LLM actúa como fallback para extraer el volumen.
+**Implementación**: Prompts incluyen explícitamente valores de enum disponibles, guiando al LLM hacia opciones predefinidas.
 
-#### Extracción LLM (DeepSeek)
-- **Clasificación industrial**: Automática por sector (Industry enum)
-- **Modelo de negocio**: Estructura y enfoque del cliente (BusinessModel enum)
-- **JTBD (Jobs To Be Done)**: Funciones principales que necesita el cliente (array)
-- **Pain Points**: Problemas específicos que enfrenta el cliente (array)
-- **Madurez de proceso**: Nivel de madurez de sus procesos actuales (ProcessMaturity enum)
-- **Madurez tecnológica**: Nivel de herramientas y tecnología utilizadas (ToolingMaturity enum)
-- **Complejidad del conocimiento**: Nivel de expertise requerido (KnowledgeComplexity enum)
-- **Nivel de riesgo**: Evaluación de riesgos para el cierre (RiskLevel enum)
-- **Urgencia**: Nivel de urgencia del prospect (Urgency enum)
-- **Métricas de éxito**: KPIs y objetivos del cliente (array)
-- **Objeciones**: Preocupaciones y barreras identificadas (array)
-- **Análisis de sentimiento**: Actitud del prospect durante la reunión (Sentiment enum)
-- **Volumen de negocio**: Cantidad y unidad de negocio involucrado (cuando regex no alcanza threshold)
-
-## Uso de Enums en LLM para Control de Respuestas
-
-### Arquitectura de Enums Estructurados
-Se implementó un sistema de enums predefinidos para todas las categorías extraídas por el LLM, en lugar de permitir respuestas libres de texto. Esta decisión se basa en múltiples beneficios estratégicos:
-
-### Beneficios del Approach con Enums
-
-#### 1. **Agrupación Automática de Categorías**
-Los enums permiten categorizar automáticamente respuestas similares bajo un mismo valor estándar, evitando la fragmentación de datos que ocurre con respuestas de texto libre.
-
-**Ejemplo**: Un LLM podría responder "tecnología financiera", "fintech", "servicios financieros tecnológicos" o "empresa de pagos digitales" - con enums todas estas variaciones se mapean al enum `FINTECH`.
-
-#### 2. **Consistencia en Analytics**
-- **Reporting uniforme**: Todas las métricas usan las mismas categorías predefinidas
-- **Comparabilidad**: Datos históricos y nuevos siguen la misma taxonomía
-- **Dashboard confiable**: Visualizaciones no se rompen por variaciones de texto
-
-#### 3. **Control de Calidad de Respuestas**
-- **Respuestas estructuradas**: El LLM debe elegir de una lista predefinida, reduciendo ambigüedad
-- **Validación automática**: Zod schemas validan que las respuestas pertenezcan a enums válidos
-- **Menos errores de interpretación**: No hay riesgo de typos o variaciones creativas
-
-#### 4. **Mejor Procesamiento y Performance**
-- **Búsqueda optimizada**: Queries de base de datos más eficientes con valores enum
-- **Filtrado rápido**: Frontend puede filtrar sin complejas búsquedas de texto
-
-### Implementación Técnica
-
-#### Enums Definidos
-```typescript
-enum Industry { FINTECH, HEALTHCARE, ECOMMERCE, /* ... */ }
-enum PainPoints { SCALABILITY, INTEGRATION, COMPLIANCE, /* ... */ }
-enum BusinessModel { B2B_SAAS, MARKETPLACE, SUBSCRIPTION, /* ... */ }
-// ... más enums para todas las dimensiones
-```
-
-#### Prompt Engineering con Enums
-Los prompts al LLM incluyen explícitamente los valores de enum disponibles, guiando la selección hacia opciones predefinidas:
-
-```
-Clasifica la industria del cliente en una de estas categorías:
-- FINTECH: Servicios financieros tecnológicos
-- HEALTHCARE: Servicios médicos y salud
-- ECOMMERCE: Comercio electrónico
-- ...
-
-Responde ÚNICAMENTE con el nombre del enum (ej: FINTECH)
-```
-
-### Filtrado Avanzado
-- **Dimensiones**: Vendedor, estado (abierto/cerrado), fuente de leads, industria, rango de fechas
-- **Componente**: Reutilizable en múltiples páginas del frontend
+**Alternativas consideradas**: Texto libre (más flexible pero inconsistente), categorías dinámicas (más complejo de mantener)
 
 ## Testing
 
@@ -200,11 +179,6 @@ Responde ÚNICAMENTE con el nombre del enum (ej: FINTECH)
 - **31 tests unitarios** en extractores determinísticos
 - **Tests de integración** para flujo completo de extracción
 - **Mocks** para dependencias externas (API de IA)
-
-### Arquitectura de Testing
-- **Unit Tests**: Funciones individuales de extracción
-- **Integration Tests**: Flujo completo desde CSV hasta métricas
-- **Coverage**: Métricas de cobertura automática
 
 ## API Endpoints
 
@@ -217,45 +191,17 @@ Responde ÚNICAMENTE con el nombre del enum (ej: FINTECH)
 | `GET` | `/api/metrics/by-dimension` | Métricas por dimensión |
 | `GET` | `/api/extract/progress` | Progreso de extracciones |
 
+## Deployment
 
-## Decisiones de Diseño
+### Frontend (Netlify)
+- Build automático con `netlify.toml`
+- Variables de entorno configurables
+- Capa gratuita con buen rendimiento
 
-### Frontend
-- **Reutilización de componentes**: Se priorizó el desarrollo de componentes reutilizables siguiendo buenas prácticas de React (Tooltip, Modal, Button, Card, etc.)
-- **Vista desktop first**: Dashboard administrativo diseñado para desktop
-- **Mobile**: No implementado completamente por limiación de tiempo(priorización de desktop)
+### Backend (Koyeb)
+- Despliegue directo desde GitHub
+- Tier gratuito
 
-### Backend
-- **Cliente IA modularizado**: Fácil incorporación de nuevos proveedores (OpenAI, Gemini)
-- **Uptime considerations**: Opción evaluada de múltiples proveedores pero descartada por alcance del proyecto
-- **Prompts modulares**: Estructurados para mejor mantenibilidad
-- **Promise.race**: Para concurrencia controlada sin sistema de colas complejo
-
-### Configuración
-- **TypeScript**: Paths absolutos para imports limpios
-- **ESLint + Prettier**: Consistencia de código
-- **Pnpm workspace**: Desarrollo paralelo eficiente
-
-## Servicio de Extracción
-
-El servicio de extracción implementa un enfoque híbrido que combina detección determinística con procesamiento mediante LLM para optimizar precisión y costo.
-
-### Enfoque Híbrido Determinístico + LLM
-
-Se implementó un sistema de dos etapas: primero se ejecutan funciones determinísticas que buscan patrones específicos en las transcripciones para detectar lead source, volumen e integraciones mediante expresiones regulares y mapeos de palabras clave. Estos resultados se pasan como hints al LLM para guiar su análisis. La decisión de usar este enfoque se basa en que ciertos datos como el lead source y el volumen suelen aparecer de forma explícita en las transcripciones, por lo que la detección determinística es más rápida, económica y precisa que delegar todo al LLM. Los resultados determinísticos tienen prioridad sobre los del LLM cuando superan un umbral de confianza mínimo, reduciendo errores de interpretación del modelo.
-
-### Procesamiento en Background con Batches
-
-Las extracciones se procesan de forma asíncrona en background utilizando un sistema de batches con límite de concurrencia. Esto permite que el endpoint retorne inmediatamente con estadísticas mientras las extracciones se ejecutan en paralelo, mejorando la experiencia del usuario al evitar tiempos de espera largos. Se utiliza Promise.race con timeouts para evitar que extracciones individuales bloqueen el proceso completo. Esta decisión evita la complejidad de configurar un sistema de colas como RabbitMQ para un proyecto de esta escala, mientras mantiene un control razonable sobre la carga del sistema.
-
-### Sistema de Reintentos
-
-Se implementó un mecanismo de reintentos automáticos para extracciones fallidas, con un límite máximo configurable. El sistema identifica meetings con extracciones fallidas que aún no han alcanzado el límite de reintentos y los incluye automáticamente en el siguiente ciclo de procesamiento. Esto mejora la resiliencia del sistema ante fallos temporales de la API del LLM o problemas de red, sin requerir intervención manual.
-
-### Tracking de Progreso
-
-El servicio expone un endpoint de progreso que calcula estadísticas en tiempo real sobre extracciones pendientes, completadas, exitosas y fallidas. Incluye también meetings recientes procesados en las últimas 24 horas para dar contexto al usuario sobre el estado general del sistema. Esta funcionalidad permite al frontend implementar polling y mostrar barras de progreso, mejorando la experiencia de usuario durante la carga de archivos CSV grandes.
-
-### Manejo de Errores y Logging
-
-Todas las llamadas al LLM se registran en una tabla separada (LlmApiLog) que almacena metadatos como proveedor, modelo utilizado, tokens consumidos, duración y respuestas completas. Esto facilita el debugging y el análisis de costos. Los errores se capturan y se almacenan como extracciones con estado FAILED, permitiendo que el sistema continúe procesando otros meetings incluso cuando algunos fallan, en lugar de detener todo el proceso.
+### Base de Datos (Supabase)
+- PostgreSQL
+- Tier gratuito
